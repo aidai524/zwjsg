@@ -17,6 +17,18 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.1
 
 flutter:
   uses-material-design: true
+
+# 应用图标：改了 assets/icon 下的图片后，运行 `dart run flutter_launcher_icons` 重新生成两端图标
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon_full.png"
+  remove_alpha_ios: true
+  min_sdk_android: 21
+  adaptive_icon_background: "#FFD23F"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+  adaptive_icon_monochrome: "assets/icon/icon_monochrome.png"

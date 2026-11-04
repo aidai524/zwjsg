@@ -79,6 +79,20 @@ flutter run --dart-define=API_BASE=http://10.0.2.2:8000/api/v1
 
 真机调试时把 `API_BASE` 换成电脑的局域网 IP，例如 `http://192.168.1.10:8000/api/v1`。
 
+### 应用图标和名称
+
+图标源文件在 `app/assets/icon/`（SVG 可编辑，PNG 用于生成）。生成两端图标：
+
+```bash
+cd app
+flutter pub get
+dart run flutter_launcher_icons
+# iOS 桌面显示的名字（安卓已在 AndroidManifest 里设好）
+plutil -replace CFBundleDisplayName -string "再玩我是狗" ios/Runner/Info.plist
+```
+
+安卓 8+ 用自适应图标（黄色底 + 前景），安卓 13+ 支持跟随系统配色的单色图标；iOS 用不透明的完整图标。
+
 ### 第一次打开时
 
 1. 引导 → 登录（也可以“先不登录，随便看看”）→ 形象创建（暂用默认形象）→ 设目标 → 今天。
