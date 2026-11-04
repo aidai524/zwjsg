@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 调试用：允许 Flutter 热重载等开发工具联网，并允许访问本机 http 后端（10.0.2.2:8000） -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application android:usesCleartextTraffic="true" />
+</manifest>
