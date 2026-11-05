@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/app_state.dart';
@@ -29,11 +30,16 @@ class _ZwjsgAppState extends State<ZwjsgApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: '再玩我是狗',
-      debugShowCheckedModeBanner: false,
-      theme: Pop.theme(),
-      routerConfig: _router,
+    // 没有 AppBar 的页面（四个 Tab、欢迎页）不设置状态栏，这里给默认值，
+    // 否则从结算卡这样的深色页面返回后，图标会停留在白色
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: Pop.overlayOnLight,
+      child: MaterialApp.router(
+        title: '再玩我是狗',
+        debugShowCheckedModeBanner: false,
+        theme: Pop.theme(),
+        routerConfig: _router,
+      ),
     );
   }
 }
