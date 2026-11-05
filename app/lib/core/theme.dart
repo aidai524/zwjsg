@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// 设计规范：黄黑波普。对应 UI 设计画布里的「设计规范」画板。
 class Pop {
@@ -22,6 +23,18 @@ class Pop {
   static const Offset shadowOffset = Offset(4, 4);
   static const double radius = 20;
 
+  /// 状态栏样式，按页面底色选。透明底 + 图标明暗，不动导航栏，和 AppBar 的默认做法一致。
+  static const overlayOnLight = SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark, // 安卓
+    statusBarBrightness: Brightness.light, // iOS
+  );
+  static const overlayOnDark = SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light, // 安卓
+    statusBarBrightness: Brightness.dark, // iOS
+  );
+
   static BoxDecoration card({Color color = white, double radius = Pop.radius, bool shadow = true, Color border = ink}) =>
       BoxDecoration(
         color: color,
@@ -43,6 +56,8 @@ class Pop {
     return base.copyWith(
       textTheme: base.textTheme.apply(bodyColor: ink, displayColor: ink, fontFamily: titleFont),
       appBarTheme: const AppBarTheme(
+        // 背景透明时 Flutter 会按深色背景算，选白色图标，所以要明确指定。深色页面单独覆盖
+        systemOverlayStyle: overlayOnLight,
         backgroundColor: Colors.transparent,
         foregroundColor: ink,
         elevation: 0,

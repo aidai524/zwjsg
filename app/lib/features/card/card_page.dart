@@ -34,6 +34,7 @@ class CardPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Pop.ink,
       appBar: AppBar(
+        systemOverlayStyle: Pop.overlayOnDark,
         foregroundColor: Pop.white,
         title: const Text('今日结算', style: TextStyle(color: Pop.white, fontSize: 16, fontWeight: FontWeight.w900)),
         centerTitle: true,
