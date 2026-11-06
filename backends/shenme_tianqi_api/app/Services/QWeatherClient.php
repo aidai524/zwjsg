@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -45,7 +46,12 @@ class QWeatherClient
 
     private function get(string $path, array $query): array
     {
-        $res = $this->http()->get($path, $query + ['lang' => 'zh']);
+        try {
+            $res = $this->http()->get($path, $query + ['lang' => 'zh']);
+        } catch (ConnectionException $e) {
+            // 超时、断网、没配 Host 都走这里；ConnectionException 不是 RuntimeException，不转换调用方接不住
+            throw new RuntimeException("QWeather unreachable {$path}", previous: $e);
+        }
 
         if (! $res->successful()) {
             throw new RuntimeException("QWeather HTTP {$res->status()} {$path}");

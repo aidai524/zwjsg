@@ -75,6 +75,20 @@ class WeatherApiTest extends TestCase
         $this->getJson('/api/v1/weather/101010100')->assertStatus(503);
     }
 
+    public function test_connection_failure_returns_503(): void
+    {
+        Http::fake(['*' => Http::failedConnection()]);
+        $this->getJson('/api/v1/weather/101010100')->assertStatus(503);
+        $this->getJson('/api/v1/cities/search?q=北京')->assertStatus(503);
+    }
+
+    public function test_missing_host_returns_503(): void
+    {
+        config(['services.qweather.host' => '']);
+        $this->getJson('/api/v1/weather/101010100')->assertStatus(503);
+        $this->getJson('/api/v1/cities/search?q=北京')->assertStatus(503);
+    }
+
     public function test_city_search(): void
     {
         $this->fakeQWeather();
