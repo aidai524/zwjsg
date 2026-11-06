@@ -1,5 +1,6 @@
 {
     "name": "zwjsg/series-auth",
+    "version": "1.0.0",
     "description": "梗名 App 系列共用的短信验证码登录。每个 app 的后端各自引用、各自存储，账号互不相通。",
     "type": "library",
     "license": "proprietary",
