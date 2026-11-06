@@ -49,10 +49,10 @@ const _onboardingPaths = {'/welcome', '/login', '/avatar', '/goal'};
 GoRouter _buildRouter(AppState state) {
   return GoRouter(
     initialLocation: '/today',
-    refreshListenable: state,
+    refreshListenable: state.ready,
     redirect: (context, s) {
       final path = s.uri.path;
-      if (!state.onboarded && !_onboardingPaths.contains(path)) return '/welcome';
+      if (!state.ready.value && !_onboardingPaths.contains(path)) return '/welcome';
       return null;
     },
     routes: [

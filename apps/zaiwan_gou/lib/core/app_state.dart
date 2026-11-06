@@ -13,6 +13,18 @@ class AppState extends ChangeNotifier {
     _onboarded = _prefs.getBool(_kOnboarded) ?? false;
     _goalMinutes = _prefs.getInt(_kGoal) ?? 180;
     api.token = _token;
+    ready.value = _onboarded;
+  }
+
+  /// 给路由用：只在“引导是否完成”变化时通知。
+  /// 不要把 AppState 直接当 refreshListenable：每次状态变化路由都会重算，
+  /// 紧跟在后面的 pop 会被撤销，刚关掉的页面又回来了。
+  final ValueNotifier<bool> ready = ValueNotifier(false);
+
+  @override
+  void notifyListeners() {
+    ready.value = _onboarded;
+    super.notifyListeners();
   }
 
   static const _kToken = 'token';

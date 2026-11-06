@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zwjsg_app/app.dart';
 import 'package:zwjsg_app/core/app_state.dart';
+import 'package:zwjsg_app/features/onboarding/goal_page.dart';
 import 'package:zwjsg_app/features/today/today_page.dart';
 
 /// 默认 800x600 不是手机比例，页面会误报溢出
@@ -26,6 +27,23 @@ void main() {
     await pumpApp(tester, {});
 
     expect(find.text('开始变身'), findsOneWidget);
+  });
+
+  testWidgets('修改每日目标后回到上一页', (tester) async {
+    usePhoneScreen(tester);
+    await pumpApp(tester, {'onboarded': true});
+    final today = tester.element(find.byType(TodayPage));
+    final router = GoRouter.of(today);
+    router.push('/goal?edit=1');
+    await tester.pumpAndSettle();
+    expect(find.byType(GoalPage), findsOneWidget);
+
+    // 和目标页保存时的顺序一样：先改状态，紧接着返回
+    await AppScope.read(today).setGoal(120);
+    router.pop();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(GoalPage), findsNothing);
   });
 
   testWidgets('状态栏图标跟随页面底色，离开页面后恢复', (tester) async {
