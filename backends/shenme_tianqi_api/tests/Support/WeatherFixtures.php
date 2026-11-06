@@ -45,6 +45,20 @@ trait WeatherFixtures
         ];
     }
 
+    /** 和风预警接口里的一条预警，结构和真实响应一致 */
+    protected function alert(array $o = []): array
+    {
+        return array_merge([
+            'id' => '202611060700123', 'senderName' => '广州市气象台', 'issuedTime' => '2026-11-06T07:00+08:00',
+            'messageType' => ['code' => 'alert', 'supersedes' => []],
+            'eventType' => ['name' => '暴雨', 'code' => '1003'],
+            'severity' => 'severe',
+            'color' => ['code' => 'orange', 'red' => 255, 'green' => 165, 'blue' => 0, 'alpha' => 1],
+            'effectiveTime' => '2026-11-06T07:00+08:00', 'expireTime' => '2026-11-06T19:00+08:00',
+            'headline' => '广州市气象台发布暴雨橙色预警信号', 'description' => '预计未来3小时内……请注意防范。',
+        ], $o);
+    }
+
     /** 假的和风接口 */
     protected function fakeQWeather(array $now = [], array $warnings = [], array $hourlyIcon = []): void
     {
@@ -66,10 +80,12 @@ trait WeatherFixtures
             ], $now)]),
             '*/v7/weather/24h*' => Http::response(['code' => '200', 'hourly' => $hourly]),
             '*/v7/weather/7d*' => Http::response(['code' => '200', 'daily' => $daily]),
-            '*/v7/warning/now*' => Http::response(['code' => '200', 'warning' => $warnings]),
-            '*/v7/air/now*' => Http::response(['code' => '200', 'now' => ['aqi' => '42', 'category' => '优', 'primary' => 'NA']]),
+            '*/weatheralert/v1/current/*' => Http::response(['metadata' => ['zeroResult' => $warnings === []], 'alerts' => $warnings]),
+            '*/airquality/v1/current/*' => Http::response(['metadata' => [], 'indexes' => [
+                ['code' => 'cn-mee', 'aqi' => 42, 'category' => '优', 'primaryPollutant' => null],
+            ], 'pollutants' => []]),
             '*/geo/v2/city/lookup*' => Http::response(['code' => '200', 'location' => [
-                ['id' => '101280101', 'name' => '广州', 'adm1' => '广东省', 'adm2' => '广州', 'lat' => '23.12', 'lon' => '113.28'],
+                ['id' => '101280101', 'name' => '广州', 'adm1' => '广东省', 'adm2' => '广州', 'lat' => '23.12518', 'lon' => '113.28064'],
             ]]),
         ]);
     }

@@ -50,9 +50,9 @@ return [
         ],
     ],
 
-    // 严重天气：黄/橙/红预警进入严肃模式（不吐槽，原文照登）；蓝色只显示横幅
-    'serious_colors' => ['Yellow', 'Orange', 'Red', 'Black'],
-    'banner_colors' => ['White', 'Blue', 'Green'],
+    // 严重天气：蓝色及以下只显示横幅，其余都进严肃模式（不吐槽，原文照登）。
+    // 没见过的颜色也算严肃：宁可严肃，也不能在预警时吐槽
+    'banner_colors' => ['White', 'Gray', 'Green', 'Blue'],
 
     // 和风天气图标代码 → 形象状态。顺序重要：先匹配先生效
     'icon_cond' => [

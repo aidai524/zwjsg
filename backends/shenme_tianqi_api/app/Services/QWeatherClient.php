@@ -33,15 +33,16 @@ class QWeatherClient
         return $this->get('/v7/weather/7d', ['location' => $locationId]);
     }
 
-    public function warnings(string $locationId): array
+    /** 按经纬度查询，最多两位小数。localTime 让时间带本地时区，默认是 UTC */
+    public function alerts(string $lat, string $lon): array
     {
-        return $this->get('/v7/warning/now', ['location' => $locationId]);
+        return $this->get("/weatheralert/v1/current/{$lat}/{$lon}", ['localTime' => 'true']);
     }
 
-    public function air(string $locationId): array
+    /** 按经纬度查询，最多两位小数 */
+    public function air(string $lat, string $lon): array
     {
-        // TODO 和风已推出新版空气质量接口（/airquality/v1/current/{lat}/{lon}），上线前评估迁移
-        return $this->get('/v7/air/now', ['location' => $locationId]);
+        return $this->get("/airquality/v1/current/{$lat}/{$lon}", []);
     }
 
     private function get(string $path, array $query): array

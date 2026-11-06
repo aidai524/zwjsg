@@ -117,6 +117,19 @@ class WeatherInterpreterTest extends TestCase
         $this->assertNotNull($view['quip_trigger']);
     }
 
+    public function test_only_low_level_colors_skip_serious_mode(): void
+    {
+        $warning = ['id' => 'w1', 'sender' => '气象台', 'pub_time' => null, 'title' => '预警', 'text' => '原文', 'type_name' => '大风'];
+
+        foreach (['White', 'Gray', 'Green', 'Blue'] as $color) {
+            $this->assertFalse($this->interpret($this->snap(warnings: [['color' => $color] + $warning]))['serious'], $color);
+        }
+        // 没见过的颜色也进严肃模式：宁可严肃，也不能在预警时吐槽
+        foreach (['Yellow', 'Amber', 'Orange', 'Red', 'Purple', 'Black', 'Magenta', ''] as $color) {
+            $this->assertTrue($this->interpret($this->snap(warnings: [['color' => $color] + $warning]))['serious'], $color);
+        }
+    }
+
     public function test_after_ten_pm_decisions_look_at_tomorrow(): void
     {
         $hourly = array_map(fn ($h) => array_merge($h, ['time' => str_replace('2026-11-06', '2026-11-07', $h['time'])]), $this->hours());

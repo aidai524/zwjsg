@@ -18,8 +18,8 @@ class WeatherInterpreter
         $target = $daily[$targetIdx] ?? null;
 
         $warnings = $snap['warnings'] ?? [];
-        $seriousColors = config('weather.serious_colors');
-        $seriousWarnings = array_values(array_filter($warnings, fn ($w) => in_array($w['color'], $seriousColors, true)));
+        $bannerColors = config('weather.banner_colors');
+        $seriousWarnings = array_values(array_filter($warnings, fn ($w) => ! in_array($w['color'], $bannerColors, true)));
         $serious = $seriousWarnings !== [];
 
         $outfit = $this->outfit($now['feels_like']);
