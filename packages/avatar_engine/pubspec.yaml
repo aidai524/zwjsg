@@ -1,0 +1,13 @@
+name: avatar_engine
+description: 梗名 App 系列共用的卡通形象引擎：人物底层 + 各 app 的分层叠加（变狗、天气遭罪……）
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  pop_ui:
+    path: ../pop_ui

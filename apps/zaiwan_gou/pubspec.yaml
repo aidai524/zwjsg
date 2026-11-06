@@ -1,0 +1,40 @@
+name: zwjsg_app
+description: 再玩我是狗 · 手机使用越多越像狗
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  go_router: ^14.2.0
+  dio: ^5.4.0
+  pop_ui:
+    path: ../../packages/pop_ui
+  avatar_engine:
+    path: ../../packages/avatar_engine
+  series_core:
+    path: ../../packages/series_core
+  shared_preferences: ^2.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter:
+  uses-material-design: true
+
+# 应用图标：改了 assets/icon 下的图片后，运行 `dart run flutter_launcher_icons` 重新生成两端图标
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon_full.png"
+  remove_alpha_ios: true
+  min_sdk_android: 21
+  adaptive_icon_background: "#FFD23F"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+  adaptive_icon_monochrome: "assets/icon/icon_monochrome.png"

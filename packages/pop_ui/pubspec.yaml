@@ -1,0 +1,11 @@
+name: pop_ui
+description: 梗名 App 系列共用的设计规范：黄黑波普主题、颜色、文字样式、波普按钮
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter

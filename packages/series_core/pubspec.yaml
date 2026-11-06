@@ -1,0 +1,10 @@
+name: series_core
+description: 梗名 App 系列共用的接口基础：请求封装、错误处理、短信登录。每个 app 连自己的后端，账号互不相通。
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  dio: ^5.4.0
