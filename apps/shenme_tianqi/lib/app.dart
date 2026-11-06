@@ -45,11 +45,10 @@ const _openPaths = {'/welcome', '/city-search'};
 GoRouter buildRouter(AppState state) {
   return GoRouter(
     initialLocation: '/',
-    refreshListenable: state,
+    refreshListenable: state.ready,
     redirect: (context, s) {
       final path = s.uri.path;
-      final ready = state.onboarded && state.cities.isNotEmpty;
-      if (!ready && !_openPaths.contains(path)) return '/welcome';
+      if (!state.ready.value && !_openPaths.contains(path)) return '/welcome';
       return null;
     },
     routes: [

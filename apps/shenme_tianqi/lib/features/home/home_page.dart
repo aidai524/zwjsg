@@ -127,7 +127,10 @@ class _CityPageState extends State<_CityPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => AppScope.read(context).loadWeather(widget.city));
+    // 跳到别的城市时，这一页可能刚建好就被换掉
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) AppScope.read(context).loadWeather(widget.city);
+    });
   }
 
   @override

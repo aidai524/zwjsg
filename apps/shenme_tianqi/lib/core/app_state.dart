@@ -17,6 +17,20 @@ class AppState extends ChangeNotifier {
       _cities = (jsonDecode(raw) as List).map((e) => City.fromJson(Map<String, dynamic>.from(e as Map))).toList();
     }
     api.token = _token;
+    ready.value = _isReady;
+  }
+
+  /// 给路由用：只在“能不能进首页”变化时通知。
+  /// 不要把 AppState 直接当 refreshListenable：每次状态变化路由都会重算，
+  /// 紧跟在后面的 pop 会被撤销，刚关掉的页面又回来了。
+  final ValueNotifier<bool> ready = ValueNotifier(false);
+
+  bool get _isReady => _onboarded && _cities.isNotEmpty;
+
+  @override
+  void notifyListeners() {
+    ready.value = _isReady;
+    super.notifyListeners();
   }
 
   static const maxCities = 5;
