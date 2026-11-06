@@ -92,7 +92,7 @@ class AppState extends ChangeNotifier {
     if (isLoggedIn) {
       try {
         final saved = await api.addCity(city);
-        city = city.copyWith(serverId: saved.id);
+        city = city.copyWith(serverId: saved.serverId);
         _cities[_cities.indexWhere((c) => c.locationId == city.locationId)] = city;
         await _saveCities();
       } on ApiException {
