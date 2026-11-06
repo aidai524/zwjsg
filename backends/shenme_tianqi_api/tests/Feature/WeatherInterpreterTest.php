@@ -10,7 +10,7 @@ class WeatherInterpreterTest extends TestCase
 {
     use WeatherFixtures;
 
-    private function view(array $snap, ?string $adm = null): array
+    private function interpret(array $snap, ?string $adm = null): array
     {
         return app(WeatherInterpreter::class)->interpret($snap, $adm);
     }
@@ -41,36 +41,36 @@ class WeatherInterpreterTest extends TestCase
 
     public function test_umbrella_thresholds(): void
     {
-        $take = $this->view($this->snap(hourly: $this->hours(overrides: [15 => ['pop' => 60]])));
+        $take = $this->interpret($this->snap(hourly: $this->hours(overrides: [15 => ['pop' => 60]])));
         $this->assertSame('take', $take['decisions']['umbrella']['verdict']);
         $this->assertSame(15, $take['decisions']['umbrella']['hour']);
         $this->assertSame('rain', $take['care_topic']);
 
-        $maybe = $this->view($this->snap(hourly: $this->hours(overrides: [15 => ['pop' => 40]])));
+        $maybe = $this->interpret($this->snap(hourly: $this->hours(overrides: [15 => ['pop' => 40]])));
         $this->assertSame('maybe', $maybe['decisions']['umbrella']['verdict']);
 
-        $no = $this->view($this->snap());
+        $no = $this->interpret($this->snap());
         $this->assertSame('no', $no['decisions']['umbrella']['verdict']);
 
-        $sun = $this->view($this->snap(daily: [$this->day('2026-11-06', ['uv_index' => 8]), $this->day('2026-11-07'), $this->day('2026-11-08')]));
+        $sun = $this->interpret($this->snap(daily: [$this->day('2026-11-06', ['uv_index' => 8]), $this->day('2026-11-07'), $this->day('2026-11-08')]));
         $this->assertSame('sun', $sun['decisions']['umbrella']['verdict']);
     }
 
     public function test_long_johns_by_lowest_feels_like(): void
     {
-        $cold = $this->view($this->snap(daily: [$this->day('2026-11-06', ['temp_min' => 6]), $this->day('2026-11-07'), $this->day('2026-11-08')]));
+        $cold = $this->interpret($this->snap(daily: [$this->day('2026-11-06', ['temp_min' => 6]), $this->day('2026-11-07'), $this->day('2026-11-08')]));
         $this->assertSame('yes', $cold['decisions']['long_johns']['verdict']);
 
-        $warm = $this->view($this->snap());
+        $warm = $this->interpret($this->snap());
         $this->assertSame('no', $warm['decisions']['long_johns']['verdict']);
     }
 
     public function test_car_wash_needs_three_dry_days(): void
     {
-        $dry = $this->view($this->snap());
+        $dry = $this->interpret($this->snap());
         $this->assertSame('yes', $dry['decisions']['car_wash']['verdict']);
 
-        $rainLater = $this->view($this->snap(daily: [
+        $rainLater = $this->interpret($this->snap(daily: [
             $this->day('2026-11-06'), $this->day('2026-11-07'), $this->day('2026-11-08', ['icon_day' => 305, 'precip' => 3.0]),
         ]));
         $this->assertSame('no', $rainLater['decisions']['car_wash']['verdict']);
@@ -79,31 +79,31 @@ class WeatherInterpreterTest extends TestCase
 
     public function test_laundry_rejects_humid_or_windy_days(): void
     {
-        $this->assertSame('yes', $this->view($this->snap())['decisions']['laundry']['verdict']);
+        $this->assertSame('yes', $this->interpret($this->snap())['decisions']['laundry']['verdict']);
 
         $humid = array_fill_keys(range(8, 18), ['humidity' => 85]);
-        $this->assertSame('no', $this->view($this->snap(hourly: $this->hours(overrides: $humid)))['decisions']['laundry']['verdict']);
+        $this->assertSame('no', $this->interpret($this->snap(hourly: $this->hours(overrides: $humid)))['decisions']['laundry']['verdict']);
 
         $windy = [12 => ['wind_scale' => 5]];
-        $this->assertSame('no', $this->view($this->snap(hourly: $this->hours(overrides: $windy)))['decisions']['laundry']['verdict']);
+        $this->assertSame('no', $this->interpret($this->snap(hourly: $this->hours(overrides: $windy)))['decisions']['laundry']['verdict']);
     }
 
     public function test_strong_wind_and_south_china_humid_override_avatar(): void
     {
-        $this->assertSame('wind', $this->view($this->snap(['wind_scale' => 6]))['cond']);
+        $this->assertSame('wind', $this->interpret($this->snap(['wind_scale' => 6]))['cond']);
 
         $humidSnap = $this->snap(['humidity' => 95], daily: [
             $this->day('2026-03-06'), $this->day('2026-03-07'), $this->day('2026-03-08'),
         ], hourly: $this->hours('2026-03-06'));
-        $this->assertSame('humid', $this->view($humidSnap, '广东省')['cond']);
-        $this->assertSame('cloudy', $this->view($humidSnap, '北京市')['cond']);
+        $this->assertSame('humid', $this->interpret($humidSnap, '广东省')['cond']);
+        $this->assertSame('cloudy', $this->interpret($humidSnap, '北京市')['cond']);
     }
 
     public function test_yellow_warning_enters_serious_mode_without_quip_and_blue_only_banners(): void
     {
         $yellow = ['id' => 'w1', 'sender' => '北京市气象台', 'pub_time' => '2026-11-06T07:00+08:00',
             'title' => '北京市气象台发布暴雨黄色预警', 'text' => '原文', 'type_name' => '暴雨', 'color' => 'Yellow'];
-        $view = $this->view($this->snap(warnings: [$yellow]));
+        $view = $this->interpret($this->snap(warnings: [$yellow]));
         $this->assertTrue($view['serious']);
         $this->assertSame('serious', $view['cond']);
         $this->assertNull($view['quip_trigger']);
@@ -111,7 +111,7 @@ class WeatherInterpreterTest extends TestCase
         $this->assertSame('北京市气象台发布暴雨黄色预警', $view['serious_warnings'][0]['title']);
 
         $blue = ['color' => 'Blue'] + $yellow;
-        $view = $this->view($this->snap(warnings: [$blue]));
+        $view = $this->interpret($this->snap(warnings: [$blue]));
         $this->assertFalse($view['serious']);
         $this->assertCount(1, $view['banner_warnings']);
         $this->assertNotNull($view['quip_trigger']);
@@ -120,7 +120,7 @@ class WeatherInterpreterTest extends TestCase
     public function test_after_ten_pm_decisions_look_at_tomorrow(): void
     {
         $hourly = array_map(fn ($h) => array_merge($h, ['time' => str_replace('2026-11-06', '2026-11-07', $h['time'])]), $this->hours());
-        $view = $this->view($this->snap(hourly: $hourly));
+        $view = $this->interpret($this->snap(hourly: $hourly));
         $this->assertSame('2026-11-07', $view['decisions_for']);
     }
 
