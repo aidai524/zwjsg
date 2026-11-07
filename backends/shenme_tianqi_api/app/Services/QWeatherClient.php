@@ -18,28 +18,28 @@ class QWeatherClient
         return $this->get('/geo/v2/city/lookup', ['location' => $keyword, 'number' => 10, 'range' => 'cn'])['location'] ?? [];
     }
 
-    public function now(string $locationId): array
+    // 下面都按经纬度查询，最多两位小数。localTime 让时间带本地时区，默认是 UTC
+
+    public function now(string $lat, string $lon): array
     {
-        return $this->get('/v7/weather/now', ['location' => $locationId]);
+        return $this->get("/weather/v1/current/{$lat}/{$lon}", ['localTime' => 'true']);
     }
 
-    public function hourly(string $locationId): array
+    public function hourly(string $lat, string $lon): array
     {
-        return $this->get('/v7/weather/24h', ['location' => $locationId]);
+        return $this->get("/weather/v1/hourly/{$lat}/{$lon}", ['hours' => 24, 'localTime' => 'true']);
     }
 
-    public function daily(string $locationId): array
+    public function daily(string $lat, string $lon): array
     {
-        return $this->get('/v7/weather/7d', ['location' => $locationId]);
+        return $this->get("/weather/v1/daily/{$lat}/{$lon}", ['days' => 7, 'localTime' => 'true']);
     }
 
-    /** 按经纬度查询，最多两位小数。localTime 让时间带本地时区，默认是 UTC */
     public function alerts(string $lat, string $lon): array
     {
         return $this->get("/weatheralert/v1/current/{$lat}/{$lon}", ['localTime' => 'true']);
     }
 
-    /** 按经纬度查询，最多两位小数 */
     public function air(string $lat, string $lon): array
     {
         return $this->get("/airquality/v1/current/{$lat}/{$lon}", []);

@@ -59,27 +59,55 @@ trait WeatherFixtures
         ], $o);
     }
 
+    /** 和风每日预报的一天，结构和真实响应一致 */
+    protected function forecastDay(string $date, array $o = []): array
+    {
+        $half = fn (string $code) => [
+            'condition' => ['text' => '多云', 'code' => $code],
+            'humidity' => 0.5,
+            'wind' => ['direction' => ['degree' => 0, 'compass' => 'n'], 'scale' => 2],
+            'precipitation' => ['amount' => ['value' => 0, 'unit' => 'mm'], 'probability' => 0, 'type' => 'none'],
+        ];
+
+        return array_replace_recursive([
+            'forecastStartTime' => "{$date}T00:00+08:00",
+            'temperatureMax' => ['value' => 24.3, 'unit' => '°C'],
+            'temperatureMin' => ['value' => 13.6, 'unit' => '°C'],
+            'uvIndexMax' => 3,
+            'daytime' => $half('101'),
+            'nighttime' => $half('102'),
+        ], $o);
+    }
+
     /** 假的和风接口 */
     protected function fakeQWeather(array $now = [], array $warnings = [], array $hourlyIcon = []): void
     {
-        $hourly = [];
+        $hours = [];
         foreach (range(7, 22) as $h) {
-            $hourly[] = ['fxTime' => sprintf('2026-11-06T%02d:00+08:00', $h), 'temp' => '20', 'icon' => (string) ($hourlyIcon[$h] ?? 101),
-                'text' => '多云', 'pop' => isset($hourlyIcon[$h]) ? '80' : '0', 'windScale' => '1-2', 'humidity' => '50'];
-        }
-        $daily = [];
-        foreach (['2026-11-06', '2026-11-07', '2026-11-08'] as $d) {
-            $daily[] = ['fxDate' => $d, 'tempMax' => '24', 'tempMin' => '14', 'iconDay' => '101', 'textDay' => '多云',
-                'iconNight' => '151', 'textNight' => '多云', 'precip' => '0.0', 'uvIndex' => '3', 'humidity' => '50', 'windScaleDay' => '1-2'];
+            $hours[] = [
+                'forecastTime' => sprintf('2026-11-06T%02d:00+08:00', $h),
+                'condition' => ['text' => '多云', 'code' => (string) ($hourlyIcon[$h] ?? 101)],
+                'temperature' => ['value' => 20.4, 'unit' => '°C'],
+                'humidity' => 0.5,
+                'wind' => ['direction' => ['degree' => 0, 'compass' => 'n'], 'scale' => 2],
+                'precipitation' => ['probability' => isset($hourlyIcon[$h]) ? 0.8 : 0, 'type' => 'none'],
+            ];
         }
 
         Http::fake([
-            '*/v7/weather/now*' => Http::response(['code' => '200', 'now' => array_merge([
-                'obsTime' => '2026-11-06T08:00+08:00', 'temp' => '20', 'feelsLike' => '19', 'icon' => '101', 'text' => '多云',
-                'windDir' => '北风', 'windScale' => '1-2', 'humidity' => '50',
-            ], $now)]),
-            '*/v7/weather/24h*' => Http::response(['code' => '200', 'hourly' => $hourly]),
-            '*/v7/weather/7d*' => Http::response(['code' => '200', 'daily' => $daily]),
+            '*/weather/v1/current/*' => Http::response(array_replace_recursive([
+                'validTime' => '2026-11-06T08:00+08:00',
+                'condition' => ['text' => '多云', 'code' => '101'],
+                'temperature' => ['value' => 20.4, 'unit' => '°C'],
+                'feelsLike' => ['value' => 19.2, 'unit' => '°C'],
+                'humidity' => 0.5,
+                'wind' => ['direction' => ['degree' => 0, 'compass' => 'n'], 'scale' => 2],
+            ], $now)),
+            '*/weather/v1/hourly/*' => Http::response(['metadata' => [], 'hours' => $hours]),
+            '*/weather/v1/daily/*' => Http::response(['metadata' => [], 'days' => array_map(
+                fn (string $d) => $this->forecastDay($d),
+                ['2026-11-06', '2026-11-07', '2026-11-08'],
+            )]),
             '*/weatheralert/v1/current/*' => Http::response(['metadata' => ['zeroResult' => $warnings === []], 'alerts' => $warnings]),
             '*/airquality/v1/current/*' => Http::response(['metadata' => [], 'indexes' => [
                 ['code' => 'cn-mee', 'aqi' => 42, 'category' => '优', 'primaryPollutant' => null],

@@ -35,51 +35,55 @@ class WeatherService
     public function snapshot(string $locationId): array
     {
         $ttl = config('weather.cache_ttl');
+        [$lat, $lon] = $this->coordinates($locationId);
 
-        $now = Cache::remember("qw:now:$locationId", $ttl['now'], function () use ($locationId) {
-            $n = $this->qw->now($locationId)['now'] ?? [];
+        $now = Cache::remember("qw:now:$locationId", $ttl['now'], function () use ($lat, $lon) {
+            $n = $this->qw->now($lat, $lon);
 
             return [
-                'temp' => (int) ($n['temp'] ?? 0),
-                'feels_like' => (int) ($n['feelsLike'] ?? $n['temp'] ?? 0),
-                'icon' => (int) ($n['icon'] ?? 100),
-                'text' => $n['text'] ?? '',
-                'wind_scale' => self::maxScale($n['windScale'] ?? '0'),
-                'wind_dir' => $n['windDir'] ?? '',
-                'humidity' => (int) ($n['humidity'] ?? 0),
-                'obs_time' => $n['obsTime'] ?? null,
+                'temp' => self::degrees($n['temperature'] ?? null),
+                'feels_like' => self::degrees($n['feelsLike'] ?? $n['temperature'] ?? null),
+                'icon' => (int) ($n['condition']['code'] ?? 100),
+                'text' => $n['condition']['text'] ?? '',
+                'wind_scale' => (int) ($n['wind']['scale'] ?? 0),
+                'wind_dir' => config('weather.wind_dirs')[$n['wind']['direction']['compass'] ?? ''] ?? '',
+                'humidity' => self::percent($n['humidity'] ?? 0),
+                'obs_time' => $n['validTime'] ?? null,
             ];
         });
 
-        $hourly = Cache::remember("qw:hourly:$locationId", $ttl['hourly'], function () use ($locationId) {
+        $hourly = Cache::remember("qw:hourly:$locationId", $ttl['hourly'], function () use ($lat, $lon) {
             return array_map(fn (array $h) => [
-                'time' => $h['fxTime'],
-                'temp' => (int) $h['temp'],
-                'icon' => (int) $h['icon'],
-                'text' => $h['text'] ?? '',
-                'pop' => ($h['pop'] ?? '') === '' ? null : (int) $h['pop'],
-                'wind_scale' => self::maxScale($h['windScale'] ?? '0'),
-                'humidity' => (int) ($h['humidity'] ?? 0),
-            ], $this->qw->hourly($locationId)['hourly'] ?? []);
+                'time' => $h['forecastTime'],
+                'temp' => self::degrees($h['temperature'] ?? null),
+                'icon' => (int) $h['condition']['code'],
+                'text' => $h['condition']['text'] ?? '',
+                'pop' => isset($h['precipitation']['probability']) ? self::percent($h['precipitation']['probability']) : null,
+                'wind_scale' => (int) ($h['wind']['scale'] ?? 0),
+                'humidity' => self::percent($h['humidity'] ?? 0),
+            ], $this->qw->hourly($lat, $lon)['hours'] ?? []);
         });
 
-        $daily = Cache::remember("qw:daily:$locationId", $ttl['daily'], function () use ($locationId) {
+        $daily = Cache::remember("qw:daily:$locationId", $ttl['daily'], function () use ($lat, $lon) {
             return array_map(fn (array $d) => [
-                'date' => $d['fxDate'],
-                'temp_max' => (int) $d['tempMax'],
-                'temp_min' => (int) $d['tempMin'],
-                'icon_day' => (int) $d['iconDay'],
-                'text_day' => $d['textDay'] ?? '',
-                'icon_night' => (int) ($d['iconNight'] ?? $d['iconDay']),
-                'text_night' => $d['textNight'] ?? '',
-                'precip' => (float) ($d['precip'] ?? 0),
-                'uv_index' => (int) ($d['uvIndex'] ?? 0),
-                'humidity' => (int) ($d['humidity'] ?? 0),
-                'wind_scale' => self::maxScale($d['windScaleDay'] ?? '0'),
-            ], $this->qw->daily($locationId)['daily'] ?? []);
+                'date' => substr($d['forecastStartTime'], 0, 10),
+                'temp_max' => self::degrees($d['temperatureMax'] ?? null),
+                'temp_min' => self::degrees($d['temperatureMin'] ?? null),
+                'icon_day' => (int) $d['daytime']['condition']['code'],
+                'text_day' => $d['daytime']['condition']['text'] ?? '',
+                'icon_night' => (int) ($d['nighttime']['condition']['code'] ?? $d['daytime']['condition']['code']),
+                'text_night' => $d['nighttime']['condition']['text'] ?? '',
+                // 接口没有全天降水量，白天和夜间相加
+                'precip' => round(
+                    ($d['daytime']['precipitation']['amount']['value'] ?? 0) + ($d['nighttime']['precipitation']['amount']['value'] ?? 0),
+                    2,
+                ),
+                'uv_index' => (int) round($d['uvIndexMax'] ?? 0),
+                // 决策卡看白天，所以取白天的湿度和风力
+                'humidity' => self::percent($d['daytime']['humidity'] ?? 0),
+                'wind_scale' => (int) ($d['daytime']['wind']['scale'] ?? 0),
+            ], $this->qw->daily($lat, $lon)['days'] ?? []);
         });
-
-        [$lat, $lon] = $this->coordinates($locationId);
 
         // 预警决定严肃模式，查询失败时必须报错，不能当成“没有预警”
         $warnings = Cache::remember("qw:warning:$locationId", $ttl['warning'], function () use ($lat, $lon) {
@@ -145,11 +149,15 @@ class WeatherService
         });
     }
 
-    /** "3-4" → 4，"5" → 5 */
-    public static function maxScale(string $scale): int
+    /** 新接口的温度带小数，页面和规则都用整数 */
+    private static function degrees(?array $temperature): int
     {
-        $parts = array_map('intval', explode('-', $scale));
+        return (int) round($temperature['value'] ?? 0);
+    }
 
-        return max($parts ?: [0]);
+    /** 新接口的比例是 0 到 1 的小数，页面和规则都用百分比 */
+    private static function percent(int|float $ratio): int
+    {
+        return (int) round($ratio * 100);
     }
 }

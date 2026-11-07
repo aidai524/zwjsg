@@ -110,7 +110,7 @@ class WeatherInterpreter
             $hours = array_values(array_filter($hourly, function ($h) use ($date, $from, $to) {
                 $t = CarbonImmutable::parse($h['time']);
 
-                // fxTime 自带时区偏移，取当地小时
+                // 预报时间自带时区偏移，取当地小时
                 return $t->format('Y-m-d') === $date && $t->hour >= $from && $t->hour <= $to;
             }));
             if ($hours !== []) {
