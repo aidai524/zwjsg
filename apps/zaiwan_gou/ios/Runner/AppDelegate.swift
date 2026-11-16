@@ -11,6 +11,10 @@ class PluginsRegistrant: NSObject, FlutterPluginRegistrant {
     if let registrar = registry.registrar(forPlugin: "ScreenTimePlugin") {
       ScreenTimePlugin.register(with: registrar)
     }
+    // 拍照形象（技术验证）：手机本地卡通化
+    if let registrar = registry.registrar(forPlugin: "CartoonLabPlugin") {
+      CartoonLabPlugin.register(with: registrar)
+    }
   }
 }
 

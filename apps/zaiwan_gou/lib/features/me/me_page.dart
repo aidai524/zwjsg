@@ -154,6 +154,7 @@ class MePage extends StatelessWidget {
               const _Section('技术验证'),
               _Group(children: [
                 _Row(title: '屏幕使用时间', trailing: 'iOS', onTap: () => context.push('/screen-time')),
+                _Row(title: '拍照形象（本地卡通化）', trailing: 'iOS', onTap: () => context.push('/cartoon-lab')),
               ]),
             ],
             const _Section('隐私与账号'),

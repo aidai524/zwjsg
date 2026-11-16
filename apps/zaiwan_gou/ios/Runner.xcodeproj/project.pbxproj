@@ -12,14 +12,17 @@
 		0E377AA7A7619E488B10DF57 /* ShieldIcon.png in Resources */ = {isa = PBXBuildFile; fileRef = FB5DEC37224651750EB6C8DF /* ShieldIcon.png */; };
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
 		16EE164CC569BE1E2768AD7A /* ShieldConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50454BE297654605FBC0E8EC /* ShieldConfig.swift */; };
+		17D3E1EE6E9B654E7C423182 /* cartoon_sample.jpg in Resources */ = {isa = PBXBuildFile; fileRef = BADF39D8CD430CDE183ACB38 /* cartoon_sample.jpg */; };
 		2EB73B7F73D9C64CF3B78136 /* ScreenTimeMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 458F5D0C80E76AB546BB5989 /* ScreenTimeMonitor.swift */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3402007AD349A884E8C31C19 /* ScreenTimePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C517AF0AC8EBBE6C827FBDE /* ScreenTimePlugin.swift */; };
 		37CB9613277723F298D4C79A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4137344AA6C3FE0FBB225000 /* Foundation.framework */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		46ECC3EAFA350E3209D9C752 /* LockShield.swift in Sources */ = {isa = PBXBuildFile; fileRef = F39F0FA3539EE5C66E3CCA3C /* LockShield.swift */; };
+		5E564E5FA37214C779BC7E7E /* CartoonLab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63172128E7891473D0180040 /* CartoonLab.swift */; };
 		6DB21AC89CF01BCD6B48A497 /* ShieldConfig.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1F05B2FE2D4FA9567A7953E3 /* ShieldConfig.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
+		7BC833DE31F8EF8AACEB5BB5 /* DCTNetAnimeHead.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 2CFC3C0BD25055B03AAFE293 /* DCTNetAnimeHead.mlpackage */; };
 		7D95E50FE3B3F84EA04AE0FC /* ReportContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAE12289BF5AC79138CE8E49 /* ReportContext.swift */; };
 		7EB2B41625BCDE798A508F4B /* ScreenTimeMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 635A04D9397B53805A9026E5 /* ScreenTimeMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
@@ -108,6 +111,7 @@
 		1E869665F5DD3BD668347CF3 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1F05B2FE2D4FA9567A7953E3 /* ShieldConfig.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShieldConfig.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		29E5C9A85AC300E17F02E7E5 /* ScreenTimeStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScreenTimeStore.swift; sourceTree = "<group>"; };
+		2CFC3C0BD25055B03AAFE293 /* DCTNetAnimeHead.mlpackage */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.mlpackage; path = DCTNetAnimeHead.mlpackage; sourceTree = "<group>"; };
 		2DC8E45991209208E2264B38 /* Runner.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -117,6 +121,7 @@
 		458F5D0C80E76AB546BB5989 /* ScreenTimeMonitor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScreenTimeMonitor.swift; sourceTree = "<group>"; };
 		50454BE297654605FBC0E8EC /* ShieldConfig.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShieldConfig.swift; sourceTree = "<group>"; };
 		51CE83D1DD6661F01B8F6F95 /* ShieldConfig.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = ShieldConfig.xcconfig; sourceTree = "<group>"; };
+		63172128E7891473D0180040 /* CartoonLab.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CartoonLab.swift; sourceTree = "<group>"; };
 		635A04D9397B53805A9026E5 /* ScreenTimeMonitor.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ScreenTimeMonitor.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		6C517AF0AC8EBBE6C827FBDE /* ScreenTimePlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScreenTimePlugin.swift; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -139,6 +144,7 @@
 		B24BB189BD97E2FA77A87F7E /* ScreenTimeReport.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = ScreenTimeReport.xcconfig; sourceTree = "<group>"; };
 		B6181CEFBFF5ECFADDADF63C /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
 		BA2FF97FEFF6C869CF13A553 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BADF39D8CD430CDE183ACB38 /* cartoon_sample.jpg */ = {isa = PBXFileReference; includeInIndex = 1; path = cartoon_sample.jpg; sourceTree = "<group>"; };
 		CD8A1CE1F650190D22721FE6 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		D12B8E2201D24267FB022E49 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		D4614ABD399FA34B2DD30B1D /* ScreenTimeMonitor.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = ScreenTimeMonitor.entitlements; sourceTree = "<group>"; };
@@ -218,6 +224,16 @@
 				4137344AA6C3FE0FBB225000 /* Foundation.framework */,
 			);
 			name = iOS;
+			sourceTree = "<group>";
+		};
+		61FC0379F69A021C60FD0E17 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				2CFC3C0BD25055B03AAFE293 /* DCTNetAnimeHead.mlpackage */,
+				BADF39D8CD430CDE183ACB38 /* cartoon_sample.jpg */,
+			);
+			name = Models;
+			path = Models;
 			sourceTree = "<group>";
 		};
 		63A02A3B7417E8B0B35992B5 /* ScreenTimeMonitor */ = {
@@ -311,6 +327,8 @@
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				2DC8E45991209208E2264B38 /* Runner.entitlements */,
 				6C517AF0AC8EBBE6C827FBDE /* ScreenTimePlugin.swift */,
+				63172128E7891473D0180040 /* CartoonLab.swift */,
+				61FC0379F69A021C60FD0E17 /* Models */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -509,6 +527,7 @@
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
+				17D3E1EE6E9B654E7C423182 /* cartoon_sample.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -646,6 +665,8 @@
 				BECB1DB1C26A3889F8C7770F /* ScreenTimeStore.swift in Sources */,
 				7D95E50FE3B3F84EA04AE0FC /* ReportContext.swift in Sources */,
 				46ECC3EAFA350E3209D9C752 /* LockShield.swift in Sources */,
+				5E564E5FA37214C779BC7E7E /* CartoonLab.swift in Sources */,
+				7BC833DE31F8EF8AACEB5BB5 /* DCTNetAnimeHead.mlpackage in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

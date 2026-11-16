@@ -9,6 +9,7 @@ import 'features/dex/dex_page.dart';
 import 'features/group/group_page.dart';
 import 'features/history/history_page.dart';
 import 'features/locks/locks_page.dart';
+import 'features/me/cartoon_lab_page.dart';
 import 'features/me/me_page.dart';
 import 'features/me/privacy_page.dart';
 import 'features/me/screen_time_page.dart';
@@ -95,6 +96,7 @@ GoRouter _buildRouter(AppState state) {
       GoRoute(path: '/history', builder: (_, __) => const HistoryPage()),
       GoRoute(path: '/locks', builder: (_, __) => const LocksPage()),
       GoRoute(path: '/screen-time', builder: (_, __) => const ScreenTimePage()),
+      GoRoute(path: '/cartoon-lab', builder: (_, __) => const CartoonLabPage()),
       StatefulShellRoute.indexedStack(
         builder: (_, __, shell) => TabShell(shell: shell),
         branches: [
