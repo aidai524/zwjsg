@@ -1,0 +1,4 @@
+// 屏幕使用时间监控扩展的构建配置。
+// 引入 Flutter 生成的配置，让扩展的版本号（FLUTTER_BUILD_NAME / FLUTTER_BUILD_NUMBER）和主 App 一致，
+// 上架时两者不一致会被拒。
+#include "../Flutter/Generated.xcconfig"

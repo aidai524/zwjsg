@@ -24,7 +24,11 @@ class _GoalPageState extends State<GoalPage> {
   Future<void> _save() async {
     final state = AppScope.read(context);
     await state.setGoal(_hours * 60);
-    if (!widget.editing) await state.completeOnboarding();
+    if (!widget.editing) {
+      await state.completeOnboarding();
+      // 引导最后一步顺带打开每晚提醒：按钮下面写了会提醒，系统弹窗问权限时用户知道是为什么
+      await state.enableReminder();
+    }
     if (!mounted) return;
     widget.editing ? context.pop() : context.go('/today');
   }
@@ -106,6 +110,14 @@ class _GoalPageState extends State<GoalPage> {
             ),
             const SizedBox(height: 28),
             PopButton(label: widget.editing ? '保存' : '就这么定，开始做人', onPressed: _save),
+            if (!widget.editing) ...[
+              const SizedBox(height: 12),
+              Text(
+                '每晚 ${AppState.formatHhmm(AppState.defaultRemindAt)} 提醒你看结算卡，可以在“我的”里关掉或改时间。',
+                textAlign: TextAlign.center,
+                style: PopText.small,
+              ),
+            ],
           ],
         ),
       ),

@@ -10,6 +10,7 @@ class UsageSnapshot {
     required this.lateNightMinutes,
     required this.categoryMinutes,
     this.isDemo = false,
+    this.stageOnly = false,
   });
 
   final int totalMinutes;
@@ -21,8 +22,12 @@ class UsageSnapshot {
   /// video / social / game / productivity / other
   final Map<String, int> categoryMinutes;
 
-  /// true 表示拿不到真实数据（iOS 未接入、无权限或模拟器），用的是演示数据
+  /// true 表示拿不到真实数据（没开权限、模拟器），用的是演示数据
   final bool isDemo;
+
+  /// true 表示数据来自 iOS 屏幕使用时间：系统只告诉我们用量越过了哪个阈值。
+  /// totalMinutes 是已经越过的阈值（下限），拿起次数、23 点后时长和分类都拿不到。
+  final bool stageOnly;
 
   static UsageSnapshot demo(int totalMinutes) => UsageSnapshot(
         totalMinutes: totalMinutes,
@@ -44,7 +49,27 @@ class UsageSnapshot {
   }
 }
 
-/// 原生插件：安卓见 android/app/src/main/kotlin/.../UsagePlugin.kt；iOS 待接入屏幕使用时间接口。
+/// 今天某个 app 的用时。隐私约定：只在手机上显示（今日排行、时间锁选 app），绝不上传。
+class AppUsage {
+  const AppUsage({required this.package, required this.label, required this.minutes, this.icon});
+
+  factory AppUsage.fromMap(Map<dynamic, dynamic> m) => AppUsage(
+        package: m['package'] as String,
+        label: m['label'] as String,
+        minutes: (m['minutes'] as num).toInt(),
+        icon: m['icon'] as Uint8List?,
+      );
+
+  final String package;
+  final String label;
+  final int minutes;
+
+  /// 96px 的 PNG 图标；拿不到时为 null
+  final Uint8List? icon;
+}
+
+/// 原生插件：安卓见 android/app/src/main/kotlin/.../UsagePlugin.kt。
+/// iOS 拿不到分钟数，屏幕使用时间还在技术验证，见 screen_time_channel.dart。
 class UsageChannel {
   UsageChannel._();
 
@@ -61,6 +86,12 @@ class UsageChannel {
   static Future<void> openPermissionSettings() async {
     if (!isSupported) return;
     await _channel.invokeMethod<void>('openPermissionSettings');
+  }
+
+  /// 今日排行：用时最多的 app 在前，不到 1 分钟的不算。没有权限时抛 [PlatformException]
+  static Future<List<AppUsage>> todayRanking() async {
+    final list = await _channel.invokeMethod<List<dynamic>>('getTodayRanking') ?? const [];
+    return [for (final m in list) AppUsage.fromMap(m as Map<dynamic, dynamic>)];
   }
 
   static Future<UsageSnapshot?> todayUsage() async {

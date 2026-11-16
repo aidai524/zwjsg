@@ -7,12 +7,17 @@ import 'package:pop_ui/pop_ui.dart';
 import 'features/card/card_page.dart';
 import 'features/dex/dex_page.dart';
 import 'features/group/group_page.dart';
-import 'features/me/hardcore_page.dart';
+import 'features/history/history_page.dart';
+import 'features/locks/locks_page.dart';
 import 'features/me/me_page.dart';
+import 'features/me/privacy_page.dart';
+import 'features/me/screen_time_page.dart';
 import 'features/onboarding/avatar_page.dart';
+import 'features/onboarding/consent_page.dart';
 import 'features/onboarding/goal_page.dart';
 import 'features/onboarding/login_page.dart';
 import 'features/onboarding/welcome_page.dart';
+import 'features/today/ranking_page.dart';
 import 'features/today/today_page.dart';
 import 'widgets/tab_shell.dart';
 
@@ -27,6 +32,20 @@ class ZwjsgApp extends StatefulWidget {
 
 class _ZwjsgAppState extends State<ZwjsgApp> {
   late final GoRouter _router = _buildRouter(widget.state);
+
+  @override
+  void initState() {
+    super.initState();
+    // 点每晚提醒打开 App 时直接看结算卡
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final launchedFromReminder = await widget.state.startReminders(_openCard);
+      if (launchedFromReminder) _openCard();
+    });
+  }
+
+  void _openCard() {
+    if (mounted && widget.state.ready.value) _router.push('/card');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,18 +63,25 @@ class _ZwjsgAppState extends State<ZwjsgApp> {
   }
 }
 
-const _onboardingPaths = {'/welcome', '/login', '/avatar', '/goal'};
+/// 引导没走完也能打开的页面（登录页要能看隐私政策）
+const _onboardingPaths = {'/welcome', '/login', '/avatar', '/goal', '/privacy'};
+
+/// 还没同意隐私政策时只能看这两页
+const _consentPaths = {'/consent', '/privacy'};
 
 GoRouter _buildRouter(AppState state) {
   return GoRouter(
     initialLocation: '/today',
-    refreshListenable: state.ready,
+    refreshListenable: Listenable.merge([state.ready, state.consented]),
     redirect: (context, s) {
       final path = s.uri.path;
+      if (!state.consented.value) return _consentPaths.contains(path) ? null : '/consent';
+      if (path == '/consent') return state.ready.value ? '/today' : '/welcome';
       if (!state.ready.value && !_onboardingPaths.contains(path)) return '/welcome';
       return null;
     },
     routes: [
+      GoRoute(path: '/consent', builder: (_, __) => const ConsentPage()),
       GoRoute(path: '/welcome', builder: (_, __) => const WelcomePage()),
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
       GoRoute(path: '/avatar', builder: (_, __) => const AvatarPage()),
@@ -63,8 +89,12 @@ GoRouter _buildRouter(AppState state) {
         path: '/goal',
         builder: (_, s) => GoalPage(editing: s.uri.queryParameters['edit'] == '1'),
       ),
-      GoRoute(path: '/card', builder: (_, __) => CardPage()),
-      GoRoute(path: '/hardcore', builder: (_, __) => const HardcorePage()),
+      GoRoute(path: '/card', builder: (_, __) => const CardPage()),
+      GoRoute(path: '/privacy', builder: (_, __) => const PrivacyPage()),
+      GoRoute(path: '/ranking', builder: (_, __) => const RankingPage()),
+      GoRoute(path: '/history', builder: (_, __) => const HistoryPage()),
+      GoRoute(path: '/locks', builder: (_, __) => const LocksPage()),
+      GoRoute(path: '/screen-time', builder: (_, __) => const ScreenTimePage()),
       StatefulShellRoute.indexedStack(
         builder: (_, __, shell) => TabShell(shell: shell),
         branches: [

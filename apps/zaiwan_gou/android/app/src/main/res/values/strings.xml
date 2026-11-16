@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 出现在系统“无障碍”设置里 -->
+    <string name="lock_service_label">再玩我是狗 · App 时间锁</string>
+    <string name="lock_service_description">只用来发现你锁住的 App 被打开，并在额度用满后把它挡住。不读取屏幕内容，不记录你的操作。</string>
+</resources>

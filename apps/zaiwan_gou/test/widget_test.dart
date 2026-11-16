@@ -14,19 +14,60 @@ void usePhoneScreen(WidgetTester tester) {
   addTearDown(tester.view.reset);
 }
 
-Future<void> pumpApp(WidgetTester tester, Map<String, Object> prefs) async {
-  SharedPreferences.setMockInitialValues(prefs);
+/// 默认当作已经同意过隐私政策；测首次打开时传 consented: false
+Future<void> pumpApp(WidgetTester tester, Map<String, Object> prefs, {bool consented = true}) async {
+  SharedPreferences.setMockInitialValues({
+    if (consented) 'privacy_version': AppState.privacyVersion,
+    ...prefs,
+  });
   final state = AppState(await SharedPreferences.getInstance());
   await tester.pumpWidget(AppScope(state: state, child: ZwjsgApp(state: state)));
   await tester.pumpAndSettle();
 }
 
 void main() {
-  testWidgets('首次打开进入引导页', (tester) async {
+  testWidgets('首次打开先看隐私政策，同意后进入引导页', (tester) async {
     usePhoneScreen(tester);
-    await pumpApp(tester, {});
+    await pumpApp(tester, {}, consented: false);
+    expect(find.text('用之前，先说清楚'), findsOneWidget);
 
+    // 同意之前，别的页面都进不去
+    GoRouter.of(tester.element(find.text('用之前，先说清楚'))).go('/today');
+    await tester.pumpAndSettle();
+    expect(find.text('用之前，先说清楚'), findsOneWidget);
+
+    await tester.tap(find.text('看完整的《隐私政策》'));
+    await tester.pumpAndSettle();
+    expect(find.text('我们申请的权限'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('同意并继续'));
+    await tester.pumpAndSettle();
     expect(find.text('开始变身'), findsOneWidget);
+    expect((await SharedPreferences.getInstance()).getInt('privacy_version'), AppState.privacyVersion);
+  });
+
+  testWidgets('不同意时说明原因，可以回去再看', (tester) async {
+    usePhoneScreen(tester);
+    await pumpApp(tester, {}, consented: false);
+
+    await tester.tap(find.text('不同意'));
+    await tester.pumpAndSettle();
+    expect(find.text('不同意就没法用了'), findsOneWidget);
+    await tester.tap(find.text('我再看看'));
+    await tester.pumpAndSettle();
+    expect(find.text('用之前，先说清楚'), findsOneWidget);
+  });
+
+  testWidgets('隐私政策更新版本后，老用户也要重新同意', (tester) async {
+    usePhoneScreen(tester);
+    await pumpApp(tester, {'onboarded': true, 'privacy_version': AppState.privacyVersion - 1}, consented: false);
+
+    expect(find.text('用之前，先说清楚'), findsOneWidget);
+    await tester.tap(find.text('同意并继续'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TodayPage), findsOneWidget);
   });
 
   testWidgets('修改每日目标后回到上一页', (tester) async {
@@ -57,7 +98,7 @@ void main() {
       '/login': Brightness.dark,
       '/avatar': Brightness.dark,
       '/goal?edit=1': Brightness.dark,
-      '/hardcore': Brightness.dark,
+      '/locks': Brightness.dark,
       '/card': Brightness.light, // 结算卡是深色底
     };
 

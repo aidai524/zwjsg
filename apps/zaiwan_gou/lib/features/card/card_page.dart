@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/app_state.dart';
 import '../../core/breeds.dart';
+import '../../core/card_exporter.dart';
 import 'package:pop_ui/pop_ui.dart';
 import 'package:avatar_engine/avatar_engine.dart';
 
 /// 每日结算卡。卡片包在 RepaintBoundary 里，保存/分享时截成 3:4 图片。
-class CardPage extends StatelessWidget {
-  CardPage({super.key});
+class CardPage extends StatefulWidget {
+  /// [exporter] 只在测试里传
+  const CardPage({super.key, this.exporter = const DefaultCardExporter()});
 
-  final GlobalKey _cardKey = GlobalKey();
+  final CardExporter exporter;
 
   static Color frameColor(Rarity r) => switch (r) {
         Rarity.common => Pop.ink,
@@ -18,9 +21,41 @@ class CardPage extends StatelessWidget {
         Rarity.legend => Pop.legendGold,
       };
 
-  void _todo(BuildContext context, String what) {
-    // TODO 用 _cardKey 截图（RenderRepaintBoundary.toImage）后保存相册 / 调微信分享 SDK
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$what 功能接入中')));
+  @override
+  State<CardPage> createState() => _CardPageState();
+}
+
+class _CardPageState extends State<CardPage> {
+  final GlobalKey _cardKey = GlobalKey();
+  final GlobalKey _shareKey = GlobalKey();
+  bool _busy = false;
+
+  void _toast(String text) {
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  }
+
+  Future<void> _export(Future<void> Function(Uint8List png) action, {String? done, required String failed}) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await action(await widget.exporter.capture(_cardKey));
+      if (done != null) _toast(done);
+    } on CardExportException catch (e) {
+      _toast(e.message);
+    } on PlatformException {
+      _toast(failed);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _save() => _export(widget.exporter.save, done: '已保存到相册', failed: '没存上，稍后再试');
+
+  Future<void> _share() {
+    // iPad 的分享面板要从按钮的位置弹出
+    final box = _shareKey.currentContext?.findRenderObject() as RenderBox?;
+    final origin = box == null ? null : box.localToGlobal(Offset.zero) & box.size;
+    return _export((png) => widget.exporter.share(png, origin: origin), failed: '分享面板没打开，稍后再试');
   }
 
   @override
@@ -57,95 +92,109 @@ class CardPage extends StatelessWidget {
                     aspectRatio: 3 / 4,
                     child: RepaintBoundary(
                       key: _cardKey,
-                      child: Container(
-                        padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
-                        decoration: BoxDecoration(
-                          color: Pop.yellow,
-                          borderRadius: BorderRadius.circular(28),
-                          border: Border.all(color: frameColor(rarity), width: 6),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('${now.month} 月 ${now.day} 日 · 今日狗度',
-                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                                      Text('${state.percent}%',
-                                          style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, height: 1)),
-                                    ],
-                                  ),
-                                ),
-                                if (breed != null) _RarityTag(rarity: rarity),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Expanded(
-                              child: Container(
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: Pop.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: Pop.ink, width: Pop.stroke),
-                                ),
-                                clipBehavior: Clip.antiAlias,
-                                alignment: Alignment.bottomCenter,
-                                child: LayoutBuilder(
-                                  builder: (_, c) => DogAvatar(stage: state.stage, size: c.maxHeight.clamp(80.0, 190.0)),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.baseline,
-                              textBaseline: TextBaseline.alphabetic,
-                              children: [
-                                Text(breed?.name ?? '人', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(breed?.quip ?? '今天守住了，明天继续',
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Container(
-                              padding: const EdgeInsets.only(top: 10),
-                              decoration: const BoxDecoration(
-                                border: Border(top: BorderSide(color: Pop.ink, width: 2)),
-                              ),
-                              child: Row(
+                      // 深色底：导出的图片四角是深色，不是透明（发到微信会变黑或变白）
+                      child: ColoredBox(
+                        color: Pop.ink,
+                        child: Container(
+                          padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+                          decoration: BoxDecoration(
+                            color: Pop.yellow,
+                            borderRadius: BorderRadius.circular(28),
+                            border: Border.all(color: CardPage.frameColor(rarity), width: 6),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Expanded(
+                                  Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text('再玩我是狗', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-                                        Text('扫码看看你今天是什么狗 · [品牌名]', style: TextStyle(fontSize: 11)),
+                                        Text('${now.month} 月 ${now.day} 日 · 今日狗度',
+                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                                        Text(state.percentLabel,
+                                            style:
+                                                const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, height: 1)),
                                       ],
                                     ),
                                   ),
-                                  Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      color: Pop.white,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Pop.ink, width: 2),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: const Text('[码]', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
+                                  if (breed != null) _RarityTag(rarity: rarity),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Expanded(
+                                child: Container(
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    color: Pop.white,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: Pop.ink, width: Pop.stroke),
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  alignment: Alignment.bottomCenter,
+                                  child: LayoutBuilder(
+                                    builder: (_, c) =>
+                                        DogAvatar(stage: state.stage, size: c.maxHeight.clamp(80.0, 190.0)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
+                                children: [
+                                  Text(breed?.name ?? '人',
+                                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(breed?.quip ?? '今天守住了，明天继续',
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 10),
+                              Container(
+                                padding: const EdgeInsets.only(top: 10),
+                                decoration: const BoxDecoration(
+                                  border: Border(top: BorderSide(color: Pop.ink, width: 2)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text('再玩我是狗',
+                                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                                          Text(
+                                            state.nickname == null ? '刷得越多，越像狗' : '@${state.nickname} · 刷得越多，越像狗',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(fontSize: 11),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    // 还没上架，没有下载二维码，先放 App 图标
+                                    Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: Pop.ink, width: 2),
+                                      ),
+                                      clipBehavior: Clip.antiAlias,
+                                      child: Image.asset('assets/icon/icon_full.png', fit: BoxFit.cover),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -164,12 +213,14 @@ class CardPage extends StatelessWidget {
                         shape: const StadiumBorder(),
                         textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
                       ),
-                      onPressed: () => _todo(context, '保存图片'),
+                      onPressed: _busy ? null : _save,
                       child: const Text('保存图片'),
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(child: PopButton(label: '晒给朋友', height: 54, onPressed: () => _todo(context, '分享'))),
+                  Expanded(
+                    child: PopButton(key: _shareKey, label: '晒给朋友', height: 54, onPressed: _busy ? null : _share),
+                  ),
                 ],
               ),
             ],

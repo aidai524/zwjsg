@@ -18,6 +18,12 @@ dependencies:
   series_core:
     path: ../../packages/series_core
   shared_preferences: ^2.2.0
+  gal: ^2.3.3
+  share_plus: ^13.3.1
+  path_provider: ^2.1.6
+  flutter_local_notifications: ^22.3.3
+  timezone: ^0.11.2
+  flutter_timezone: ^5.1.1
 
 dev_dependencies:
   flutter_test:
@@ -27,6 +33,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    # 结算卡右下角的 App 图标
+    - assets/icon/icon_full.png
 
 # 应用图标：改了 assets/icon 下的图片后，运行 `dart run flutter_launcher_icons` 重新生成两端图标
 flutter_launcher_icons:
