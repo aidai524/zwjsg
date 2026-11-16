@@ -61,7 +61,7 @@ php artisan test
 
 ## 再玩我是狗
 
-隐私：具体 app 名称只在安卓原生层用于计算，**不传给 Flutter，更不传给服务端**；服务端只接收每天的狗度、分钟数、犬种。狗度规则两处同步：`apps/zaiwan_gou/lib/core/dog_meter.dart`、`breeds.dart` ↔ `backends/zaiwan_gou_api/config/dog.php`、`app/Services/DogMeter.php`。
+隐私：具体 app 的名称、图标和用时**只在手机上用**，可以交给 Flutter 显示今日排行，**绝不传给服务端**；服务端只接收每天的狗度、分钟数、犬种（`test/ranking_test.dart` 锁定了上报内容）。iOS 的排行由系统报告扩展 `ios/ScreenTimeReport/` 画出来，App 读不到里面的数字。狗度规则两处同步：`apps/zaiwan_gou/lib/core/dog_meter.dart`、`breeds.dart` ↔ `backends/zaiwan_gou_api/config/dog.php`、`app/Services/DogMeter.php`。
 
 本 app 的接口：`GET daily-records?from=&to=`（历史）、`PUT daily-records/{YYYY-MM-DD}`（上报狗度，返回新解锁犬种）、`GET breeds`（图鉴）。
 
@@ -81,6 +81,37 @@ flutter run --dart-define=API_BASE=http://10.0.2.2:8000/api/v1
 
 第一次打开：引导 → 登录（可跳过）→ 形象 → 设目标 → 今天。安卓“今天”页会提示打开**使用情况访问权限**；没有权限、iOS 或模拟器上显示“演示数据”，可拖滑杆看变狗效果。
 
+“今天”页从上到下：头部（形象、狗度、阶段，右上角“晒一下”）→ 进度卡 → “今天时间去哪了”（一句吐槽 + 前三名，安卓底部还有拿起次数和 23 点后用时，点开看完整排行）→ “这周”（周一到周日一排小形象，加上连续做人几天、离传说犬种“狼”还差几天，点开看历史记录）。两张卡片的代码在 `lib/features/today/today_cards.dart`。iOS 的前三名是报告扩展的精简版（报告名 `topAppsCompact`），App 读不到数字；“狼”最终以服务端判定为准，卡片上只按手机里的记录给进度。
+
+不依赖外部账号的几块：
+- 结算卡：头部“晒一下”随时打开。到每晚提醒的时间（默认 22:00，没开提醒也按这个时间）之前，标题是“此刻的我”，卡上写“此刻狗度”和时间；之后是“今日结算”。“保存图片”存到相册（gal），“晒给朋友”打开系统分享面板（share_plus），可以直接发微信。用微信 SDK 分享要等开放平台。
+- 每晚提醒：本地通知（flutter_local_notifications），不经过服务器。设目标页点“开始做人”时请求通知权限，默认 22:00；在“我的 › 结算卡提醒”里开关、换时间，点通知直接打开结算卡。登录后提醒时间同步到 `remind_at`，以后做服务端推送时用。安卓用非精确闹钟，可能晚几分钟，国内部分系统还要用户允许后台运行。
+- 昵称：“我的”页点名字修改，最长 16 个字，登录后同步到服务端，也显示在结算卡上。
+- 隐私政策：`lib/features/me/privacy_page.dart`，“我的”页和登录页都能打开。内容按现在的数据处理写成，上架前要补运营者名称和联系方式，并请法务审核。
+
+App 时间锁（免费的基础功能，“我的 › App 时间锁”）：选几个 App 和每天的额度，合计用满就锁到第二天 0 点；最多 10 个锁，只存在手机上，不上传。苹果审核指南 4.10 不允许对屏幕使用时间相关的功能收费，所以不能做成会员功能。
+- iOS：系统屏蔽（ManagedSettings）。每个锁一个统计周期 `lock.<id>`，用满时监控扩展打上屏蔽，0 点解开；屏蔽页扩展 `ios/ShieldConfig/` 换上狗的文案和配色。
+- 安卓：无障碍服务 `LockAccessibilityService`，只听切换 App 的事件。被锁的 App 一打开就算今天用了多久：用满就退回桌面、弹出拦截页 `LockedActivity`；没用满就到点再查一次。用户要在系统“无障碍”里手动打开，小米、华为等还要允许自启动。
+- 紧急解锁：每个锁每天 3 次，每次再用 5 分钟（按使用时长算），用满自动锁回去。安卓在拦截页（“还是要刷”）和时间锁页都能解；iOS 在时间锁页里解，原生层撤掉屏蔽，再单独监控 `grace.<id>`，用满由监控扩展重新锁上。次数和分钟数以原生层为准（`LockStore.kt`、`ScreenTimeStore.swift`）。
+
+首次打开先弹隐私政策（`consent_page.dart`，国内商店要求）：同意之前路由只放行隐私政策页，不读使用数据、不读应用列表、不请求权限。政策有重要变化时把 `AppState.privacyVersion` 加 1，所有人重新同意。
+
+历史记录（“今天”页 › “这周”卡片）：每次刷新今天的数据时在手机上存一条（`lib/core/history.dart`），同一天只留最后一次，最多 400 天；可以看最近 7 天或按月的日历。演示数据不记。
+
+iOS 屏幕使用时间（技术验证中）：
+- 最低 iOS 16；签名必须用付费开发者团队，免费的 Personal Team 不支持 Family Controls。
+- iOS 只告诉 App 用量到了哪个阈值，拿不到分钟数。“今天”页点“去开启”，依次授权、选 App、按每日目标开始统计，之后显示真实阶段：狗度显示成“≥60%”，已刷时长显示下限，不显示拿起次数和 23 点后时长；拿不到分类，犬种先统一按默认的柯基。改每日目标会按新阈值重新统计。
+- iOS 的阶段数据暂不上传服务端：开发者协议 3.3.3(P) 不允许把使用数据传出设备，iOS 怎么上报还没定。
+- 验证页在“我的 › 技术验证 › 屏幕使用时间”，可以用 10 分钟的测试目标，看每次阈值通知的时间，对照系统“设置 › 屏幕使用时间”看准不准。
+- 阈值由 Flutter 按 `dog_meter.dart` 算好传给原生层（`ios/Runner/ScreenTimePlugin.swift`）。到阈值时系统调起监控扩展 `ios/ScreenTimeMonitor/`，扩展把阶段写进 App Group `group.com.zwjsg.zwjsgApp`。选中的 App 是系统的不透明令牌，只存在本机，Flutter 只拿到数量。
+- 真机调试不用 Apple 批准。发 TestFlight 或 App Store 前，账户持有人要给主 App `com.zwjsg.zwjsgApp` 和三个扩展 `.ScreenTimeMonitor`、`.ScreenTimeReport`、`.ShieldConfig` 分别申请 Family Controls 发布权限。
+
+拍照形象 · 本地卡通化（技术验证，iOS）：
+- 验证页在“我的 › 技术验证 › 拍照形象（本地卡通化）”：可以用包里的样图，也可以用系统选图器选一张照片。照片只在手机内存里处理，不存盘、不上传。
+- 流程：苹果 Vision 找五官 → 对齐成 288×288 → Core ML 跑 DCT-Net 日漫头像模型（Apache 2.0，`ios/Runner/Models/`，3 MB）→ Vision 抠出人像。代码在 `ios/Runner/CartoonLab.swift`。
+- 画风（2026-11-16 定）：日漫 + 平涂墨线。卡通图再压成平涂色块、描墨线，抠成白边黑描边的贴纸，在 `packages/avatar_engine` 的 `PhotoSticker`（纯 Dart，iOS、安卓共用）；贴纸加狗耳朵、狗鼻子是 `PhotoDogAvatar`，阶段 3 以后的图层等美术素材。
+- 模型来源、转换脚本和实测数据见 `tools/cartoon/README.md`。验证页和样图上线前要删掉；正式用模型时，开源许可页要附 Apache 2.0 许可证。
+
 ---
 
 ## 什么鬼天气
@@ -90,6 +121,7 @@ flutter run --dart-define=API_BASE=http://10.0.2.2:8000/api/v1
 ### 合规与规则
 
 - 天气和预警只来自和风天气转发的气象部门官方数据；**预警原文照登**（标题、正文、发布单位、时间不改）。
+- 来源标注（和风的要求）：显示了和风数据的页面都要放 `QWeatherCredit`（“天气服务由和风天气驱动”，链到官网）；接口返回的 `attributions` 要原样显示，不能写死或改写。
 - 吐槽文案人工撰写（`config/quips.php`），不用 AI 生成，不改写预报结论；黄色及以上预警进入**严肃模式**，吐槽暂停。
 - 玩法结论都在服务端算（`app/Services/WeatherInterpreter.php`，阈值在 `config/weather.php`），App 只展示。
 - 关心群防骚扰（`app/Services/CareService.php`）：只能选固定关心话；同一人每天最多提醒同一人 2 次；30 分钟内同话题合并成一条推送；被提醒者本地 22:00–07:00 发的延迟到 07:00（预警除外）；静音对发送者无感知；记录 30 天后删除；群里只显示城市名。
@@ -141,9 +173,11 @@ flutter run --dart-define=API_BASE=http://127.0.0.1:8001/api/v1
 ## 还没做
 
 再玩我是狗：
-- [ ] 技术验证：iOS 屏幕使用时间接口；照片本地卡通化方案
-- [ ] 形象创建：拍照 / 相册 → 卡通化 → 上传；结算卡保存与微信分享；每晚提醒推送
-- [ ] P2：狗群、硬核模式；商业化
+- [ ] 技术验证：iOS 屏幕使用时间接口；照片本地卡通化（iOS 已通过，安卓待做）
+- [ ] 形象创建：拍照 / 相册 → 卡通化 → 上传
+- [ ] 结算卡用微信 SDK 分享（现在走系统分享）、下载二维码（上架后）
+- [ ] App 时间锁的后续：iOS 屏蔽页上的“还是要刷”（要再加一个屏蔽按钮扩展）、电话和支付等白名单、按狗度或时间段触发
+- [ ] P2：狗群；商业化
 
 什么鬼天气：
 - [ ] 确认和风天气商用授权和数据来源资质；接入真实推送通道
