@@ -2,4 +2,6 @@
 library;
 
 export 'src/dog_avatar.dart';
+export 'src/photo_dog_avatar.dart';
+export 'src/photo_sticker.dart';
 export 'src/weather_avatar.dart';
