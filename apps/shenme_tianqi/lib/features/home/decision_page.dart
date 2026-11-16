@@ -55,6 +55,7 @@ class DecisionPage extends StatelessWidget {
             ),
           ),
           SourceNote(w.attribution),
+          QWeatherCredit(attributions: w.attributions),
         ],
       ),
     );

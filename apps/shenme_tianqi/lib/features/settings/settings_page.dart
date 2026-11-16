@@ -84,7 +84,8 @@ class SettingsPage extends StatelessWidget {
               onTap: () => _confirmDelete(context, state),
             ),
           ],
-          const SourceNote('天气数据：和风天气 · 预警信息来自当地气象部门\n吐槽文案为人工撰写，不改写预报结论'),
+          const SourceNote('预警信息来自当地气象部门\n吐槽文案为人工撰写，不改写预报结论'),
+          const QWeatherCredit(),
         ],
       ),
     );

@@ -3,6 +3,7 @@
 int _i(dynamic v) => v is num ? v.toInt() : int.tryParse('$v') ?? 0;
 int? _ni(dynamic v) => v == null ? null : _i(v);
 String _s(dynamic v) => v?.toString() ?? '';
+List<String> _strings(dynamic v) => v is List ? v.map(_s).toList() : const [];
 List<Map<String, dynamic>> _list(dynamic v) =>
     v is List ? v.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList() : const [];
 
@@ -124,6 +125,9 @@ class WeatherData {
   String? get quip => view['quip'] as String?;
   String get attribution => _s(raw['attribution']);
 
+  /// 和风要求原样显示的归因内容，见 QWeatherCredit
+  List<String> get attributions => _strings(raw['attributions']);
+
   List<Warning> get seriousWarnings => _list(view['serious_warnings']).map(Warning.fromJson).toList();
   List<Warning> get bannerWarnings => _list(view['banner_warnings']).map(Warning.fromJson).toList();
 
@@ -198,6 +202,7 @@ class Member {
   String get fact => _s(weather?['fact']);
   String? get alert => weather?['alert'] as String?;
   List<Phrase> get phrases => _list(weather?['phrases']).map(Phrase.fromJson).toList();
+  List<String> get attributions => _strings(weather?['attributions']);
 }
 
 class GroupDetail {

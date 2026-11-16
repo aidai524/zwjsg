@@ -129,6 +129,7 @@ class _GroupPageState extends State<GroupPage> {
                   if (g.members.length < 2)
                     PopButton(label: '复制邀请码，拉家人进来', onPressed: _invite),
                   const SourceNote('只能发天气关心，不能聊天 · 只显示城市，不共享位置'),
+                  QWeatherCredit(attributions: {for (final m in g.members) ...m.attributions}.toList()),
                 ],
               ),
             ),

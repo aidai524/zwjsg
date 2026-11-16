@@ -36,6 +36,7 @@ class CitiesPage extends StatelessWidget {
           if (cities.length < AppState.maxCities)
             PopButton(label: '+ 加个城市', style: PopButtonStyle.secondary, onPressed: () => context.push('/city-search')),
           const SourceNote('最多关注 5 个城市 · 常驻城市用于早安推送和关心群\n位置只到城市，不记录你去过哪'),
+          const QWeatherCredit(),
         ],
       ),
     );
