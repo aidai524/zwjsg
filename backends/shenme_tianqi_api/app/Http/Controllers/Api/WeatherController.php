@@ -81,6 +81,7 @@ class WeatherController extends Controller
             'fact' => self::fact($view),
             'alert' => $view['serious_warnings'][0]['title'] ?? null,
             'phrases' => CareService::phrasesFor($view['care_topic']),
+            'attributions' => $snap['attributions'],
         ];
     }
 }

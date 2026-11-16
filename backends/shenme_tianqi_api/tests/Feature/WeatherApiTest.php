@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CareGroup;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -126,6 +127,40 @@ class WeatherApiTest extends TestCase
         $this->fakeQWeather();
 
         $this->getJson('/api/v1/weather/101280101')->assertOk()->assertJsonPath('data.air', null);
+    }
+
+    public function test_attributions_are_passed_through_unmodified(): void
+    {
+        $this->fakeQWeather(warnings: [$this->alert()]);
+
+        $want = [
+            'https://developer.qweather.com/attribution.html',
+            '国家预警信息发布中心',
+            '当前预警数据可能存在延迟或信息过时，以官方数据发布为准。',
+        ];
+        $this->getJson('/api/v1/weather/101280101')->assertOk()->assertJsonPath('data.attributions', $want);
+        // 命中缓存时也不能丢
+        $this->getJson('/api/v1/weather/101280101')->assertOk()->assertJsonPath('data.attributions', $want);
+    }
+
+    public function test_no_alert_statement_without_alerts(): void
+    {
+        $this->fakeQWeather();
+
+        $this->getJson('/api/v1/weather/101280101')->assertOk()
+            ->assertJsonPath('data.attributions', ['https://developer.qweather.com/attribution.html']);
+    }
+
+    public function test_care_group_members_carry_attributions(): void
+    {
+        $this->fakeQWeather(warnings: [$this->alert()]);
+        $user = User::factory()->create();
+        $user->cities()->create(['location_id' => '101280101', 'name' => '广州', 'adm' => '广东省', 'is_home' => true]);
+        $group = CareGroup::create(['name' => '我们家', 'invite_code' => 'TESTHOME', 'owner_id' => $user->id]);
+        $group->members()->attach($user->id);
+
+        $this->actingAs($user, 'sanctum')->getJson("/api/v1/care-groups/{$group->id}")->assertOk()
+            ->assertJsonPath('data.members.0.weather.attributions.1', '国家预警信息发布中心');
     }
 
     public function test_forecast_units_are_converted(): void
