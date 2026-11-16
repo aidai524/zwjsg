@@ -9,11 +9,13 @@ import 'package:pop_ui/pop_ui.dart';
 import 'package:avatar_engine/avatar_engine.dart';
 
 /// 每日结算卡。卡片包在 RepaintBoundary 里，保存/分享时截成 3:4 图片。
+/// 白天随时能晒，晒的是“此刻”的样子；到了每晚提醒的时间（默认 22:00）才叫“今日结算”。
 class CardPage extends StatefulWidget {
-  /// [exporter] 只在测试里传
-  const CardPage({super.key, this.exporter = const DefaultCardExporter()});
+  /// [exporter]、[now] 只在测试里传
+  const CardPage({super.key, this.exporter = const DefaultCardExporter(), this.now});
 
   final CardExporter exporter;
+  final DateTime? now;
 
   static Color frameColor(Rarity r) => switch (r) {
         Rarity.common => Pop.ink,
@@ -63,14 +65,23 @@ class _CardPageState extends State<CardPage> {
     final state = AppScope.of(context);
     final breed = breedByKey(state.breedKey);
     final rarity = breed?.rarity ?? Rarity.common;
-    final now = DateTime.now();
+    final now = widget.now ?? DateTime.now();
+    final nowMinutes = now.hour * 60 + now.minute;
+    final settled = nowMinutes >= state.reminderMinutes;
+    final String note;
+    if (settled) {
+      note = breed == null ? '今天还是个人，值得晒一晒' : '今天变成了${breed.name}';
+    } else {
+      note = '${breed == null ? '此刻还是个人' : '此刻是${breed.name}'} · ${AppState.formatHhmm(state.reminderMinutes)} 结算';
+    }
 
     return Scaffold(
       backgroundColor: Pop.ink,
       appBar: AppBar(
         systemOverlayStyle: Pop.overlayOnDark,
         foregroundColor: Pop.white,
-        title: const Text('今日结算', style: TextStyle(color: Pop.white, fontSize: 16, fontWeight: FontWeight.w900)),
+        title: Text(settled ? '今日结算' : '此刻的我',
+            style: const TextStyle(color: Pop.white, fontSize: 16, fontWeight: FontWeight.w900)),
         centerTitle: true,
         leading: IconButton(
           tooltip: '关闭',
@@ -83,8 +94,7 @@ class _CardPageState extends State<CardPage> {
           padding: const EdgeInsets.fromLTRB(28, 4, 28, 24),
           child: Column(
             children: [
-              Text(breed == null ? '今天还是个人，值得晒一晒' : '今天变成了${breed.name}',
-                  style: const TextStyle(color: Color(0xFFD6D6D6), fontSize: 13)),
+              Text(note, style: const TextStyle(color: Color(0xFFD6D6D6), fontSize: 13)),
               const SizedBox(height: 14),
               Expanded(
                 child: Center(
@@ -112,7 +122,10 @@ class _CardPageState extends State<CardPage> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text('${now.month} 月 ${now.day} 日 · 今日狗度',
+                                        Text(
+                                            settled
+                                                ? '${now.month} 月 ${now.day} 日 · 今日狗度'
+                                                : '${now.month} 月 ${now.day} 日 ${AppState.formatHhmm(nowMinutes)} · 此刻狗度',
                                             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                                         Text(state.percentLabel,
                                             style:

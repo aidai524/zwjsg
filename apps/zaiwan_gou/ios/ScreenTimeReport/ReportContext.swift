@@ -5,4 +5,6 @@ import SwiftUI
 extension DeviceActivityReport.Context {
   /// 今日各 App 用时排行
   static let topApps = Self("topApps")
+  /// “今天”页卡片里的精简版：一句话 + 前三名
+  static let topAppsCompact = Self("topAppsCompact")
 }

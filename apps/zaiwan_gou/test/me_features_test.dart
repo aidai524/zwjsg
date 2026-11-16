@@ -198,15 +198,29 @@ void main() {
   });
 
   group('结算卡', () {
-    Future<FakeExporter> pumpCard(WidgetTester tester) async {
+    Future<FakeExporter> pumpCard(WidgetTester tester, {DateTime? now}) async {
       usePhoneScreen(tester);
       SharedPreferences.setMockInitialValues({'nickname': '小狗勾'});
       final state = AppState(await SharedPreferences.getInstance(), reminders: FakeReminders());
       final exporter = FakeExporter();
-      await tester.pumpWidget(AppScope(state: state, child: MaterialApp(home: CardPage(exporter: exporter))));
+      await tester.pumpWidget(
+          AppScope(state: state, child: MaterialApp(home: CardPage(exporter: exporter, now: now))));
       await tester.pumpAndSettle();
       return exporter;
     }
+
+    testWidgets('白天晒的是“此刻”，到了每晚提醒的时间才是“今日结算”', (tester) async {
+      await pumpCard(tester, now: DateTime(2026, 11, 20, 14, 30));
+      expect(find.text('此刻的我'), findsOneWidget);
+      expect(find.text('11 月 20 日 14:30 · 此刻狗度'), findsOneWidget);
+      expect(find.textContaining('22:00 结算'), findsOneWidget);
+      expect(find.text('今日结算'), findsNothing);
+
+      await pumpCard(tester, now: DateTime(2026, 11, 20, 22, 5));
+      expect(find.text('今日结算'), findsOneWidget);
+      expect(find.text('11 月 20 日 · 今日狗度'), findsOneWidget);
+      expect(find.textContaining('结算'), findsOneWidget);
+    });
 
     testWidgets('能保存到相册、能分享，卡片上没有占位文字', (tester) async {
       final exporter = await pumpCard(tester);

@@ -10,6 +10,7 @@ import SwiftUI
 struct ScreenTimeReportExtension: DeviceActivityReportExtension {
   var body: some DeviceActivityReportScene {
     TopAppsReport { TopAppsView(report: $0) }
+    TopAppsCompactReport { TopAppsCompactView(report: $0) }
   }
 }
 
@@ -24,11 +25,6 @@ struct TopApps {
 
   var items: [Item] = []
   var total: TimeInterval = 0
-}
-
-struct TopAppsReport: DeviceActivityReportScene {
-  let context: DeviceActivityReport.Context = .topApps
-  let content: (TopApps) -> TopAppsView
 
   private struct Entry {
     let token: ApplicationToken?
@@ -36,7 +32,7 @@ struct TopAppsReport: DeviceActivityReportScene {
     var duration: TimeInterval
   }
 
-  func makeConfiguration(representing data: DeviceActivityResults<DeviceActivityData>) async -> TopApps {
+  static func make(from data: DeviceActivityResults<DeviceActivityData>) async -> TopApps {
     var byApp: [String: Entry] = [:]
     for await device in data {
       for await segment in device.activitySegments {
@@ -63,13 +59,33 @@ struct TopAppsReport: DeviceActivityReportScene {
   }
 }
 
+/// 完整排行（“今日 App 排行”页）
+struct TopAppsReport: DeviceActivityReportScene {
+  let context: DeviceActivityReport.Context = .topApps
+  let content: (TopApps) -> TopAppsView
+
+  func makeConfiguration(representing data: DeviceActivityResults<DeviceActivityData>) async -> TopApps {
+    await TopApps.make(from: data)
+  }
+}
+
+/// 精简版（“今天”页的“今天时间去哪了”卡片）
+struct TopAppsCompactReport: DeviceActivityReportScene {
+  let context: DeviceActivityReport.Context = .topAppsCompact
+  let content: (TopApps) -> TopAppsCompactView
+
+  func makeConfiguration(representing data: DeviceActivityResults<DeviceActivityData>) async -> TopApps {
+    await TopApps.make(from: data)
+  }
+}
+
 struct TopAppsView: View {
   let report: TopApps
 
   // 和 Flutter 那边的黄黑波普配色一致
-  private static let ink = Color(red: 0x1B / 255, green: 0x1B / 255, blue: 0x1F / 255)
-  private static let yellow = Color(red: 1, green: 0xD2 / 255, blue: 0x3F / 255)
-  private static let gray = Color(red: 0xF3 / 255, green: 0xF4 / 255, blue: 0xF6 / 255)
+  static let ink = Color(red: 0x1B / 255, green: 0x1B / 255, blue: 0x1F / 255)
+  static let yellow = Color(red: 1, green: 0xD2 / 255, blue: 0x3F / 255)
+  static let gray = Color(red: 0xF3 / 255, green: 0xF4 / 255, blue: 0xF6 / 255)
 
   var body: some View {
     Group {
@@ -92,6 +108,8 @@ struct TopAppsView: View {
       }
     }
     .background(Self.gray)
+    // App 只做浅色：手机开了深色模式也按浅色画，不然白底上的字会变成白色
+    .environment(\.colorScheme, .light)
   }
 
   private func row(_ item: TopApps.Item) -> some View {
@@ -133,5 +151,70 @@ struct TopAppsView: View {
     let minutes = Int(t / 60)
     if minutes < 60 { return "\(minutes) 分钟" }
     return minutes % 60 == 0 ? "\(minutes / 60) 小时" : "\(minutes / 60) 小时 \(minutes % 60) 分"
+  }
+}
+
+/// “今天”页卡片里的精简版：一句话 + 前三名，不滚动。Flutter 那边给它留了 116 点高。
+struct TopAppsCompactView: View {
+  let report: TopApps
+
+  var body: some View {
+    Group {
+      if let first = report.items.first {
+        VStack(alignment: .leading, spacing: 8) {
+          Text(Self.headline(first, total: report.total))
+            .font(.system(size: 14, weight: .bold))
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+          ForEach(report.items.prefix(3)) { row($0, top: first.duration) }
+        }
+      } else {
+        Text("今天还没有用满 1 分钟的 App")
+          .font(.system(size: 13))
+          .foregroundStyle(.secondary)
+      }
+    }
+    .foregroundStyle(TopAppsView.ink)
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    .background(Color.white)
+    .environment(\.colorScheme, .light)
+  }
+
+  private func row(_ item: TopApps.Item, top: TimeInterval) -> some View {
+    HStack(spacing: 8) {
+      Text("\(item.id)")
+        .font(.system(size: 13, weight: .black))
+        .frame(width: 16, alignment: .leading)
+      Group {
+        if let token = item.token {
+          Label(token).labelStyle(.iconOnly)
+        } else {
+          Image(systemName: "app.fill").foregroundStyle(.secondary)
+        }
+      }
+      .frame(width: 22, height: 22)
+      .clipped()
+      Text(item.name)
+        .font(.system(size: 13, weight: .bold))
+        .lineLimit(1)
+        .frame(width: 72, alignment: .leading)
+      GeometryReader { geo in
+        Capsule()
+          .fill(TopAppsView.yellow)
+          .overlay(Capsule().stroke(TopAppsView.ink, lineWidth: 1.5))
+          .frame(width: max(8, geo.size.width * item.duration / max(top, 1)))
+      }
+      .frame(height: 8)
+      Text(TopAppsView.format(item.duration))
+        .font(.system(size: 13, weight: .bold))
+        .monospacedDigit()
+    }
+    .frame(height: 24)
+  }
+
+  /// 和 Flutter 那边（安卓，today_cards.dart 的 TimeSpentCard.headline）同一个规则：占四成以上说“一个就占了”
+  static func headline(_ top: TopApps.Item, total: TimeInterval) -> String {
+    let pct = Int((top.duration * 100 / max(total, 1)).rounded())
+    return pct >= 40 ? "“\(top.name)”一个就占了今天的 \(pct)%" : "最费时间的是“\(top.name)”，占今天的 \(pct)%"
   }
 }

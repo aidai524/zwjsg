@@ -9,8 +9,13 @@ import '../../core/screen_time_channel.dart';
 import '../../core/usage_channel.dart';
 import 'package:avatar_engine/avatar_engine.dart';
 
+import 'today_cards.dart';
+
 class TodayPage extends StatefulWidget {
-  const TodayPage({super.key});
+  /// [rankingLoader] 只在测试里传，代替安卓原生层的今日排行
+  const TodayPage({super.key, this.rankingLoader});
+
+  final Future<List<AppUsage>> Function()? rankingLoader;
 
   @override
   State<TodayPage> createState() => _TodayPageState();
@@ -93,7 +98,7 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                           ],
                         ),
                       ),
-                      if (state.usage.isDemo)
+                      if (state.usage.isDemo) ...[
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
@@ -103,6 +108,10 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                           ),
                           child: const Text('演示数据', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                         ),
+                        const SizedBox(width: 8),
+                      ],
+                      // 随时都能晒：打开的是此刻的卡片，到了每晚提醒的时间才是“今日结算”
+                      _ShareChip(onTap: () => context.push('/card')),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -180,18 +189,6 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                     percent: state.percent,
                     hint: _hint(state),
                   ),
-                  const SizedBox(height: 12),
-                  if (state.usage.stageOnly)
-                    const Text('iOS 只告诉 App 用量到了哪个阶段，拿不到准确时长、拿起次数和 23 点后的用时。', style: PopText.small)
-                  else
-                    Row(
-                      children: [
-                        Expanded(child: _Stat(label: '拿起手机', value: '${state.usage.pickups} 次')),
-                        const SizedBox(width: 10),
-                        Expanded(
-                            child: _Stat(label: '23 点后', value: DogMeter.formatMinutes(state.usage.lateNightMinutes))),
-                      ],
-                    ),
                   if (state.usage.isDemo) ...[
                     const SizedBox(height: 12),
                     Text('演示：拖动看看不同时长的样子（${DogMeter.formatMinutes(state.demoMinutes)}）', style: PopText.small),
@@ -204,26 +201,10 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                     ),
                   ],
                   const SizedBox(height: 12),
-                  _EntryCard(
-                    icon: Icons.leaderboard_outlined,
-                    title: '今日 App 排行',
-                    subtitle: '看看时间都花在哪了',
-                    onTap: () => context.push('/ranking'),
-                  ),
-                  const SizedBox(height: 10),
-                  _EntryCard(
-                    icon: Icons.calendar_month_outlined,
-                    title: '历史记录',
-                    subtitle: '这周变狗了几天',
-                    onTap: () => context.push('/history'),
-                  ),
+                  // 卡片上直接露出前三名和这周 7 天，点开再看全部
+                  TimeSpentCard(loader: widget.rankingLoader),
                   const SizedBox(height: 12),
-                  PopButton(
-                    label: '提前看今晚的结算卡',
-                    style: PopButtonStyle.secondary,
-                    height: 52,
-                    onPressed: () => context.push('/card'),
-                  ),
+                  const WeekCard(),
                 ],
               ),
             ),
@@ -234,41 +215,28 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
   }
 }
 
-class _EntryCard extends StatelessWidget {
-  const _EntryCard({required this.icon, required this.title, required this.subtitle, required this.onTap});
+/// 头部右上角的“晒一下”，打开结算卡
+class _ShareChip extends StatelessWidget {
+  const _ShareChip({required this.onTap});
 
-  final IconData icon;
-  final String title;
-  final String subtitle;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: Pop.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Pop.ink, width: 2),
-      ),
+      shape: const StadiumBorder(side: BorderSide(color: Pop.ink, width: 2)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: Pop.ink),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
-                    Text(subtitle, style: PopText.small),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right, color: Pop.muted),
+              Icon(Icons.adaptive.share, size: 16, color: Pop.ink),
+              const SizedBox(width: 4),
+              const Text('晒一下', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900)),
             ],
           ),
         ),
@@ -344,29 +312,6 @@ class _ProgressCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(hint, style: const TextStyle(fontSize: 13, color: Color(0xFF3C4043))),
-        ],
-      ),
-    );
-  }
-}
-
-class _Stat extends StatelessWidget {
-  const _Stat({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(color: Pop.gray, borderRadius: BorderRadius.circular(16)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: Pop.muted)),
-          const SizedBox(height: 2),
-          Text(value, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
         ],
       ),
     );

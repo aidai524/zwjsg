@@ -313,11 +313,18 @@ final class ScreenTimePlugin: NSObject, FlutterPlugin {
 
 /// 今日排行：把系统的报告视图嵌进 Flutter 页面（UiKitView）。
 /// 排行由报告扩展 ios/ScreenTimeReport/ 画出来，主 App 读不到里面的数字。
+/// Flutter 传 {"compact": true} 时画“今天”页卡片里的精简版（一句话 + 前三名），不传是完整排行。
 final class ScreenTimeReportFactory: NSObject, FlutterPlatformViewFactory {
+  func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol {
+    FlutterStandardMessageCodec.sharedInstance()
+  }
+
   func create(withFrame frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?) -> FlutterPlatformView {
     let today = DateInterval(start: Calendar.current.startOfDay(for: Date()), end: Date())
     let filter = DeviceActivityFilter(segment: .daily(during: today), users: .all, devices: .all)
-    return HostedSwiftUIView(frame: frame, root: AnyView(DeviceActivityReport(.topApps, filter: filter)))
+    let compact = (args as? [String: Any])?["compact"] as? Bool == true
+    return HostedSwiftUIView(
+      frame: frame, root: AnyView(DeviceActivityReport(compact ? .topAppsCompact : .topApps, filter: filter)))
   }
 }
 
@@ -349,6 +356,8 @@ final class HostedSwiftUIView: NSObject, FlutterPlatformView {
 
   init(frame: CGRect, root: AnyView) {
     host = UIHostingController(rootView: root)
+    // App 只做浅色，嵌进来的系统视图也按浅色画
+    host.overrideUserInterfaceStyle = .light
     host.view.frame = frame
     host.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
     host.view.backgroundColor = .clear

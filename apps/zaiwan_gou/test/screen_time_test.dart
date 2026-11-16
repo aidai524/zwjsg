@@ -109,8 +109,18 @@ void main() {
   group('iOS 今天页', () {
     final ios = TargetPlatformVariant.only(TargetPlatform.iOS);
 
+    /// 嵌进页面的系统视图（UiKitView）在测试里没有原生层，记下创建了哪些
+    late List<MethodCall> viewCalls;
+
     /// 模拟原生插件：按调用更新状态，startMonitoring 后假定系统已补发到阶段 [stageAfterStart]
     List<MethodCall> mockScreenTime(WidgetTester tester, Map<String, Object?> initial, {int stageAfterStart = 0}) {
+      viewCalls = [];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform_views, (call) async {
+        viewCalls.add(call);
+        return null;
+      });
+      addTearDown(
+          () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform_views, null));
       const channel = MethodChannel('zwjsg/screen_time');
       final calls = <MethodCall>[];
       var status = Map<String, Object?>.of(initial);
@@ -163,8 +173,30 @@ void main() {
       expect(find.text('≥60%'), findsOneWidget);
       expect(find.text('今日已刷 至少 1 小时 48 分'), findsOneWidget);
       expect(find.text('今天用满 2 小时 42 分，你就会脸上长毛'), findsOneWidget);
-      expect(find.text('拿起手机'), findsNothing);
+      expect(find.textContaining('拿起手机'), findsNothing);
       expect(state.stage, 2);
+
+      // 授权后，“今天时间去哪了”里嵌的是系统报告扩展画的精简版
+      final create = viewCalls.singleWhere((c) => c.method == 'create');
+      final args = create.arguments as Map;
+      expect(args['viewType'], 'zwjsg/screen_time_report');
+      final params = args['params'] as Uint8List;
+      expect(const StandardMessageCodec().decodeMessage(ByteData.sublistView(params)), {'compact': true});
+    }, variant: ios);
+
+    testWidgets('没授权时，“今天时间去哪了”先说明授权后能看到什么', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      mockScreenTime(tester, {'authorization': 'notDetermined'});
+
+      SharedPreferences.setMockInitialValues({'onboarded': true, 'privacy_version': AppState.privacyVersion});
+      final state = AppState(await SharedPreferences.getInstance());
+      await tester.pumpWidget(AppScope(state: state, child: ZwjsgApp(state: state)));
+      await tester.pumpAndSettle();
+
+      expect(find.text('授权“屏幕使用时间”后，这里显示今天最费时间的 3 个 App'), findsOneWidget);
+      expect(viewCalls.where((c) => c.method == 'create'), isEmpty);
     }, variant: ios);
 
     testWidgets('还没到第一个阈值时显示上限，改每日目标后按新阈值重新统计', (tester) async {
