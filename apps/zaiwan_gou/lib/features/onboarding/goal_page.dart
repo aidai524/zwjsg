@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/app_state.dart';
 import '../../core/dog_meter.dart';
 import 'package:pop_ui/pop_ui.dart';
-import 'package:avatar_engine/avatar_engine.dart';
+import '../../widgets/my_avatar.dart';
 
 class GoalPage extends StatefulWidget {
   const GoalPage({super.key, this.editing = false});
@@ -24,7 +24,11 @@ class _GoalPageState extends State<GoalPage> {
   Future<void> _save() async {
     final state = AppScope.read(context);
     await state.setGoal(_hours * 60);
-    if (!widget.editing) await state.completeOnboarding();
+    if (!widget.editing) {
+      await state.completeOnboarding();
+      // 引导最后一步顺带打开每晚提醒：按钮下面写了会提醒，系统弹窗问权限时用户知道是为什么
+      await state.enableReminder();
+    }
     if (!mounted) return;
     widget.editing ? context.pop() : context.go('/today');
   }
@@ -90,7 +94,7 @@ class _GoalPageState extends State<GoalPage> {
                       ),
                       child: Row(
                         children: [
-                          DogAvatar(stage: i + 1, size: 40),
+                          MyAvatar(stage: i + 1, size: 40),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(DogMeter.nextChange[i],
@@ -106,6 +110,14 @@ class _GoalPageState extends State<GoalPage> {
             ),
             const SizedBox(height: 28),
             PopButton(label: widget.editing ? '保存' : '就这么定，开始做人', onPressed: _save),
+            if (!widget.editing) ...[
+              const SizedBox(height: 12),
+              Text(
+                '每晚 ${AppState.formatHhmm(AppState.defaultRemindAt)} 提醒你看结算卡，可以在“我的”里关掉或改时间。',
+                textAlign: TextAlign.center,
+                style: PopText.small,
+              ),
+            ],
           ],
         ),
       ),

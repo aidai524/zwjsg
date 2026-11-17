@@ -84,6 +84,7 @@ class WeatherView extends StatelessWidget {
         _Extras(w),
         SourceNote('${w.attribution}${w.obsTime != null ? ' · ${hm(DateTime.parse(w.obsTime!).toLocal())} 更新' : ''}\n'
             '吐槽是我们说的，天气是气象台说的'),
+        QWeatherCredit(attributions: w.attributions),
       ],
     );
   }

@@ -132,6 +132,8 @@ class _CitySearchPageState extends State<CitySearchPage> {
             ),
           if (!_loading && _hits.isEmpty && _ctrl.text.trim().isNotEmpty && _error == null)
             const Padding(padding: EdgeInsets.all(16), child: Text('没找到，换个叫法试试', textAlign: TextAlign.center)),
+          const SizedBox(height: 16),
+          const QWeatherCredit(),
         ],
       ),
     );

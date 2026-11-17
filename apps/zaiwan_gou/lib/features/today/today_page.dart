@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/app_state.dart';
 import '../../core/dog_meter.dart';
 import 'package:pop_ui/pop_ui.dart';
+import '../../core/screen_time_channel.dart';
 import '../../core/usage_channel.dart';
-import 'package:avatar_engine/avatar_engine.dart';
+
+import 'today_cards.dart';
+import '../../widgets/my_avatar.dart';
 
 class TodayPage extends StatefulWidget {
-  const TodayPage({super.key});
+  /// [rankingLoader] 只在测试里传，代替安卓原生层的今日排行
+  const TodayPage({super.key, this.rankingLoader});
+
+  final Future<List<AppUsage>> Function()? rankingLoader;
 
   @override
   State<TodayPage> createState() => _TodayPageState();
@@ -34,11 +41,33 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     if (s == AppLifecycleState.resumed && mounted) AppScope.read(context).refreshUsage();
   }
 
+  /// iOS 的开启和重启会弹系统页面，出错时给个提示
+  Future<void> _runScreenTime(Future<void> Function() action) async {
+    try {
+      await action();
+    } on PlatformException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? '出错了，稍后再试')));
+      }
+    }
+  }
+
+  /// 进度卡下面的一句话。iOS 拿不到准确分钟数，只能说用满多少会进入下一阶段
+  String _hint(AppState state) {
+    final stage = state.stage;
+    if (stage >= DogMeter.stageThresholds.length) return '已经到底了，再刷也还是狗';
+    if (state.usage.stageOnly) {
+      final next = ScreenTimeChannel.thresholdMinutes(state.goalMinutes)[stage];
+      return '今天用满 ${DogMeter.formatMinutes(next)}，你就会${DogMeter.nextChange[stage]}';
+    }
+    final toNext = DogMeter.minutesToNextStage(state.minutesUsed, state.goalMinutes) ?? 0;
+    return '再刷 ${DogMeter.formatMinutes(toNext)}，你就会${DogMeter.nextChange[stage]}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
     final stage = state.stage;
-    final toNext = DogMeter.minutesToNextStage(state.minutesUsed, state.goalMinutes);
     final now = DateTime.now();
     const weekdays = ['一', '二', '三', '四', '五', '六', '日'];
 
@@ -69,7 +98,7 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                           ],
                         ),
                       ),
-                      if (state.usage.isDemo)
+                      if (state.usage.isDemo) ...[
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
@@ -79,6 +108,10 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                           ),
                           child: const Text('演示数据', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                         ),
+                        const SizedBox(width: 8),
+                      ],
+                      // 随时都能晒：打开的是此刻的卡片，到了每晚提醒的时间才是“今日结算”
+                      _ShareChip(onTap: () => context.push('/card')),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -93,7 +126,7 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                     ),
                     clipBehavior: Clip.antiAlias,
                     alignment: Alignment.bottomCenter,
-                    child: DogAvatar(stage: stage, size: 184),
+                    child: MyAvatar(stage: stage, size: 184),
                   ),
                   const SizedBox(height: 14),
                   Row(
@@ -102,7 +135,8 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                     textBaseline: TextBaseline.alphabetic,
                     children: [
                       const Text('狗度 ', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                      Text('${state.percent}%', style: const TextStyle(fontSize: 60, fontWeight: FontWeight.w900, height: 1)),
+                      Text(state.percentLabel,
+                          style: const TextStyle(fontSize: 60, fontWeight: FontWeight.w900, height: 1)),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -123,24 +157,37 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (UsageChannel.isSupported && !state.hasUsagePermission) ...[
-                    _PermissionBanner(onOpen: UsageChannel.openPermissionSettings),
+                    const _PermissionBanner(
+                      title: '还差一步：打开“使用情况访问权限”',
+                      body: '只用来算你今天刷了多久，数据只在手机上，不上传 app 记录。',
+                      action: '去打开',
+                      onOpen: UsageChannel.openPermissionSettings,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (ScreenTimeChannel.isSupported && !state.screenTimeActive) ...[
+                    _PermissionBanner(
+                      title: '还差一步：打开“屏幕使用时间”',
+                      body: 'iOS 只告诉我们你到了哪个阶段，拿不到具体时长。想统计整台手机，选 App 时把类别全部选上。数据只在手机上，不上传。',
+                      action: '去开启',
+                      onOpen: () => _runScreenTime(state.enableScreenTime),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (state.screenTimeGoalMismatch) ...[
+                    _PermissionBanner(
+                      title: '正在按测试目标统计',
+                      body: '验证页按 ${DogMeter.formatMinutes(state.screenTime!.goalMinutes)} 的目标在统计，和你的每日目标不一样。',
+                      action: '改回每日目标',
+                      onOpen: () => _runScreenTime(state.restartScreenTime),
+                    ),
                     const SizedBox(height: 12),
                   ],
                   _ProgressCard(
-                    used: state.minutesUsed,
+                    used: state.minutesUsedLabel,
                     goal: state.goalMinutes,
                     percent: state.percent,
-                    hint: toNext == null
-                        ? '已经到底了，再刷也还是狗'
-                        : '再刷 ${DogMeter.formatMinutes(toNext)}，你就会${DogMeter.nextChange[stage]}',
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(child: _Stat(label: '拿起手机', value: '${state.usage.pickups} 次')),
-                      const SizedBox(width: 10),
-                      Expanded(child: _Stat(label: '23 点后', value: DogMeter.formatMinutes(state.usage.lateNightMinutes))),
-                    ],
+                    hint: _hint(state),
                   ),
                   if (state.usage.isDemo) ...[
                     const SizedBox(height: 12),
@@ -154,12 +201,10 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                     ),
                   ],
                   const SizedBox(height: 12),
-                  PopButton(
-                    label: '提前看今晚的结算卡',
-                    style: PopButtonStyle.secondary,
-                    height: 52,
-                    onPressed: () => context.push('/card'),
-                  ),
+                  // 卡片上直接露出前三名和这周 7 天，点开再看全部
+                  TimeSpentCard(loader: widget.rankingLoader),
+                  const SizedBox(height: 12),
+                  const WeekCard(),
                 ],
               ),
             ),
@@ -170,9 +215,42 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
   }
 }
 
-class _PermissionBanner extends StatelessWidget {
-  const _PermissionBanner({required this.onOpen});
+/// 头部右上角的“晒一下”，打开结算卡
+class _ShareChip extends StatelessWidget {
+  const _ShareChip({required this.onTap});
 
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Pop.white,
+      shape: const StadiumBorder(side: BorderSide(color: Pop.ink, width: 2)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.adaptive.share, size: 16, color: Pop.ink),
+              const SizedBox(width: 4),
+              const Text('晒一下', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PermissionBanner extends StatelessWidget {
+  const _PermissionBanner({required this.title, required this.body, required this.action, required this.onOpen});
+
+  final String title;
+  final String body;
+  final String action;
   final Future<void> Function() onOpen;
 
   @override
@@ -183,11 +261,11 @@ class _PermissionBanner extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('还差一步：打开“使用情况访问权限”', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
+          Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
           const SizedBox(height: 4),
-          const Text('只用来算你今天刷了多久，数据只在手机上，不上传 app 记录。', style: TextStyle(fontSize: 13, height: 1.5)),
+          Text(body, style: const TextStyle(fontSize: 13, height: 1.5)),
           const SizedBox(height: 10),
-          PopButton(label: '去打开', style: PopButtonStyle.dark, height: 46, onPressed: onOpen),
+          PopButton(label: action, style: PopButtonStyle.dark, height: 46, onPressed: onOpen),
         ],
       ),
     );
@@ -197,7 +275,8 @@ class _PermissionBanner extends StatelessWidget {
 class _ProgressCard extends StatelessWidget {
   const _ProgressCard({required this.used, required this.goal, required this.percent, required this.hint});
 
-  final int used;
+  /// 已刷时长的显示文字（iOS 上是“至少 …”或“不到 …”）
+  final String used;
   final int goal;
   final int percent;
   final String hint;
@@ -212,9 +291,11 @@ class _ProgressCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('今日已刷 ${DogMeter.formatMinutes(used)}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+              // iOS 上是“至少 …”，文字更长，放不下时换行，不挤掉右边的目标
+              Expanded(child: Text('今日已刷 $used', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700))),
+              const SizedBox(width: 8),
               Text('目标 ${DogMeter.formatMinutes(goal)}', style: PopText.small),
             ],
           ),
@@ -231,29 +312,6 @@ class _ProgressCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(hint, style: const TextStyle(fontSize: 13, color: Color(0xFF3C4043))),
-        ],
-      ),
-    );
-  }
-}
-
-class _Stat extends StatelessWidget {
-  const _Stat({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(color: Pop.gray, borderRadius: BorderRadius.circular(16)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: Pop.muted)),
-          const SizedBox(height: 2),
-          Text(value, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
         ],
       ),
     );

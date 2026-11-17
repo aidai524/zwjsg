@@ -7,5 +7,6 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         UsagePlugin(this).register(flutterEngine.dartExecutor.binaryMessenger)
+        LockPlugin(this).register(flutterEngine.dartExecutor.binaryMessenger)
     }
 }

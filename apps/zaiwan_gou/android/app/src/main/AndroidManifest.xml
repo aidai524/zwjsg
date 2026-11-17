@@ -2,6 +2,12 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 每晚结算提醒：手机重启后重新排上提醒（通知权限由 flutter_local_notifications 自带声明） -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- 结算卡保存到相册：安卓 10 及以下需要 -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29" />
     <!-- 读取手机使用时长；需要用户在系统设置里手动授权 -->
     <uses-permission
         android:name="android.permission.PACKAGE_USAGE_STATS"
@@ -35,6 +41,41 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- App 时间锁：用满额度后挡住被锁的 App。无障碍服务，要用户在系统设置里手动打开 -->
+        <service
+            android:name=".LockAccessibilityService"
+            android:exported="false"
+            android:label="@string/lock_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/lock_accessibility_service" />
+        </service>
+        <!-- 时间锁的拦截页：单独的任务栈，不把 App 主界面带出来 -->
+        <activity
+            android:name=".LockedActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:taskAffinity="com.zwjsg.zwjsg_app.locked"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar" />
+        <!-- 每晚结算提醒：flutter_local_notifications 的定时通知和开机后重排 -->
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
     </application>
 
     <queries>

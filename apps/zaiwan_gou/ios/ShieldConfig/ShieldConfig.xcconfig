@@ -1,0 +1,3 @@
+// App 时间锁屏蔽页扩展的构建配置。
+// 引入 Flutter 生成的配置，让扩展的版本号和主 App 一致，上架时两者不一致会被拒。
+#include "../Flutter/Generated.xcconfig"

@@ -3,7 +3,9 @@ import 'package:go_router/go_router.dart';
 
 import 'package:pop_ui/pop_ui.dart';
 
-/// 底部导航：今天 / 狗群 / 图鉴 / 我的
+import 'unlock_celebration.dart';
+
+/// 底部导航：今天 / 狗群 / 图鉴 / 我的。新犬种的解锁动画也从这里弹
 class TabShell extends StatelessWidget {
   const TabShell({super.key, required this.shell});
 
@@ -19,7 +21,7 @@ class TabShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: shell,
+      body: UnlockListener(child: shell),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: Pop.white,

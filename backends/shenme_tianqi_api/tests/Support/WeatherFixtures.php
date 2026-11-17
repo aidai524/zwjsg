@@ -94,8 +94,15 @@ trait WeatherFixtures
             ];
         }
 
+        $metadata = ['attributions' => ['https://developer.qweather.com/attribution.html']];
+        // 和真实响应一样：有预警时才带预警的来源和声明
+        $alertMetadata = $warnings === [] ? ['zeroResult' => true, 'attributions' => null] : ['zeroResult' => false, 'attributions' => [
+            '国家预警信息发布中心', '当前预警数据可能存在延迟或信息过时，以官方数据发布为准。',
+        ]];
+
         Http::fake([
             '*/weather/v1/current/*' => Http::response(array_replace_recursive([
+                'metadata' => $metadata,
                 'validTime' => '2026-11-06T08:00+08:00',
                 'condition' => ['text' => '多云', 'code' => '101'],
                 'temperature' => ['value' => 20.4, 'unit' => '°C'],
@@ -103,13 +110,13 @@ trait WeatherFixtures
                 'humidity' => 0.5,
                 'wind' => ['direction' => ['degree' => 0, 'compass' => 'n'], 'scale' => 2],
             ], $now)),
-            '*/weather/v1/hourly/*' => Http::response(['metadata' => [], 'hours' => $hours]),
-            '*/weather/v1/daily/*' => Http::response(['metadata' => [], 'days' => array_map(
+            '*/weather/v1/hourly/*' => Http::response(['metadata' => $metadata, 'hours' => $hours]),
+            '*/weather/v1/daily/*' => Http::response(['metadata' => $metadata, 'days' => array_map(
                 fn (string $d) => $this->forecastDay($d),
                 ['2026-11-06', '2026-11-07', '2026-11-08'],
             )]),
-            '*/weatheralert/v1/current/*' => Http::response(['metadata' => ['zeroResult' => $warnings === []], 'alerts' => $warnings]),
-            '*/airquality/v1/current/*' => Http::response(['metadata' => [], 'indexes' => [
+            '*/weatheralert/v1/current/*' => Http::response(['metadata' => $alertMetadata, 'alerts' => $warnings]),
+            '*/airquality/v1/current/*' => Http::response(['metadata' => $metadata, 'indexes' => [
                 ['code' => 'cn-mee', 'aqi' => 42, 'category' => '优', 'primaryPollutant' => null],
             ], 'pollutants' => []]),
             '*/geo/v2/city/lookup*' => Http::response(['code' => '200', 'location' => [

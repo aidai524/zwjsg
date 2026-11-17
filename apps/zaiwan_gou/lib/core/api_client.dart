@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:series_core/series_core.dart';
 
 export 'package:series_core/series_core.dart' show ApiException;
@@ -33,5 +35,22 @@ class ApiClient extends SeriesApiClient {
             .where((b) => (b as Map)['unlocked'] == true)
             .map((b) => (b as Map)['key'].toString())
             .toSet(),
+      );
+
+  /// 上传卡通形象（平涂墨线贴纸的 PNG，不是照片），返回新的用户信息。
+  /// 换形象的次数用完时，服务端返回 422 和给用户看的话
+  Future<Map<String, dynamic>> uploadAvatar(Uint8List png) => request(
+        () => dio.post('/me/avatar',
+            data: FormData.fromMap({
+              'avatar': MultipartFile.fromBytes(png, filename: 'avatar.png', contentType: DioMediaType('image', 'png')),
+            })),
+        (d) => Map<String, dynamic>.from((d as Map)['data'] as Map),
+      );
+
+  /// 下载服务端存的卡通形象。形象地址可能在对象存储上，所以用一个不带登录凭证的请求
+  Future<Uint8List> downloadAvatar(String url) => request(
+        () => Dio(BaseOptions(connectTimeout: const Duration(seconds: 10), receiveTimeout: const Duration(seconds: 15)))
+            .get<List<int>>(url, options: Options(responseType: ResponseType.bytes)),
+        (d) => Uint8List.fromList(d as List<int>),
       );
 }

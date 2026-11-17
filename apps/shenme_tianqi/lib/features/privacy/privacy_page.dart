@@ -1,0 +1,102 @@
+import 'package:flutter/material.dart';
+import 'package:pop_ui/pop_ui.dart';
+
+/// 隐私政策。内容要和 App 实际的数据处理一致：改了收集、上传或权限，这里一起改，并把 AppState.privacyVersion 加 1。
+/// 上架前还要请法务看一遍，并补上运营者名称和联系方式。
+class PrivacyPage extends StatelessWidget {
+  const PrivacyPage({super.key});
+
+  static const updated = '2026 年 11 月 17 日';
+
+  static const summary = '我们只为了给你看天气、发关心提醒使用你的数据。不用定位，位置只到城市；不登录也能看天气。';
+
+  static const sections = <(String, List<String>)>[
+    (
+      '我们收集哪些信息',
+      [
+        '不登录也能用：关注的城市和毒舌档位只存在你的手机上。',
+        '查天气：App 把城市编号发给我们的服务器，服务器再向和风天气查询，同一个城市的结果大家共用。查询时不带你的个人信息。',
+        '登录时：手机号，用来登录和找回账号。',
+        '登录后同步：关注的城市（只到城市）、常驻城市、毒舌档位和推送设置，换手机时能恢复。',
+        '关心群（登录后）：群名、成员，以及谁在什么时候给谁发了哪句关心话、对方点没点“收到 ♥”，用来限频和合并提醒，30 天后自动删除。'
+            '群里的家人只看得到你的昵称、常驻城市名和那里的天气，看不到你的位置。',
+        '形象：现在用默认形象，不收集照片。以后从“再玩我是狗”导入形象时，只导入卡通形象。',
+        '推送（接入后）：保存推送用的设备标识，只用来给你发早安播报、预警和关心群提醒。',
+      ],
+    ),
+    (
+      '我们申请的权限',
+      [
+        '网络：查天气、登录和同步。',
+        '通知（接入推送后）：早安播报、预警和关心群提醒，可以在“设置 › 推送”里关掉。',
+        '定位：现在不申请，城市由你手动选。以后接定位也只取到区县，不记录你去过哪。',
+      ],
+    ),
+    (
+      '我们怎么使用和共享',
+      [
+        '只用来给你看天气、发推送和关心提醒。',
+        '天气数据来自和风天气：我们只把城市编号发给它，不发你的个人信息。预报和预警来自气象部门所属台站，原文照登；吐槽文案是人工写的，不改写预报结论。',
+        '不做广告，不卖数据，不和第三方共享你的个人信息。',
+        '目前没有接入第三方统计、广告或推送 SDK。以后接入短信验证码、微信登录或推送服务时，会在这里写明服务商和它们收集的信息。',
+      ],
+    ),
+    (
+      '保存和删除',
+      [
+        '登录后同步的数据保存在我们的服务器上，直到你注销账号；关心群的提醒记录 30 天后自动删除。',
+        '在“设置 › 注销账号”可以删除账号：账号、城市、关心群记录和形象会一起删除，不能恢复。',
+        '退出登录后，手机上关注的城市还留着，不登录也能接着看天气；卸载 App 会清除手机上的数据。',
+      ],
+    ),
+    (
+      '未成年人',
+      ['未满 14 周岁的用户，请在监护人同意并陪同下使用。'],
+    ),
+    (
+      '变更和联系我们',
+      [
+        '政策有重要变化时，会在 App 里告诉你，并请你重新同意。',
+        '运营者名称和联系方式：上线前补充。',
+      ],
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Pop.gray,
+      appBar: AppBar(title: const Text('隐私政策')),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
+          children: [
+            const Text('更新日期：$updated', style: PopText.small),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: Pop.card(color: Pop.softYellow, shadow: false),
+              child: const Text(summary, style: TextStyle(fontSize: 15, height: 1.6, fontWeight: FontWeight.w700)),
+            ),
+            for (final (title, items) in sections) ...[
+              const SizedBox(height: 22),
+              Text(title, style: PopText.h2),
+              const SizedBox(height: 8),
+              for (final item in items)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('·  ', style: PopText.body),
+                      Expanded(child: Text(item, style: PopText.body)),
+                    ],
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}

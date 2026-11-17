@@ -92,6 +92,7 @@ class SeriousView extends StatelessWidget {
           ),
         ),
         SourceNote('预警信息来源：${w.seriousWarnings.map((e) => e.sender).toSet().join('、')}\n${w.attribution}'),
+        QWeatherCredit(attributions: w.attributions),
       ],
     );
   }

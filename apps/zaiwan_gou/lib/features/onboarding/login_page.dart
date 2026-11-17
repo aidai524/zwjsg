@@ -142,6 +142,12 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 8),
             const Text('微信登录：开放平台配置好后开启', textAlign: TextAlign.center, style: PopText.small),
+            Center(
+              child: TextButton(
+                onPressed: () => context.push('/privacy'),
+                child: const Text('登录即表示你同意《隐私政策》', style: TextStyle(color: Pop.muted, fontSize: 13)),
+              ),
+            ),
           ],
         ),
       ),

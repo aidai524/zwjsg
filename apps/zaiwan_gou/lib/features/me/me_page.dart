@@ -4,8 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../../core/api_client.dart';
 import '../../core/app_state.dart';
 import '../../core/dog_meter.dart';
+import '../../core/screen_time_channel.dart';
 import 'package:pop_ui/pop_ui.dart';
-import 'package:avatar_engine/avatar_engine.dart';
+import '../../widgets/my_avatar.dart';
 
 class MePage extends StatelessWidget {
   const MePage({super.key});
@@ -34,6 +35,21 @@ class MePage extends StatelessWidget {
     }
   }
 
+  Future<void> _editNickname(BuildContext context) async {
+    final state = AppScope.read(context);
+    final name = await showDialog<String>(
+      context: context,
+      builder: (_) => _NicknameDialog(initial: state.nickname ?? ''),
+    );
+    if (name != null) await state.setNickname(name);
+  }
+
+  Future<void> _editReminder(BuildContext context) => showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: Pop.white,
+        builder: (_) => const _ReminderSheet(),
+      );
+
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
@@ -61,21 +77,43 @@ class MePage extends StatelessWidget {
                     ),
                     clipBehavior: Clip.antiAlias,
                     alignment: Alignment.bottomCenter,
-                    child: const DogAvatar(stage: 0, size: 56),
+                    child: const MyAvatar(stage: 0, size: 56),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(state.isLoggedIn ? '[昵称]' : '还没登录',
-                            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
-                        Text('图鉴 ${state.ownedBreeds.length} / 8', style: PopText.small),
+                        Semantics(
+                          button: true,
+                          hint: '改昵称',
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => _editNickname(context),
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    state.nickname ?? '给自己起个名字',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.edit_outlined, size: 16, color: Pop.muted),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Text(
+                          '${state.isLoggedIn ? '' : '还没登录 · '}图鉴 ${state.ownedBreeds.length} / 8',
+                          style: PopText.small,
+                        ),
                       ],
                     ),
                   ),
-                  if (!state.isLoggedIn)
-                    TextButton(onPressed: () => context.push('/login'), child: const Text('登录')),
+                  if (!state.isLoggedIn) TextButton(onPressed: () => context.push('/login'), child: const Text('登录')),
                 ],
               ),
             ),
@@ -90,7 +128,7 @@ class MePage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('开通会员', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-                        Text('动态结算卡、周报月报、硬核模式', style: TextStyle(fontSize: 12, color: Pop.mutedOnYellow)),
+                        Text('动态结算卡、周报月报、多套形象', style: TextStyle(fontSize: 12, color: Pop.mutedOnYellow)),
                       ],
                     ),
                   ),
@@ -98,6 +136,14 @@ class MePage extends StatelessWidget {
                 ],
               ),
             ),
+            const _Section('形象'),
+            _Group(children: [
+              _Row(
+                title: state.photoAvatar == null ? '用自拍做形象' : '换个形象',
+                trailing: state.photoAvatar == null ? '默认形象' : '拍照形象',
+                onTap: () => context.push('/avatar?edit=1'),
+              ),
+            ]),
             const _Section('目标与提醒'),
             _Group(children: [
               _Row(
@@ -105,19 +151,139 @@ class MePage extends StatelessWidget {
                 trailing: DogMeter.formatMinutes(state.goalMinutes),
                 onTap: () => context.push('/goal?edit=1'),
               ),
-              const _Row(title: '结算卡提醒', trailing: '22:00'),
+              _Row(title: '结算卡提醒', trailing: state.reminderLabel, onTap: () => _editReminder(context)),
             ]),
             const _Section('玩法'),
             _Group(children: [
-              _Row(title: '硬核模式', trailing: '会员', onTap: () => context.push('/hardcore')),
+              _Row(title: 'App 时间锁', trailing: '免费', onTap: () => context.push('/locks')),
               const _Row(title: '装扮商店', trailing: '即将上线'),
             ]),
+            if (ScreenTimeChannel.isSupported) ...[
+              const _Section('技术验证'),
+              _Group(children: [
+                _Row(title: '屏幕使用时间', trailing: 'iOS', onTap: () => context.push('/screen-time')),
+                _Row(title: '拍照形象（本地卡通化）', trailing: 'iOS', onTap: () => context.push('/cartoon-lab')),
+              ]),
+            ],
             const _Section('隐私与账号'),
             _Group(children: [
-              const _Row(title: '隐私政策'),
+              _Row(title: '隐私政策', onTap: () => context.push('/privacy')),
               if (state.isLoggedIn) _Row(title: '退出登录', onTap: state.logout),
               if (state.isLoggedIn) _Row(title: '删除我的形象和数据', danger: true, onTap: () => _confirmDelete(context)),
             ]),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NicknameDialog extends StatefulWidget {
+  const _NicknameDialog({required this.initial});
+
+  final String initial;
+
+  @override
+  State<_NicknameDialog> createState() => _NicknameDialogState();
+}
+
+class _NicknameDialogState extends State<_NicknameDialog> {
+  late final _controller = TextEditingController(text: widget.initial);
+  String? _error;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final error = AppState.nicknameError(_controller.text);
+    if (error != null) return setState(() => _error = error);
+    Navigator.pop(context, _controller.text.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('起个名字'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        maxLength: AppState.nicknameMaxLength,
+        textInputAction: TextInputAction.done,
+        decoration: InputDecoration(hintText: '朋友平时怎么叫你', errorText: _error),
+        onChanged: (_) {
+          if (_error != null) setState(() => _error = null);
+        },
+        onSubmitted: (_) => _submit(),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
+        TextButton(onPressed: _submit, child: const Text('保存')),
+      ],
+    );
+  }
+}
+
+/// 每晚提醒：开关 + 几个常用时间。打开时才问通知权限。
+class _ReminderSheet extends StatefulWidget {
+  const _ReminderSheet();
+
+  /// 可选的提醒时间（从 0 点算的分钟数）
+  static const presets = [20 * 60, 21 * 60, 21 * 60 + 30, 22 * 60, 22 * 60 + 30, 23 * 60];
+
+  @override
+  State<_ReminderSheet> createState() => _ReminderSheetState();
+}
+
+class _ReminderSheetState extends State<_ReminderSheet> {
+  bool _denied = false;
+
+  Future<void> _enable([int? minutesOfDay]) async {
+    final ok = await AppScope.read(context).enableReminder(minutesOfDay);
+    if (mounted) setState(() => _denied = !ok);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = AppScope.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text('结算卡提醒', style: PopText.h2),
+            const SizedBox(height: 4),
+            const Text('每晚到点提醒你看今天的结算卡，提醒在手机本地，不经过服务器。', style: PopText.small),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('每晚提醒我', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+              value: state.reminderOn,
+              activeThumbColor: Pop.ink,
+              onChanged: (on) => on ? _enable() : state.disableReminder(),
+            ),
+            if (_denied)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: Text('通知没开：去系统设置里打开“再玩我是狗”的通知，再回来打开提醒。', style: TextStyle(fontSize: 13, color: Pop.danger)),
+              ),
+            const Text('提醒时间', style: PopText.label),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final t in _ReminderSheet.presets)
+                  ChoiceChip(
+                    label: Text(AppState.formatHhmm(t)),
+                    selected: state.reminderOn && state.reminderMinutes == t,
+                    onSelected: (_) => _enable(t),
+                  ),
+              ],
+            ),
           ],
         ),
       ),
@@ -169,7 +335,8 @@ class _Row extends StatelessWidget {
         title: Text(title, style: TextStyle(fontSize: 15, color: danger ? Pop.danger : Pop.ink)),
         trailing: danger
             ? null
-            : Text('${trailing ?? ''}${onTap != null ? '  ›' : ''}', style: const TextStyle(fontSize: 14, color: Pop.muted)),
+            : Text('${trailing ?? ''}${onTap != null ? '  ›' : ''}',
+                style: const TextStyle(fontSize: 14, color: Pop.muted)),
         onTap: onTap,
       );
 }
