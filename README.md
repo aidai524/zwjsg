@@ -106,11 +106,15 @@ iOS 屏幕使用时间（技术验证中）：
 - 阈值由 Flutter 按 `dog_meter.dart` 算好传给原生层（`ios/Runner/ScreenTimePlugin.swift`）。到阈值时系统调起监控扩展 `ios/ScreenTimeMonitor/`，扩展把阶段写进 App Group `group.com.zwjsg.zwjsgApp`。选中的 App 是系统的不透明令牌，只存在本机，Flutter 只拿到数量。
 - 真机调试不用 Apple 批准。发 TestFlight 或 App Store 前，账户持有人要给主 App `com.zwjsg.zwjsgApp` 和三个扩展 `.ScreenTimeMonitor`、`.ScreenTimeReport`、`.ShieldConfig` 分别申请 Family Controls 发布权限。
 
-拍照形象 · 本地卡通化（技术验证，iOS）：
-- 验证页在“我的 › 技术验证 › 拍照形象（本地卡通化）”：可以用包里的样图，也可以用系统选图器选一张照片。照片只在手机内存里处理，不存盘、不上传。
-- 流程：苹果 Vision 找五官 → 对齐成 288×288 → Core ML 跑 DCT-Net 日漫头像模型（Apache 2.0，`ios/Runner/Models/`，3 MB）→ Vision 抠出人像。代码在 `ios/Runner/CartoonLab.swift`。
-- 画风（2026-11-16 定）：日漫 + 平涂墨线。卡通图再压成平涂色块、描墨线，抠成白边黑描边的贴纸，在 `packages/avatar_engine` 的 `PhotoSticker`（纯 Dart，iOS、安卓共用）；贴纸加狗耳朵、狗鼻子是 `PhotoDogAvatar`，阶段 3 以后的图层等美术素材。
-- 模型来源、转换脚本和实测数据见 `tools/cartoon/README.md`。验证页和样图上线前要删掉；正式用模型时，开源许可页要附 Apache 2.0 许可证。
+拍照形象（iOS 已接进形象创建，安卓还没做）：
+- 入口：引导里的“先做一个你”，以后在“我的 › 换个形象”。拍一张自拍（系统相机，优先前置）或用系统选图器选一张 → 手机本地卡通化 → 画成贴纸 → 预览（顺便看刷多了会变成什么样）→ “就用这个”。安卓先用默认形象。
+- 第一次用照片前单独弹一次同意（人脸信息，`FaceConsentSheet`），说清照片不保存不上传、卡通形象会上传、AI 生成会标注、只用本人照片。同意记在本机，退出登录后也不用再同意。
+- 流程：苹果 Vision 找五官 → 对齐成 288×288 → Core ML 跑 DCT-Net 日漫头像模型（Apache 2.0，`ios/Runner/Models/`，3 MB）→ Vision 抠出人像，代码在 `ios/Runner/CartoonLab.swift`。形象创建走 `zwjsg/cartoon` 通道，只把卡通图和人像蒙版交给 Flutter，照片本身不出原生层、不存盘、不上传。
+- 画风（2026-11-16 定）：日漫 + 平涂墨线。卡通图再压成平涂色块、描墨线，抠成白边黑描边的贴纸，在 `packages/avatar_engine` 的 `PhotoSticker`（纯 Dart，iOS、安卓共用）。变狗图层是 `PhotoDogAvatar`：阶段 1 耳朵、2 狗鼻子、3 狗毛、4 舌头和尾巴、5 狗嘴筒，现在是代码画的示意，等美术按 288 的对齐模板画正式素材。
+- 保存：贴纸（PNG）存在 App 支持目录（`lib/core/avatar_store.dart`）。登录了就传服务端（`POST /me/avatar`，只传贴纸）；没登录或没网时先存手机上，登录或下次打开时补传；换手机登录后从 `avatar_url` 下载回来。换掉已有的拍照形象按服务端次数算（默认 3 次），用完时服务端回 422，手机上的形象不变。退出登录会删掉手机上的形象。
+- 各处显示用 `MyAvatar`：有拍照形象就用它，没有就用代码画的默认形象。
+- AI 标识：用了拍照形象的结算卡，右下角印“AI生成”（文字高度不低于卡片短边的 5%），导出、分享的 PNG 里写入 GB 45438-2025 的 AIGC 元数据（`lib/core/aigc_label.dart`）。上线前请法务确认，`ContentProducer` 换成公司名称或备案号。
+- 技术验证页还在“我的 › 技术验证 › 拍照形象（本地卡通化）”，能看对齐后的照片和各步耗时。模型来源、转换脚本和实测数据见 `tools/cartoon/README.md`。验证页和样图上线前要删掉；开源许可页要附 Apache 2.0 许可证。
 
 ---
 
@@ -173,8 +177,8 @@ flutter run --dart-define=API_BASE=http://127.0.0.1:8001/api/v1
 ## 还没做
 
 再玩我是狗：
-- [ ] 技术验证：iOS 屏幕使用时间接口；照片本地卡通化（iOS 已通过，安卓待做）
-- [ ] 形象创建：拍照 / 相册 → 卡通化 → 上传
+- [ ] 技术验证：iOS 屏幕使用时间接口
+- [ ] 形象创建：安卓的本地卡通化、捏脸；正式的变狗图层素材
 - [ ] 结算卡用微信 SDK 分享（现在走系统分享）、下载二维码（上架后）
 - [ ] App 时间锁的后续：iOS 屏蔽页上的“还是要刷”（要再加一个屏蔽按钮扩展）、电话和支付等白名单、按狗度或时间段触发
 - [ ] P2：狗群；商业化
