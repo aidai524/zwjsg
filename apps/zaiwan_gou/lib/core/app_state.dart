@@ -28,6 +28,7 @@ class AppState extends ChangeNotifier {
     _remindOn = _prefs.getBool(_kRemindOn) ?? false;
     _remindAt = parseHhmm(_prefs.getString(_kRemindAt)) ?? defaultRemindAt;
     _privacyAccepted = (_prefs.getInt(_kPrivacyVersion) ?? 0) >= privacyVersion;
+    _newlyUnlocked = _prefs.getStringList(_kPendingUnlocks) ?? [];
     this.api.token = _token;
     ready.value = _onboarded;
     consented.value = _privacyAccepted;
@@ -77,6 +78,7 @@ class AppState extends ChangeNotifier {
   static const _kPrivacyVersion = 'privacy_version';
   static const _kFaceConsent = 'face_consent_version';
   static const _kAvatarPending = 'avatar_pending_upload';
+  static const _kPendingUnlocks = 'pending_unlocks';
 
   /// 默认每晚 22:00 提醒看结算卡
   static const defaultRemindAt = 22 * 60;
@@ -121,7 +123,26 @@ class AppState extends ChangeNotifier {
   String get reminderLabel => _remindOn ? formatHhmm(_remindAt) : '已关闭';
   bool get hasUsagePermission => _hasPermission;
   Set<String> get ownedBreeds => _ownedBreeds;
-  List<String> get newlyUnlocked => _newlyUnlocked;
+
+  /// 新解锁、还没给用户看过解锁动画的犬种。服务端只在第一次解锁时告诉一次，
+  /// 所以先存在手机上，看过再删（App 被关掉也不会漏）
+  List<String> get newlyUnlocked => List.unmodifiable(_newlyUnlocked);
+
+  /// 上报每日结果后服务端说新解锁了哪些。和还没看过的合在一起存：
+  /// 下一次上报会返回空列表，不能把还没弹的冲掉
+  @visibleForTesting
+  Future<void> receiveUnlocked(List<String> keys) async {
+    if (keys.isEmpty) return;
+    _newlyUnlocked = {..._newlyUnlocked, ...keys}.toList();
+    await _prefs.setStringList(_kPendingUnlocks, _newlyUnlocked);
+  }
+
+  /// 解锁动画看过了
+  Future<void> markUnlockSeen(String key) async {
+    _newlyUnlocked = [for (final k in _newlyUnlocked) if (k != key) k];
+    await _prefs.setStringList(_kPendingUnlocks, _newlyUnlocked);
+    notifyListeners();
+  }
 
   UsageSnapshot get usage => _usage ?? UsageSnapshot.demo(demoMinutes);
   int get minutesUsed => usage.totalMinutes;
@@ -472,12 +493,13 @@ class AppState extends ChangeNotifier {
   Future<void> _sync() async {
     if (!isLoggedIn || usage.isDemo) return;
     try {
-      _newlyUnlocked = await api.putDailyRecord(
+      final unlocked = await api.putDailyRecord(
         date: localDate(),
         dogPercent: percent,
         minutesUsed: minutesUsed,
         breedKey: breedKey,
       );
+      await receiveUnlocked(unlocked);
       _ownedBreeds = await api.ownedBreeds();
       notifyListeners();
     } on ApiException {
@@ -510,6 +532,7 @@ class AppState extends ChangeNotifier {
     _onboarded = false;
     _goalMinutes = 180;
     _ownedBreeds = {};
+    _newlyUnlocked = [];
     _nickname = null;
     // 形象是账号的：退出或注销后从手机上删掉（服务端的跟着账号走，注销时一起删）
     try {

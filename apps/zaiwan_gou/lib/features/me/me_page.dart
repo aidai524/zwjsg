@@ -128,7 +128,7 @@ class MePage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('开通会员', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-                        Text('动态结算卡、周报月报、硬核模式', style: TextStyle(fontSize: 12, color: Pop.mutedOnYellow)),
+                        Text('动态结算卡、周报月报、多套形象', style: TextStyle(fontSize: 12, color: Pop.mutedOnYellow)),
                       ],
                     ),
                   ),
