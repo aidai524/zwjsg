@@ -9,6 +9,7 @@ import 'package:shenme_tianqi/core/models.dart';
 import 'package:shenme_tianqi/features/home/home_page.dart';
 import 'package:shenme_tianqi/features/home/serious_view.dart';
 import 'package:shenme_tianqi/features/home/weather_view.dart';
+import 'package:shenme_tianqi/features/privacy/privacy_page.dart';
 import 'package:shenme_tianqi/widgets/common.dart';
 
 void main() {
@@ -18,6 +19,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     SharedPreferences.setMockInitialValues({
+      'privacy_version': AppState.privacyVersion,
       'onboarded': true,
       'cities': '[{"location_id":"101010100","name":"北京","is_home":true}]',
     });
@@ -44,7 +46,7 @@ void main() {
   });
 
   // 这个测试会加载全部页面，任何一页编译不过都会失败
-  testWidgets('首次打开进入欢迎页', (tester) async {
+  testWidgets('首次打开先看隐私政策，同意后进入欢迎页', (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -53,8 +55,23 @@ void main() {
     final state = AppState(await SharedPreferences.getInstance());
     await tester.pumpWidget(AppScope(state: state, child: ShenmeTianqiApp(state: state)));
     await tester.pumpAndSettle();
+    expect(find.text('用之前，先说清楚'), findsOneWidget);
 
+    // 同意之前，别的页面都进不去
+    GoRouter.of(tester.element(find.text('用之前，先说清楚'))).go('/');
+    await tester.pumpAndSettle();
+    expect(find.text('用之前，先说清楚'), findsOneWidget);
+
+    await tester.tap(find.text('看完整的《隐私政策》'));
+    await tester.pumpAndSettle();
+    expect(find.text(PrivacyPage.summary), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('同意并继续'));
+    await tester.pumpAndSettle();
     expect(find.text('选个城市，开始'), findsOneWidget);
+    expect((await SharedPreferences.getInstance()).getInt('privacy_version'), AppState.privacyVersion);
   });
 
   group('和风来源标注', () {

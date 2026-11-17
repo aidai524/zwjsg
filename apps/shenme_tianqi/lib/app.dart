@@ -12,6 +12,8 @@ import 'features/home/decision_page.dart';
 import 'features/home/home_page.dart';
 import 'features/login/login_page.dart';
 import 'features/onboarding/welcome_page.dart';
+import 'features/privacy/consent_page.dart';
+import 'features/privacy/privacy_page.dart';
 import 'features/settings/settings_page.dart';
 
 class ShenmeTianqiApp extends StatefulWidget {
@@ -40,18 +42,26 @@ class _ShenmeTianqiAppState extends State<ShenmeTianqiApp> {
   }
 }
 
-const _openPaths = {'/welcome', '/city-search'};
+/// 还没选城市时也能打开的页面
+const _openPaths = {'/welcome', '/city-search', '/privacy'};
+
+/// 还没同意隐私政策时只能看这两页
+const _consentPaths = {'/consent', '/privacy'};
 
 GoRouter buildRouter(AppState state) {
   return GoRouter(
     initialLocation: '/',
-    refreshListenable: state.ready,
+    refreshListenable: Listenable.merge([state.ready, state.consented]),
     redirect: (context, s) {
       final path = s.uri.path;
+      if (!state.consented.value) return _consentPaths.contains(path) ? null : '/consent';
+      if (path == '/consent') return state.ready.value ? '/' : '/welcome';
       if (!state.ready.value && !_openPaths.contains(path)) return '/welcome';
       return null;
     },
     routes: [
+      GoRoute(path: '/consent', builder: (_, __) => const ConsentPage()),
+      GoRoute(path: '/privacy', builder: (_, __) => const PrivacyPage()),
       GoRoute(path: '/welcome', builder: (_, __) => const WelcomePage()),
       GoRoute(
         path: '/city-search',

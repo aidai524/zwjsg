@@ -8,16 +8,19 @@ import 'models.dart';
 
 /// 全局状态。游客也能用：城市和毒舌档位存本机；登录后同步到服务端（关心群需要常驻城市）。
 class AppState extends ChangeNotifier {
-  AppState(this._prefs) {
+  /// [api] 只在测试里传，换成假的
+  AppState(this._prefs, {WeatherApi? api}) : api = api ?? WeatherApi() {
     _token = _prefs.getString(_kToken);
+    _privacyAccepted = (_prefs.getInt(_kPrivacyVersion) ?? 0) >= privacyVersion;
     _onboarded = _prefs.getBool(_kOnboarded) ?? false;
     _snark = _prefs.getInt(_kSnark) ?? 1;
     final raw = _prefs.getString(_kCities);
     if (raw != null) {
       _cities = (jsonDecode(raw) as List).map((e) => City.fromJson(Map<String, dynamic>.from(e as Map))).toList();
     }
-    api.token = _token;
+    this.api.token = _token;
     ready.value = _isReady;
+    consented.value = _privacyAccepted;
   }
 
   /// 给路由用：只在“能不能进首页”变化时通知。
@@ -25,12 +28,30 @@ class AppState extends ChangeNotifier {
   /// 紧跟在后面的 pop 会被撤销，刚关掉的页面又回来了。
   final ValueNotifier<bool> ready = ValueNotifier(false);
 
+  /// 给路由用：用户同意了当前版本的隐私政策没有
+  final ValueNotifier<bool> consented = ValueNotifier(false);
+
   bool get _isReady => _onboarded && _cities.isNotEmpty;
 
   @override
   void notifyListeners() {
     ready.value = _isReady;
+    consented.value = _privacyAccepted;
     super.notifyListeners();
+  }
+
+  /// 隐私政策的版本。内容有重要变化时加 1，所有人打开 App 时重新同意一次
+  static const privacyVersion = 1;
+
+  bool _privacyAccepted = false;
+
+  /// 第一次打开先同意隐私政策（国内商店的要求），同意之前不查天气、不请求任何权限
+  bool get privacyAccepted => _privacyAccepted;
+
+  Future<void> acceptPrivacy() async {
+    _privacyAccepted = true;
+    await _prefs.setInt(_kPrivacyVersion, privacyVersion);
+    notifyListeners();
   }
 
   static const maxCities = 5;
@@ -38,9 +59,10 @@ class AppState extends ChangeNotifier {
   static const _kOnboarded = 'onboarded';
   static const _kSnark = 'snark_level';
   static const _kCities = 'cities';
+  static const _kPrivacyVersion = 'privacy_version';
 
   final SharedPreferences _prefs;
-  final WeatherApi api = WeatherApi();
+  final WeatherApi api;
 
   String? _token;
   bool _onboarded = false;
@@ -183,6 +205,47 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  PushSettings? _push;
+  bool _pushLoading = false;
+  String? _pushError;
+
+  /// 推送设置：登录后从服务端拉；没登录、还没拉到时是 null
+  PushSettings? get push => _push;
+  bool get pushLoading => _pushLoading;
+  String? get pushError => _pushError;
+
+  Future<void> loadPush() async {
+    if (!isLoggedIn || _pushLoading) return;
+    _pushLoading = true;
+    _pushError = null;
+    notifyListeners();
+    try {
+      _push = PushSettings.fromJson(await api.me());
+    } on ApiException catch (e) {
+      _pushError = e.message;
+    } finally {
+      _pushLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// 改推送设置：界面先改过来；传服务端失败就改回去，并抛 [ApiException]
+  Future<void> updatePush(PushSettings next) async {
+    final old = _push;
+    if (old == null) return;
+    final changes = next.changesFrom(old);
+    if (changes.isEmpty) return;
+    _push = next;
+    notifyListeners();
+    try {
+      await api.updateSettings(changes);
+    } on ApiException {
+      _push = old;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
   Future<void> completeOnboarding() async {
     _onboarded = true;
     await _prefs.setBool(_kOnboarded, true);
@@ -223,6 +286,8 @@ class AppState extends ChangeNotifier {
   Future<void> _dropAccount() async {
     _token = null;
     api.token = null;
+    _push = null;
+    _pushError = null;
     await _prefs.remove(_kToken);
     _cities = [for (final c in _cities) City(locationId: c.locationId, name: c.name, adm: c.adm, isHome: c.isHome)];
     await _saveCities();

@@ -259,3 +259,58 @@ class InboxItem {
         acked: j['acked'] == true,
       );
 }
+
+/// 推送设置（登录后才有，存在服务端：早安播报和预警都按常驻城市在服务端生成）
+class PushSettings {
+  const PushSettings({
+    this.morningOn = true,
+    this.weekday = '07:30',
+    this.weekend = '09:00',
+    this.alertOn = true,
+  });
+
+  /// 每天早上推一句话天气
+  final bool morningOn;
+
+  /// 早安播报的时间，HH:mm；工作日和周末分开
+  final String weekday;
+  final String weekend;
+
+  /// 黄色及以上预警推一次
+  final bool alertOn;
+
+  static bool _bool(dynamic v, bool fallback) => switch (v) {
+        bool b => b,
+        num n => n != 0,
+        String s => s == '1' || s == 'true',
+        _ => fallback,
+      };
+
+  /// 服务端给的可能是 07:30 或 07:30:00
+  static String _hhmm(dynamic v, String fallback) {
+    final m = RegExp(r'^(\d{2}):(\d{2})').firstMatch(_s(v));
+    return m == null ? fallback : '${m[1]}:${m[2]}';
+  }
+
+  factory PushSettings.fromJson(Map<String, dynamic> j) => PushSettings(
+        morningOn: _bool(j['morning_push_on'], true),
+        weekday: _hhmm(j['morning_push_weekday'], '07:30'),
+        weekend: _hhmm(j['morning_push_weekend'], '09:00'),
+        alertOn: _bool(j['alert_push_on'], true),
+      );
+
+  PushSettings copyWith({bool? morningOn, String? weekday, String? weekend, bool? alertOn}) => PushSettings(
+        morningOn: morningOn ?? this.morningOn,
+        weekday: weekday ?? this.weekday,
+        weekend: weekend ?? this.weekend,
+        alertOn: alertOn ?? this.alertOn,
+      );
+
+  /// 和 [old] 不一样的字段，用接口的字段名
+  Map<String, dynamic> changesFrom(PushSettings old) => {
+        if (morningOn != old.morningOn) 'morning_push_on': morningOn,
+        if (weekday != old.weekday) 'morning_push_weekday': weekday,
+        if (weekend != old.weekend) 'morning_push_weekend': weekend,
+        if (alertOn != old.alertOn) 'alert_push_on': alertOn,
+      };
+}
