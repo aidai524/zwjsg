@@ -1,8 +1,12 @@
+import 'dart:async';
+import 'dart:ui' as ui;
+
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_client.dart';
+import 'avatar_store.dart';
 import 'breeds.dart';
 import 'dog_meter.dart';
 import 'history.dart';
@@ -12,8 +16,11 @@ import 'usage_channel.dart';
 
 /// 全局状态。MVP 足够用；功能多了再换 Riverpod 之类的方案。
 class AppState extends ChangeNotifier {
-  /// [reminders] 只在测试里传，换成假的提醒
-  AppState(this._prefs, {ReminderScheduler? reminders}) : reminders = reminders ?? LocalReminderScheduler.instance {
+  /// [reminders]、[api]、[avatars] 只在测试里传，换成假的
+  AppState(this._prefs, {ReminderScheduler? reminders, ApiClient? api, AvatarStore? avatars})
+      : reminders = reminders ?? LocalReminderScheduler.instance,
+        api = api ?? ApiClient(),
+        avatars = avatars ?? const FileAvatarStore() {
     _token = _prefs.getString(_kToken);
     _onboarded = _prefs.getBool(_kOnboarded) ?? false;
     _goalMinutes = _prefs.getInt(_kGoal) ?? 180;
@@ -21,12 +28,15 @@ class AppState extends ChangeNotifier {
     _remindOn = _prefs.getBool(_kRemindOn) ?? false;
     _remindAt = parseHhmm(_prefs.getString(_kRemindAt)) ?? defaultRemindAt;
     _privacyAccepted = (_prefs.getInt(_kPrivacyVersion) ?? 0) >= privacyVersion;
-    api.token = _token;
+    this.api.token = _token;
     ready.value = _onboarded;
     consented.value = _privacyAccepted;
   }
 
   final ReminderScheduler reminders;
+
+  /// 拍照形象存在手机上的地方
+  final AvatarStore avatars;
 
   /// 给路由用：只在“引导是否完成”变化时通知。
   /// 不要把 AppState 直接当 refreshListenable：每次状态变化路由都会重算，
@@ -44,7 +54,8 @@ class AppState extends ChangeNotifier {
   }
 
   /// 隐私政策的版本。内容有重要变化时加 1，所有人打开 App 时重新同意一次
-  static const privacyVersion = 1;
+  /// 2：2026-11-16 加了拍照形象（相机、人脸单独同意、AI 生成标识）
+  static const privacyVersion = 2;
 
   bool _privacyAccepted = false;
 
@@ -64,6 +75,8 @@ class AppState extends ChangeNotifier {
   static const _kRemindOn = 'remind_on';
   static const _kRemindAt = 'remind_at';
   static const _kPrivacyVersion = 'privacy_version';
+  static const _kFaceConsent = 'face_consent_version';
+  static const _kAvatarPending = 'avatar_pending_upload';
 
   /// 默认每晚 22:00 提醒看结算卡
   static const defaultRemindAt = 22 * 60;
@@ -72,7 +85,7 @@ class AppState extends ChangeNotifier {
   static const nicknameMaxLength = 16;
 
   final SharedPreferences _prefs;
-  final ApiClient api = ApiClient();
+  final ApiClient api;
 
   /// 每天的结果，只存在手机上
   late final HistoryStore history = HistoryStore(_prefs);
@@ -172,6 +185,118 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
+  // MARK: 拍照形象
+
+  /// 用照片做形象的单独同意（人脸信息）的版本。说明有重要变化时加 1，大家重新同意一次
+  static const faceConsentVersion = 1;
+
+  /// 用照片做形象之前，要单独同意处理照片里的人脸信息（深度合成规定第十四条）
+  bool get faceConsented => (_prefs.getInt(_kFaceConsent) ?? 0) >= faceConsentVersion;
+
+  Future<void> acceptFaceConsent() async {
+    await _prefs.setInt(_kFaceConsent, faceConsentVersion);
+    notifyListeners();
+  }
+
+  ui.Image? _photoAvatar;
+  Uint8List? _photoAvatarPng;
+  int? _avatarRegenLeft;
+
+  /// 拍照做的卡通形象（平涂墨线贴纸）；没有时各处用代码画的默认形象
+  ui.Image? get photoAvatar => _photoAvatar;
+
+  /// 登录后服务端给的“还能换几次形象”；没登录、还没拉到时是 null
+  int? get avatarRegenLeft => _avatarRegenLeft;
+
+  /// App 启动时读出存在手机上的形象。登录了、上次没传上去的，顺便补传
+  Future<void> loadAvatar() async {
+    Uint8List? png;
+    try {
+      png = await avatars.load();
+    } catch (_) {
+      return; // 读不到就先用默认形象
+    }
+    if (png == null) return;
+    try {
+      _photoAvatar = await _decode(png);
+      _photoAvatarPng = png;
+    } catch (_) {
+      return; // 图坏了也先用默认形象，用户可以在“我的”里重新拍
+    }
+    notifyListeners();
+    // 补传放到后台，不耽误 App 打开
+    if (isLoggedIn && (_prefs.getBool(_kAvatarPending) ?? false)) unawaited(_uploadPendingAvatar());
+  }
+
+  static Future<ui.Image> _decode(Uint8List png) async {
+    final codec = await ui.instantiateImageCodec(png);
+    try {
+      return (await codec.getNextFrame()).image;
+    } finally {
+      codec.dispose();
+    }
+  }
+
+  /// 换成新的拍照形象（平涂墨线贴纸的 PNG，不是照片）。
+  /// 登录了就先传服务端：服务端不收（比如换形象的次数用完了）时抛 [ApiException]，手机上的形象不变；
+  /// 没网时先存在手机上，下次打开 App 或登录时补传。
+  Future<void> setPhotoAvatar(Uint8List png) async {
+    final image = await _decode(png);
+    var pending = true;
+    if (isLoggedIn) {
+      try {
+        await _uploadAvatar(png);
+        pending = false;
+      } on ApiException catch (e) {
+        if (e.statusCode == 422) rethrow;
+      }
+    }
+    await avatars.save(png);
+    await _prefs.setBool(_kAvatarPending, pending);
+    _photoAvatar = image;
+    _photoAvatarPng = png;
+    notifyListeners();
+  }
+
+  Future<void> _uploadAvatar(Uint8List png) async {
+    final me = await api.uploadAvatar(png);
+    _avatarRegenLeft = (me['avatar_regen_left'] as num?)?.toInt();
+  }
+
+  Future<void> _uploadPendingAvatar() async {
+    final png = _photoAvatarPng;
+    if (png == null) return;
+    try {
+      await _uploadAvatar(png);
+      await _prefs.setBool(_kAvatarPending, false);
+      notifyListeners();
+    } on ApiException catch (e) {
+      // 服务端不收就不再补传，手机上的形象照用；没网就等下次
+      if (e.statusCode == 422) await _prefs.setBool(_kAvatarPending, false);
+    }
+  }
+
+  /// 登录后对一下形象：手机上有没传上去的就补传；手机上没有、服务端有（比如换了手机），就下载回来
+  Future<void> _syncAvatar(Map<String, dynamic> me) async {
+    _avatarRegenLeft = (me['avatar_regen_left'] as num?)?.toInt();
+    if (_photoAvatarPng != null) {
+      if (_prefs.getBool(_kAvatarPending) ?? false) await _uploadPendingAvatar();
+      return;
+    }
+    final url = me['avatar_url'] as String?;
+    if (url == null || url.isEmpty) return;
+    try {
+      final png = await api.downloadAvatar(url);
+      final image = await _decode(png);
+      await avatars.save(png);
+      await _prefs.setBool(_kAvatarPending, false);
+      _photoAvatar = image;
+      _photoAvatarPng = png;
+    } catch (_) {
+      // 下载不下来就先用默认形象，下次登录再试
+    }
+  }
+
   Future<void> login(String phone, String code) async {
     final token = await api.smsLogin(phone, code);
     _token = token;
@@ -185,6 +310,8 @@ class AppState extends ChangeNotifier {
   Future<void> _pullProfile() async {
     try {
       final me = await api.me();
+      await _syncAvatar(me);
+      notifyListeners();
       final remote = (me['nickname'] as String?)?.trim() ?? '';
       if (remote.isNotEmpty) {
         _nickname = remote;
@@ -384,12 +511,23 @@ class AppState extends ChangeNotifier {
     _goalMinutes = 180;
     _ownedBreeds = {};
     _nickname = null;
+    // 形象是账号的：退出或注销后从手机上删掉（服务端的跟着账号走，注销时一起删）
+    try {
+      await avatars.delete();
+    } catch (_) {
+      // 删不掉也不影响退出
+    }
+    _photoAvatar = null;
+    _photoAvatarPng = null;
+    _avatarRegenLeft = null;
     // 退出后不该再收到提醒
     if (_remindOn) await disableReminder();
     _remindAt = defaultRemindAt;
+    // 同意隐私政策、同意用照片做形象是这台手机上的事，退出或注销后不用再问一遍
+    final faceConsent = faceConsented;
     await _prefs.clear();
-    // 同意隐私政策是这台手机上的事，退出或注销后不用再问一遍
     if (_privacyAccepted) await _prefs.setInt(_kPrivacyVersion, privacyVersion);
+    if (faceConsent) await _prefs.setInt(_kFaceConsent, faceConsentVersion);
     notifyListeners();
   }
 }

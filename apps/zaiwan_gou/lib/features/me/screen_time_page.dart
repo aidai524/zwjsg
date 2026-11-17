@@ -1,4 +1,3 @@
-import 'package:avatar_engine/avatar_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pop_ui/pop_ui.dart';
@@ -6,6 +5,7 @@ import 'package:pop_ui/pop_ui.dart';
 import '../../core/app_state.dart';
 import '../../core/dog_meter.dart';
 import '../../core/screen_time_channel.dart';
+import '../../widgets/my_avatar.dart';
 
 /// iOS 屏幕使用时间的技术验证页：授权 → 选 App → 开始监控 → 看阈值通知来得准不准。
 /// 验证通过后，再决定“今天”页怎么用这个阶段。
@@ -171,7 +171,7 @@ class _StageCard extends StatelessWidget {
       decoration: Pop.card(color: Pop.yellow),
       child: Row(
         children: [
-          DogAvatar(stage: stage, size: 88),
+          MyAvatar(stage: stage, size: 88),
           const SizedBox(width: 14),
           Expanded(
             child: Column(

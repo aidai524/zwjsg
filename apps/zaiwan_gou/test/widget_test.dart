@@ -38,6 +38,7 @@ void main() {
 
     await tester.tap(find.text('看完整的《隐私政策》'));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('我们申请的权限'), 300);
     expect(find.text('我们申请的权限'), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();

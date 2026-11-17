@@ -6,7 +6,7 @@ import '../../core/app_state.dart';
 import '../../core/dog_meter.dart';
 import '../../core/screen_time_channel.dart';
 import 'package:pop_ui/pop_ui.dart';
-import 'package:avatar_engine/avatar_engine.dart';
+import '../../widgets/my_avatar.dart';
 
 class MePage extends StatelessWidget {
   const MePage({super.key});
@@ -77,7 +77,7 @@ class MePage extends StatelessWidget {
                     ),
                     clipBehavior: Clip.antiAlias,
                     alignment: Alignment.bottomCenter,
-                    child: const DogAvatar(stage: 0, size: 56),
+                    child: const MyAvatar(stage: 0, size: 56),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -136,6 +136,14 @@ class MePage extends StatelessWidget {
                 ],
               ),
             ),
+            const _Section('形象'),
+            _Group(children: [
+              _Row(
+                title: state.photoAvatar == null ? '用自拍做形象' : '换个形象',
+                trailing: state.photoAvatar == null ? '默认形象' : '拍照形象',
+                onTap: () => context.push('/avatar?edit=1'),
+              ),
+            ]),
             const _Section('目标与提醒'),
             _Group(children: [
               _Row(

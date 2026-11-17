@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:avatar_engine/avatar_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +10,7 @@ import '../../core/dog_meter.dart';
 import '../../core/history.dart';
 import '../../core/screen_time_channel.dart';
 import '../../core/usage_channel.dart';
+import '../../widgets/my_avatar.dart';
 
 /// “今天”页上的白卡：标题、右上角的“全部 ›”，整张卡都能点
 class _TodayCard extends StatelessWidget {
@@ -415,7 +415,7 @@ class _DayCell extends StatelessWidget {
             ),
             clipBehavior: Clip.antiAlias,
             alignment: Alignment.bottomCenter,
-            child: s == null || future ? null : DogAvatar(stage: s, size: 28),
+            child: s == null || future ? null : MyAvatar(stage: s, size: 28),
           ),
         ],
       ),

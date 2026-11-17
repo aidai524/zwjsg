@@ -1,3 +1,4 @@
+import AVFoundation
 import CoreML
 import Flutter
 import ImageIO
@@ -6,15 +7,22 @@ import UIKit
 import UniformTypeIdentifiers
 import Vision
 
-/// 拍照形象的技术验证：Vision 找 5 个点 → 按 DCT-Net 官方模板对齐成 288x288 → Core ML 卡通化 → Vision 抠出人像。
+/// 拍照形象：Vision 找 5 个点 → 按 DCT-Net 官方模板对齐成 288x288 → Core ML 卡通化 → Vision 抠出人像。
 /// 平涂墨线贴纸和变狗图层在 Flutter 里画（packages/avatar_engine 的 PhotoSticker、PhotoDogAvatar），安卓以后复用。
 /// 照片只在内存里处理，不存盘、不上传。
 /// 模型：DCT-Net 日漫头像（阿里达摩院，Apache 2.0），由 TF 冻结图转成 Core ML，见 ios/Runner/Models/。
-final class CartoonLabPlugin: NSObject, FlutterPlugin, PHPickerViewControllerDelegate {
+///
+/// 两个通道：
+/// - `zwjsg/cartoon`：形象创建用。`camera` 拍自拍、`library` 从相册选，只回传卡通图和人像蒙版，照片本身不出原生层。
+/// - `zwjsg/cartoon_lab`：“我的 › 技术验证”页用，多回传对齐后的照片和各步耗时。上线前和样图一起删掉。
+final class CartoonLabPlugin: NSObject, FlutterPlugin, PHPickerViewControllerDelegate,
+  UIImagePickerControllerDelegate, UINavigationControllerDelegate
+{
   static func register(with registrar: FlutterPluginRegistrar) {
-    let channel = FlutterMethodChannel(name: "zwjsg/cartoon_lab", binaryMessenger: registrar.messenger())
     let plugin = CartoonLabPlugin()
-    registrar.addMethodCallDelegate(plugin, channel: channel)
+    for name in ["zwjsg/cartoon", "zwjsg/cartoon_lab"] {
+      registrar.addMethodCallDelegate(plugin, channel: FlutterMethodChannel(name: name, binaryMessenger: registrar.messenger()))
+    }
     // 只给调试用：用 devicectl 带 CARTOON_LAB_AUTORUN=1 启动时，自动拿包里的样图跑一遍，
     // 结果写进沙盒的 Documents/cartoon_lab/。只处理样图，不碰用户照片。
     if ProcessInfo.processInfo.environment["CARTOON_LAB_AUTORUN"] == "1" {
@@ -40,38 +48,50 @@ final class CartoonLabPlugin: NSObject, FlutterPlugin, PHPickerViewControllerDel
     }
   }()
 
-  private var pending: FlutterResult?
+  /// 照片从哪来：选图器给的是文件数据，相机给的是内存里的图
+  private enum Photo {
+    case data(Data)
+    case image(UIImage)
+  }
+
+  /// 等用户拍照或选图时，先把 Flutter 的回调存着；full 表示验证页要的完整结果
+  private var pending: (result: FlutterResult, full: Bool)?
   private var model: MLModel?
   private let queue = DispatchQueue(label: "cartoon-lab", qos: .userInitiated)
 
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {
+    case "camera":
+      openCamera(result)
+    case "library":
+      openLibrary(result, full: false)
     case "runSample":
       guard let data = Self.sampleData() else {
         return result(FlutterError(code: "no_sample", message: "样图不在包里", details: nil))
       }
-      process(data, result)
+      process(.data(data), full: true, result)
     case "runLibrary":
-      // 系统选图器不需要相册权限，App 只拿到用户选的那一张
-      var config = PHPickerConfiguration()
-      config.filter = .images
-      config.selectionLimit = 1
-      let picker = PHPickerViewController(configuration: config)
-      picker.delegate = self
-      guard let top = Self.topViewController() else {
-        return result(FlutterError(code: "no_window", message: "打不开相册", details: nil))
-      }
-      pending = result
-      top.present(picker, animated: true)
+      openLibrary(result, full: true)
     default:
       result(FlutterMethodNotImplemented)
     }
   }
 
+  // MARK: - 选图、拍照
+
+  /// 系统选图器不需要相册权限，App 只拿到用户选的那一张
+  private func openLibrary(_ result: @escaping FlutterResult, full: Bool) {
+    var config = PHPickerConfiguration()
+    config.filter = .images
+    config.selectionLimit = 1
+    let picker = PHPickerViewController(configuration: config)
+    picker.delegate = self
+    show(picker, result, full: full, failMessage: "打不开相册")
+  }
+
   func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
     picker.dismiss(animated: true)
-    guard let result = pending else { return }
-    pending = nil
+    guard case let (result, full)? = takePending() else { return }
     let type = UTType.image.identifier
     guard let provider = results.first?.itemProvider, provider.hasItemConformingToTypeIdentifier(type) else {
       return result(nil) // 没选就关了
@@ -82,18 +102,92 @@ final class CartoonLabPlugin: NSObject, FlutterPlugin, PHPickerViewControllerDel
         guard let data else {
           return result(FlutterError(code: "load_failed", message: "照片没读出来", details: nil))
         }
-        self.process(data, result)
+        self.process(.data(data), full: full, result)
       }
     }
   }
 
-  private func process(_ data: Data, _ result: @escaping FlutterResult) {
+  private static let cameraDenied = "没有相机权限：去系统设置里允许“再玩我是狗”使用相机，或者从相册选一张"
+
+  /// 系统相机拍一张，优先用前置摄像头。拍到的照片只在内存里，不存进相册
+  private func openCamera(_ result: @escaping FlutterResult) {
+    guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
+      return result(FlutterError(code: "no_camera", message: "这台设备用不了相机，从相册选一张吧", details: nil))
+    }
+    switch AVCaptureDevice.authorizationStatus(for: .video) {
+    case .authorized:
+      presentCamera(result)
+    case .notDetermined:
+      AVCaptureDevice.requestAccess(for: .video) { granted in
+        DispatchQueue.main.async {
+          if granted {
+            self.presentCamera(result)
+          } else {
+            result(FlutterError(code: "camera_denied", message: Self.cameraDenied, details: nil))
+          }
+        }
+      }
+    default:
+      result(FlutterError(code: "camera_denied", message: Self.cameraDenied, details: nil))
+    }
+  }
+
+  private func presentCamera(_ result: @escaping FlutterResult) {
+    let picker = UIImagePickerController()
+    picker.sourceType = .camera
+    if UIImagePickerController.isCameraDeviceAvailable(.front) { picker.cameraDevice = .front }
+    // 全屏打开：半屏的话用户下滑关掉时系统不回调，Flutter 那边会一直等
+    picker.modalPresentationStyle = .fullScreen
+    picker.delegate = self
+    show(picker, result, full: false, failMessage: "打不开相机")
+  }
+
+  func imagePickerController(
+    _ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+  ) {
+    picker.dismiss(animated: true)
+    guard case let (result, full)? = takePending() else { return }
+    guard let image = info[.originalImage] as? UIImage else {
+      return result(FlutterError(code: "load_failed", message: "照片没拍下来，再试一次", details: nil))
+    }
+    process(.image(image), full: full, result)
+  }
+
+  func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+    picker.dismiss(animated: true)
+    takePending()?.result(nil) // 没拍就关了
+  }
+
+  /// 取出等着的回调（只能取一次）
+  @discardableResult
+  private func takePending() -> (result: FlutterResult, full: Bool)? {
+    defer { pending = nil }
+    return pending
+  }
+
+  private func show(_ controller: UIViewController, _ result: @escaping FlutterResult, full: Bool, failMessage: String) {
+    guard pending == nil else {
+      return result(FlutterError(code: "busy", message: "上一张还没处理完", details: nil))
+    }
+    guard let top = Self.topViewController() else {
+      return result(FlutterError(code: "no_window", message: failMessage, details: nil))
+    }
+    pending = (result, full)
+    top.present(controller, animated: true)
+  }
+
+  /// 形象创建只要卡通图和人像蒙版；验证页（full）要全部结果
+  private static let creationKeys: Set<String> = ["cartoonRgba", "mask", "faces"]
+
+  private func process(_ photo: Photo, full: Bool, _ result: @escaping FlutterResult) {
     queue.async {
       do {
-        let out = try self.run(data).mapValues { value -> Any in
+        var out = try self.run(photo)
+        if !full { out = out.filter { Self.creationKeys.contains($0.key) } }
+        let encoded = out.mapValues { value -> Any in
           (value as? Data).map { FlutterStandardTypedData(bytes: $0) } ?? value
         }
-        DispatchQueue.main.async { result(out) }
+        DispatchQueue.main.async { result(encoded) }
       } catch let error as LabError {
         DispatchQueue.main.async { result(FlutterError(code: "lab_failed", message: error.message, details: nil)) }
       } catch {
@@ -115,7 +209,7 @@ final class CartoonLabPlugin: NSObject, FlutterPlugin, PHPickerViewControllerDel
         // 跑两遍：第一遍含加载模型，第二遍看模型已经在内存里时的速度
         var timings: [[String: Any]] = []
         for round in 1...2 {
-          let out = try self.run(data)
+          let out = try self.run(.data(data))
           var numbers: [String: Any] = ["round": round, "machine": Self.machine()]
           for (key, value) in out {
             if let bytes = value as? Data {
@@ -139,9 +233,9 @@ final class CartoonLabPlugin: NSObject, FlutterPlugin, PHPickerViewControllerDel
 
   // MARK: - 流程
 
-  private func run(_ data: Data) throws -> [String: Any] {
+  private func run(_ source: Photo) throws -> [String: Any] {
     let t0 = CACurrentMediaTime()
-    let photo = try Self.decode(data)
+    let photo = try Self.decode(source)
     let t1 = CACurrentMediaTime()
     let (points, faces) = try Self.fivePoints(photo)
     let t2 = CACurrentMediaTime()
@@ -204,6 +298,30 @@ final class CartoonLabPlugin: NSObject, FlutterPlugin, PHPickerViewControllerDel
 
   private static func sampleData() -> Data? {
     Bundle.main.url(forResource: "cartoon_sample", withExtension: "jpg").flatMap { try? Data(contentsOf: $0) }
+  }
+
+  /// 在内存里解码并转正，最长边缩到 1280 以内
+  private static func decode(_ photo: Photo) throws -> CGImage {
+    switch photo {
+    case .data(let data): return try decode(data)
+    case .image(let image): return try upright(image)
+    }
+  }
+
+  /// 相机拍的图：按拍摄方向画正，最长边缩到 1280 以内
+  private static func upright(_ image: UIImage) throws -> CGImage {
+    let longest = max(image.size.width, image.size.height)
+    guard longest > 0 else { throw LabError(message: "照片读不出来") }
+    let scale = min(1, 1280 / longest)
+    let size = CGSize(width: (image.size.width * scale).rounded(), height: (image.size.height * scale).rounded())
+    let format = UIGraphicsImageRendererFormat()
+    format.scale = 1
+    format.opaque = true
+    let drawn = UIGraphicsImageRenderer(size: size, format: format).image { _ in
+      image.draw(in: CGRect(origin: .zero, size: size))
+    }
+    guard let cg = drawn.cgImage else { throw LabError(message: "照片读不出来") }
+    return cg
   }
 
   /// 在内存里解码并按 EXIF 转正，最长边缩到 1280 以内（4800 万像素的原图也不用整张解开）

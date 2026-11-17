@@ -28,6 +28,8 @@
 	<true/>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>把结算卡保存到相册，方便晒给朋友。</string>
+	<key>NSCameraUsageDescription</key>
+	<string>拍一张自拍，在手机上把你画成卡通形象。照片不保存、不上传。</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

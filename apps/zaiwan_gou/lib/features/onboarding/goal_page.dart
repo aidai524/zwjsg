@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/app_state.dart';
 import '../../core/dog_meter.dart';
 import 'package:pop_ui/pop_ui.dart';
-import 'package:avatar_engine/avatar_engine.dart';
+import '../../widgets/my_avatar.dart';
 
 class GoalPage extends StatefulWidget {
   const GoalPage({super.key, this.editing = false});
@@ -94,7 +94,7 @@ class _GoalPageState extends State<GoalPage> {
                       ),
                       child: Row(
                         children: [
-                          DogAvatar(stage: i + 1, size: 40),
+                          MyAvatar(stage: i + 1, size: 40),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(DogMeter.nextChange[i],

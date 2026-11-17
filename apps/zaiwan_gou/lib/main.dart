@@ -10,5 +10,7 @@ Future<void> main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   final prefs = await SharedPreferences.getInstance();
   final state = AppState(prefs);
+  // 先读出拍照形象，第一帧就是自己的样子
+  await state.loadAvatar();
   runApp(AppScope(state: state, child: ZwjsgApp(state: state)));
 }

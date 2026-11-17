@@ -184,7 +184,11 @@ void main() {
 
       await tapText(tester, '隐私政策');
       expect(find.text(PrivacyPage.summary), findsOneWidget);
+      // 拍照形象：AI 生成标识、相机权限都写进去了
+      await tester.scrollUntilVisible(find.textContaining('AI 生成标识'), 300);
+      await tester.scrollUntilVisible(find.text('我们申请的权限'), 300);
       expect(find.text('我们申请的权限'), findsOneWidget);
+      await tester.scrollUntilVisible(find.textContaining('相机：拍自拍做卡通形象'), 300);
     });
 
     testWidgets('还没走完引导时，从登录页也能打开', (tester) async {

@@ -7,9 +7,9 @@ import '../../core/dog_meter.dart';
 import 'package:pop_ui/pop_ui.dart';
 import '../../core/screen_time_channel.dart';
 import '../../core/usage_channel.dart';
-import 'package:avatar_engine/avatar_engine.dart';
 
 import 'today_cards.dart';
+import '../../widgets/my_avatar.dart';
 
 class TodayPage extends StatefulWidget {
   /// [rankingLoader] 只在测试里传，代替安卓原生层的今日排行
@@ -126,7 +126,7 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                     ),
                     clipBehavior: Clip.antiAlias,
                     alignment: Alignment.bottomCenter,
-                    child: DogAvatar(stage: stage, size: 184),
+                    child: MyAvatar(stage: stage, size: 184),
                   ),
                   const SizedBox(height: 14),
                   Row(

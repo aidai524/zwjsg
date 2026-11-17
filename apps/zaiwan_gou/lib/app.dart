@@ -85,7 +85,7 @@ GoRouter _buildRouter(AppState state) {
       GoRoute(path: '/consent', builder: (_, __) => const ConsentPage()),
       GoRoute(path: '/welcome', builder: (_, __) => const WelcomePage()),
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
-      GoRoute(path: '/avatar', builder: (_, __) => const AvatarPage()),
+      GoRoute(path: '/avatar', builder: (_, s) => AvatarPage(editing: s.uri.queryParameters['edit'] == '1')),
       GoRoute(
         path: '/goal',
         builder: (_, s) => GoalPage(editing: s.uri.queryParameters['edit'] == '1'),

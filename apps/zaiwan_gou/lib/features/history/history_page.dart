@@ -1,4 +1,3 @@
-import 'package:avatar_engine/avatar_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:pop_ui/pop_ui.dart';
 
@@ -6,6 +5,7 @@ import '../../core/app_state.dart';
 import '../../core/breeds.dart';
 import '../../core/dog_meter.dart';
 import '../../core/history.dart';
+import '../../widgets/my_avatar.dart';
 
 /// 历史记录：最近 7 天 / 按月看每天的狗度和形态。数据只在手机上。
 class HistoryPage extends StatefulWidget {
@@ -166,7 +166,7 @@ class _DayRow extends StatelessWidget {
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, height: 1.3),
             ),
           ),
-          SizedBox(width: 44, height: 44, child: r == null ? null : DogAvatar(stage: r.stage, size: 44)),
+          SizedBox(width: 44, height: 44, child: r == null ? null : MyAvatar(stage: r.stage, size: 44)),
           const SizedBox(width: 10),
           Expanded(
             child: r == null
@@ -211,7 +211,7 @@ class _MonthCell extends StatelessWidget {
         children: [
           Text('${date.day}', style: TextStyle(fontSize: 12, color: r == null ? Pop.muted : Pop.ink)),
           const SizedBox(height: 2),
-          SizedBox(width: 28, height: 28, child: r == null ? null : DogAvatar(stage: r.stage, size: 28)),
+          SizedBox(width: 28, height: 28, child: r == null ? null : MyAvatar(stage: r.stage, size: 28)),
         ],
       ),
     );
