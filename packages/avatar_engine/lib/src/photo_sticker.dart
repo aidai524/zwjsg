@@ -32,6 +32,8 @@ class PhotoSticker {
   static const leftEye = ui.Offset(111.8, 137.6);
   static const rightEye = ui.Offset(179.7, 137.3);
   static const nose = ui.Offset(146.0, 176.3);
+  static const leftMouth = ui.Offset(118.1, 216.1);
+  static const rightMouth = ui.Offset(174.3, 215.8);
 
   static const _ink = [0x1B, 0x1B, 0x1F];
 

@@ -72,12 +72,12 @@ void main() {
     expect(() => PhotoSticker.render(Uint8List(4), Uint8List(1)), throwsArgumentError);
   });
 
-  testWidgets('照片形象按阶段叠狗耳朵、狗鼻子', (tester) async {
+  testWidgets('照片形象按阶段叠变狗图层：耳朵、鼻子、狗毛、舌头和尾巴、嘴筒', (tester) async {
     final image = await tester.runAsync(() async {
       final (rgba, mask) = fakeFace();
       return PhotoSticker.toImage(PhotoSticker.render(rgba, mask));
     });
-    for (final stage in [0, 1, 2, 5]) {
+    for (final stage in [0, 1, 2, 3, 4, 5]) {
       await tester.pumpWidget(Directionality(
         textDirection: TextDirection.ltr,
         child: Center(child: PhotoDogAvatar(sticker: image!, stage: stage, size: 160)),
