@@ -9,6 +9,8 @@ import '../../core/models.dart';
 import '../../core/scene.dart';
 import '../../core/temp_unit.dart';
 import '../../widgets/common.dart';
+import '../../widgets/weather_avatars.dart';
+import 'import_avatar_sheet.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -43,23 +45,10 @@ class SettingsPage extends StatelessWidget {
           const PushSection(),
           const SizedBox(height: 28),
           const Text('我的形象', style: _heading),
+          const SizedBox(height: 4),
+          const Text('从「再玩我是狗」导入卡通形象，让它在这里替你遭罪。', style: TextStyle(fontSize: 12, color: Pop.muted)),
           const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: Pop.card(),
-            child: Row(
-              children: [
-                const WeatherAvatar(temp: WeatherTemp.mild, cond: WeatherCond.cloudy, size: 64),
-                const SizedBox(width: 12),
-                const Expanded(child: Text('从「再玩我是狗」导入 ›', style: TextStyle(fontWeight: FontWeight.w800))),
-                TextButton(
-                  // TODO 一次性导入：狗 App 生成短时导出码 → 本 App 用导出码请求后端拉取形象（两边账号不互通）
-                  onPressed: () => showToast(context, '导入功能开发中，先用默认形象'),
-                  child: const Text('导入'),
-                ),
-              ],
-            ),
-          ),
+          const AvatarSection(),
           const SizedBox(height: 28),
           const Text('账号', style: _heading),
           const SizedBox(height: 12),
@@ -111,6 +100,71 @@ class SettingsPage extends StatelessWidget {
     } on ApiException catch (e) {
       if (context.mounted) showToast(context, e.message);
     }
+  }
+}
+
+/// 我的形象：显示现在用的形象，可以从“再玩我是狗”导入、重新导入，或者用回默认形象
+class AvatarSection extends StatelessWidget {
+  const AvatarSection({super.key});
+
+  Future<void> _import(BuildContext context) async {
+    if (await showImportAvatarSheet(context) == true && context.mounted) showToast(context, '导入好了，回首页看它遭罪');
+  }
+
+  Future<void> _reset(BuildContext context) async {
+    final state = AppScope.read(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('用回默认形象？'),
+        content: const Text('导入的形象会从手机上删掉，登录了的话服务器上的也删掉。想再用，回「再玩我是狗」重新导出。'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('算了')),
+          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('用回默认')),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    try {
+      await state.clearAvatar();
+    } on ApiException catch (e) {
+      if (context.mounted) showToast(context, e.message);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final imported = AppScope.of(context).avatar != null;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: Pop.card(),
+      child: Row(
+        children: [
+          const MyWeatherAvatar(temp: WeatherTemp.mild, cond: WeatherCond.cloudy, size: 64),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(imported ? '用的是导入的形象' : '现在是默认形象', style: const TextStyle(fontWeight: FontWeight.w800)),
+                if (imported)
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 32),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      alignment: Alignment.centerLeft,
+                    ),
+                    onPressed: () => _reset(context),
+                    child: const Text('用回默认形象', style: TextStyle(fontSize: 13, color: Pop.muted)),
+                  ),
+              ],
+            ),
+          ),
+          TextButton(onPressed: () => _import(context), child: Text(imported ? '重新导入' : '导入')),
+        ],
+      ),
+    );
   }
 }
 

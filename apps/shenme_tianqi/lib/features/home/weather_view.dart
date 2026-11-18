@@ -8,6 +8,7 @@ import '../../core/models.dart';
 import '../../core/scene.dart';
 import '../../core/temp_unit.dart';
 import '../../widgets/common.dart';
+import '../../widgets/weather_avatars.dart';
 
 /// 普通模式：形象 + 吐槽 + 温度 + 四张决策卡 + 逐小时 + 7 天
 class WeatherView extends StatelessWidget {
@@ -28,7 +29,7 @@ class WeatherView extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            WeatherAvatar(temp: weatherTempFromKey(w.outfitKey), cond: weatherCondFromKey(w.cond), size: 170),
+            MyWeatherAvatar(temp: weatherTempFromKey(w.outfitKey), cond: weatherCondFromKey(w.cond), size: 170),
             const SizedBox(width: 8),
             Expanded(child: _QuipBubble(w.quip ?? w.outfitLabel)),
           ],

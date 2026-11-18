@@ -1,5 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
+import 'package:avatar_engine/avatar_engine.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -9,8 +13,10 @@ import 'temp_unit.dart';
 
 /// 全局状态。游客也能用：城市、毒舌档位和温度单位存本机；登录后同步到服务端（关心群需要常驻城市）。
 class AppState extends ChangeNotifier {
-  /// [api] 只在测试里传，换成假的
-  AppState(this._prefs, {WeatherApi? api}) : api = api ?? WeatherApi() {
+  /// [api]、[avatars] 只在测试里传，换成假的
+  AppState(this._prefs, {WeatherApi? api, AvatarStore? avatars})
+      : api = api ?? WeatherApi(),
+        avatars = avatars ?? const FileAvatarStore() {
     _token = _prefs.getString(_kToken);
     _privacyAccepted = (_prefs.getInt(_kPrivacyVersion) ?? 0) >= privacyVersion;
     _onboarded = _prefs.getBool(_kOnboarded) ?? false;
@@ -42,8 +48,9 @@ class AppState extends ChangeNotifier {
     super.notifyListeners();
   }
 
-  /// 隐私政策的版本。内容有重要变化时加 1，所有人打开 App 时重新同意一次
-  static const privacyVersion = 1;
+  /// 隐私政策的版本。内容有重要变化时加 1，所有人打开 App 时重新同意一次。
+  /// 2：2026-11-18 可以从“再玩我是狗”导入卡通形象，登录后存服务端、关心群里的家人能看到
+  static const privacyVersion = 2;
 
   bool _privacyAccepted = false;
 
@@ -63,9 +70,11 @@ class AppState extends ChangeNotifier {
   static const _kTempUnit = 'temp_unit';
   static const _kCities = 'cities';
   static const _kPrivacyVersion = 'privacy_version';
+  static const _kAvatarPending = 'avatar_pending_upload';
 
   final SharedPreferences _prefs;
   final WeatherApi api;
+  final AvatarStore avatars;
 
   String? _token;
   bool _onboarded = false;
@@ -270,6 +279,123 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  // ---- 形象 ----
+
+  ui.Image? _avatar;
+  Uint8List? _avatarPng;
+
+  /// 从“再玩我是狗”导入的卡通形象（贴纸）；没导入时是 null，各处用代码画的默认形象
+  ui.Image? get avatar => _avatar;
+
+  /// App 启动时读出存在手机上的形象。登录了、上次没传上去的，顺便补传
+  Future<void> loadAvatar() async {
+    Uint8List? png;
+    try {
+      png = await avatars.load();
+    } catch (_) {
+      return; // 读不到就先用默认形象
+    }
+    if (png == null) return;
+    try {
+      _avatar = await _decode(png);
+      _avatarPng = png;
+    } catch (_) {
+      return; // 图坏了也先用默认形象，可以重新导入
+    }
+    notifyListeners();
+    // 补传放到后台，不耽误 App 打开
+    if (isLoggedIn && (_prefs.getBool(_kAvatarPending) ?? false)) unawaited(_uploadPendingAvatar());
+  }
+
+  /// 凭导出码从“再玩我是狗”导入卡通形象：先存在手机上，登录了再传服务端（换手机能找回，关心群里的家人能看到）。
+  /// 码不对、过期或者连不上时抛 [ApiException]，手机上原来的形象不变
+  Future<void> importAvatar(String code) async {
+    final png = await api.importAvatar(code);
+    final ui.Image image;
+    try {
+      image = await _decode(png);
+    } catch (_) {
+      throw ApiException('导入的形象打不开，回「再玩我是狗」重新生成一个导出码试试');
+    }
+    await avatars.save(png);
+    await _prefs.setBool(_kAvatarPending, true);
+    _avatar = image;
+    _avatarPng = png;
+    notifyListeners();
+    if (isLoggedIn) await _uploadPendingAvatar();
+  }
+
+  /// 用回默认形象。登录了先删服务端的，删不掉时抛 [ApiException]，手机上的不动
+  Future<void> clearAvatar() async {
+    if (isLoggedIn) await api.deleteAvatar();
+    await _forgetAvatar();
+    notifyListeners();
+  }
+
+  Future<void> _forgetAvatar() async {
+    try {
+      await avatars.delete();
+    } catch (_) {
+      // 删不掉也当没有
+    }
+    await _prefs.remove(_kAvatarPending);
+    _avatar = null;
+    _avatarPng = null;
+  }
+
+  Future<void> _uploadPendingAvatar() async {
+    final png = _avatarPng;
+    if (png == null || !isLoggedIn) return;
+    try {
+      await api.uploadAvatar(png);
+      await _prefs.setBool(_kAvatarPending, false);
+    } on ApiException catch (e) {
+      // 服务端不收就不再补传，手机上的照用；没网就等下次
+      if (e.statusCode == 422) await _prefs.setBool(_kAvatarPending, false);
+    }
+  }
+
+  /// 登录后对一下形象：手机上有、还没传上去的就补传；手机上没有、服务端有（比如换了手机），就下载回来
+  Future<void> _syncAvatar() async {
+    if (_avatarPng != null) {
+      if (_prefs.getBool(_kAvatarPending) ?? false) await _uploadPendingAvatar();
+      return;
+    }
+    try {
+      final url = (await api.me())['avatar_url'] as String?;
+      if (url == null) return;
+      final png = await api.downloadAvatar(url);
+      final image = await _decode(png);
+      await avatars.save(png);
+      await _prefs.setBool(_kAvatarPending, false);
+      _avatar = image;
+      _avatarPng = png;
+    } catch (_) {
+      // 拉不到就先用默认形象，下次登录再试
+    }
+  }
+
+  final Map<String, Future<ui.Image?>> _memberAvatars = {};
+
+  /// 关心群里别人的形象：同一个地址只下载一次，App 开着时记住；下载不到、图坏了返回 null（用默认形象，下次再试）
+  Future<ui.Image?> memberAvatar(String url) => _memberAvatars.putIfAbsent(url, () async {
+        try {
+          return await _decode(await api.downloadAvatar(url));
+        } catch (_) {
+          _memberAvatars.remove(url);
+          return null;
+        }
+      });
+
+  static Future<ui.Image> _decode(Uint8List png) async {
+    final codec = await ui.instantiateImageCodec(png);
+    try {
+      return (await codec.getNextFrame()).image;
+    } finally {
+      codec.dispose();
+    }
+  }
+
   Future<void> completeOnboarding() async {
     _onboarded = true;
     await _prefs.setBool(_kOnboarded, true);
@@ -289,6 +415,7 @@ class AppState extends ChangeNotifier {
       // 忽略
     }
     await _syncCities();
+    await _syncAvatar();
     notifyListeners();
   }
 
@@ -306,13 +433,16 @@ class AppState extends ChangeNotifier {
     await _dropAccount();
   }
 
-  /// 退出账号只清登录信息；本机城市留着，游客照样能看天气
+  /// 退出账号只清登录信息；本机城市留着，游客照样能看天气。
+  /// 导入的形象从手机上删掉（再登录时从服务端找回来）
   Future<void> _dropAccount() async {
     _token = null;
     api.token = null;
     _push = null;
     _pushError = null;
     await _prefs.remove(_kToken);
+    await _forgetAvatar();
+    _memberAvatars.clear();
     _cities = [for (final c in _cities) City(locationId: c.locationId, name: c.name, adm: c.adm, isHome: c.isHome)];
     await _saveCities();
   }
