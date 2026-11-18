@@ -62,6 +62,29 @@
             android:launchMode="singleTask"
             android:taskAffinity="com.zwjsg.zwjsg_app.locked"
             android:theme="@android:style/Theme.Material.Light.NoActionBar" />
+        <!-- 桌面小组件：小号 2×2、中号 4×2。系统大约每 30 分钟叫醒一次，小组件自己算今天刷了多久 -->
+        <receiver
+            android:name=".widget.SmallDogWidget"
+            android:exported="false"
+            android:label="@string/widget_small_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/dog_widget_small" />
+        </receiver>
+        <receiver
+            android:name=".widget.MediumDogWidget"
+            android:exported="false"
+            android:label="@string/widget_medium_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/dog_widget_medium" />
+        </receiver>
         <!-- 每晚结算提醒：flutter_local_notifications 的定时通知和开机后重排 -->
         <receiver
             android:exported="false"

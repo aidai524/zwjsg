@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 中号：4×2。大约每 30 分钟系统叫醒一次，小组件自己算今天刷了多久；0 点另有闹钟让它变回人 -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_medium_description"
+    android:initialLayout="@layout/widget_dog_medium"
+    android:minWidth="250dp"
+    android:minHeight="110dp"
+    android:previewLayout="@layout/widget_dog_medium"
+    android:resizeMode="none"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen" />

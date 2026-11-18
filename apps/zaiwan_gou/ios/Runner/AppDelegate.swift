@@ -15,6 +15,10 @@ class PluginsRegistrant: NSObject, FlutterPluginRegistrant {
     if let registrar = registry.registrar(forPlugin: "CartoonLabPlugin") {
       CartoonLabPlugin.register(with: registrar)
     }
+    // 桌面小组件
+    if let registrar = registry.registrar(forPlugin: "HomeWidgetPlugin") {
+      HomeWidgetPlugin.register(with: registrar)
+    }
   }
 }
 
