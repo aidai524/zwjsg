@@ -1,8 +1,20 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
 import 'package:pop_ui/pop_ui.dart';
+
+import 'widget_images.dart';
+
+/// 变狗形象画法的版本：改了画法（默认形象、照片形象的变狗图层，包括换成美术素材）就加 1，
+/// 桌面小组件用的形象图是 App 预先画好存在手机上的，版本变了才会重画
+const dogAvatarArtVersion = 1;
+
+/// 不经过 Widget 树，把默认形象画成 [pixels] x [pixels] 的图片（背景透明），和 [DogAvatar] 一样。
+/// 给桌面小组件用，返回的图片用完要 dispose
+Future<ui.Image> renderDogAvatar({required int stage, int pixels = 360}) =>
+    paintToImage(_AvatarPainter(stage.clamp(0, 5)), pixels);
 
 /// 卡通形象：按变狗阶段 0–5 分层叠加。
 /// 现在是代码画的示意图；美术素材到位后，每一层换成对应的图片图层即可（层的顺序和开关逻辑不变）。
