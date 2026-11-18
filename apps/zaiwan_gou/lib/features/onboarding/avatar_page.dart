@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pop_ui/pop_ui.dart';
+import 'package:series_share/series_share.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_state.dart';
 import '../../core/cartoonizer.dart';
-import '../../widgets/ai_tag.dart';
 
 /// 把卡通图画成平涂墨线贴纸；测试里可以换掉
 typedef FaceStickerRenderer = Future<ui.Image> Function(CartoonFace face);

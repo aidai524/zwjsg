@@ -256,7 +256,7 @@ packages:
     source: sdk
     version: "0.0.0"
   gal:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: gal
       sha256: f71e79840fe023a21f2f949771375444b6efcd34b9e625d5f4f5504971380a77
@@ -541,8 +541,15 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
-  share_plus:
+  series_share:
     dependency: "direct main"
+    description:
+      path: "../../packages/series_share"
+      relative: true
+    source: path
+    version: "0.1.0"
+  share_plus:
+    dependency: transitive
     description:
       name: share_plus
       sha256: db40767f130189d53f3ae8a6393c217ff4a492da1baff718a9873679c0c00224

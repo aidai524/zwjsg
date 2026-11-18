@@ -17,7 +17,8 @@ class CardExportException implements Exception {
   String toString() => message;
 }
 
-/// 结算卡导出：截图、保存到相册、系统分享（能直接发到微信）。抽成接口，测试里换成假的。
+/// 分享卡片（狗 App 的结算卡、天气 App 的天气卡）的导出：截图、保存到相册、系统分享（能直接发到微信）。
+/// 抽成接口，测试里换成假的。
 abstract class CardExporter {
   /// 把 [boundaryKey] 对应的 RepaintBoundary 截成 PNG
   Future<Uint8List> capture(GlobalKey boundaryKey);
@@ -29,7 +30,11 @@ abstract class CardExporter {
 }
 
 class DefaultCardExporter implements CardExporter {
-  const DefaultCardExporter();
+  /// [appName] 用在提示里（“去系统设置里允许 xx 添加照片”），[filePrefix] 是存下来的图片的文件名前缀
+  const DefaultCardExporter({required this.appName, required this.filePrefix});
+
+  final String appName;
+  final String filePrefix;
 
   @override
   Future<Uint8List> capture(GlobalKey boundaryKey) async {
@@ -46,14 +51,13 @@ class DefaultCardExporter implements CardExporter {
 
   @override
   Future<void> save(Uint8List png) async {
-    if (!await Gal.hasAccess() && !await Gal.requestAccess()) {
-      throw const CardExportException('没有相册权限，去系统设置里允许“再玩我是狗”添加照片');
-    }
+    final denied = '没有相册权限，去系统设置里允许“$appName”添加照片';
+    if (!await Gal.hasAccess() && !await Gal.requestAccess()) throw CardExportException(denied);
     try {
-      await Gal.putImageBytes(png, name: 'zaiwangou_${DateTime.now().millisecondsSinceEpoch}');
+      await Gal.putImageBytes(png, name: '${filePrefix}_${DateTime.now().millisecondsSinceEpoch}');
     } on GalException catch (e) {
       throw CardExportException(switch (e.type) {
-        GalExceptionType.accessDenied => '没有相册权限，去系统设置里允许“再玩我是狗”添加照片',
+        GalExceptionType.accessDenied => denied,
         GalExceptionType.notEnoughSpace => '手机空间不够，存不下了',
         _ => '没存上，稍后再试',
       });
@@ -63,7 +67,7 @@ class DefaultCardExporter implements CardExporter {
   @override
   Future<void> share(Uint8List png, {Rect? origin}) async {
     final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/zaiwangou_card.png');
+    final file = File('${dir.path}/${filePrefix}_card.png');
     await file.writeAsBytes(png, flush: true);
     await SharePlus.instance.share(ShareParams(
       files: [XFile(file.path, mimeType: 'image/png')],

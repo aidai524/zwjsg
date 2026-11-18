@@ -4,19 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/aigc_label.dart';
+import 'package:pop_ui/pop_ui.dart';
+import 'package:series_share/series_share.dart';
+
 import '../../core/app_state.dart';
 import '../../core/breeds.dart';
-import '../../core/card_exporter.dart';
-import 'package:pop_ui/pop_ui.dart';
-import '../../widgets/ai_tag.dart';
 import '../../widgets/my_avatar.dart';
 
 /// 每日结算卡。卡片包在 RepaintBoundary 里，保存/分享时截成 3:4 图片。
 /// 白天随时能晒，晒的是“此刻”的样子；到了每晚提醒的时间（默认 22:00）才叫“今日结算”。
 class CardPage extends StatefulWidget {
   /// [exporter]、[now] 只在测试里传
-  const CardPage({super.key, this.exporter = const DefaultCardExporter(), this.now});
+  const CardPage({super.key, this.exporter = const DefaultCardExporter(appName: '再玩我是狗', filePrefix: 'zaiwangou'), this.now});
 
   final CardExporter exporter;
   final DateTime? now;
@@ -47,7 +46,7 @@ class _CardPageState extends State<CardPage> {
     try {
       var png = await widget.exporter.capture(_cardKey);
       // 拍照形象是 AI 生成的：导出的图片文件里还要写上隐式标识
-      if (aiAvatar) png = AigcLabel.embed(png);
+      if (aiAvatar) png = AigcLabel.embed(png, producer: '再玩我是狗');
       await action(png);
       if (done != null) _toast(done);
     } on CardExportException catch (e) {
