@@ -11,8 +11,9 @@
 ```
 packages/
   pop_ui/            黄黑波普设计规范：颜色、描边、硬阴影、主题、波普按钮（Flutter）
-  avatar_engine/     卡通形象引擎：人物底层 + 各 app 的叠加层（变狗 DogAvatar、天气 WeatherAvatar）
-  series_core/       接口客户端基类：token、错误处理、短信登录、退出、注销（Flutter）
+  avatar_engine/     卡通形象引擎：人物底层 + 各 app 的叠加层（变狗 DogAvatar、天气 WeatherAvatar，照片形象的 PhotoDogAvatar、PhotoWeatherAvatar），形象存在手机上（AvatarStore）
+  series_core/       接口客户端基类：token、错误处理、短信登录、退出、注销、上传和下载形象（Flutter）
+  series_share/      分享卡片：截图、存相册、系统分享，AI 生成内容的显式标识（AiTag）和隐式标识（AigcLabel）（Flutter）
   php/series-auth/   短信验证码服务 + 发送接口（Laravel，composer 本地路径包）
 apps/                各 app 的 Flutter 工程，用 path 依赖引用 packages/
 backends/            各 app 的 Laravel 工程，用 composer path 仓库引用 packages/php/
@@ -121,7 +122,7 @@ iOS 屏幕使用时间（技术验证中）：
 - 保存：贴纸（PNG）存在 App 支持目录（`AvatarStore`，在 `packages/avatar_engine`，和天气 App 共用）。登录了就传服务端（`POST /me/avatar`，只传贴纸）；没登录或没网时先存手机上，登录或下次打开时补传；换手机登录后从 `avatar_url` 下载回来。换掉已有的拍照形象按服务端次数算（默认 3 次），用完时服务端回 422，手机上的形象不变。退出登录会删掉手机上的形象。
 - 各处显示用 `MyAvatar`：有拍照形象就用它，没有就用代码画的默认形象。
 - 导出到「什么鬼天气」：有拍照形象时“我的 › 形象”里多一行，没登录先去登录；形象还没传上服务端的先补传，再生成导出码，弹层里分两段显示（ABCD-EFGH），可以复制（`lib/features/me/export_avatar_sheet.dart`）。
-- AI 标识：用了拍照形象的结算卡，右下角印“AI生成”（文字高度不低于卡片短边的 5%），导出、分享的 PNG 里写入 GB 45438-2025 的 AIGC 元数据（`lib/core/aigc_label.dart`）。上线前请法务确认，`ContentProducer` 换成公司名称或备案号。
+- AI 标识：用了拍照形象的结算卡，右下角印“AI生成”（文字高度不低于卡片短边的 5%），导出、分享的 PNG 里写入 GB 45438-2025 的 AIGC 元数据（`packages/series_share` 的 `AigcLabel`，和天气卡共用）。上线前请法务确认，`ContentProducer` 换成公司名称或备案号。
 - 技术验证页还在“我的 › 技术验证 › 拍照形象（本地卡通化）”，能看对齐后的照片和各步耗时。模型来源、转换脚本和实测数据见 `tools/cartoon/README.md`。验证页和样图上线前要删掉；开源许可页要附 Apache 2.0 许可证。
 
 ---
@@ -143,6 +144,7 @@ iOS 屏幕使用时间（技术验证中）：
 - 首次打开先弹隐私政策（`lib/features/privacy/consent_page.dart`）：同意之前路由只放行隐私政策页，不查天气、不请求权限。政策有重要变化时把 `AppState.privacyVersion` 加 1，所有人重新同意。设置页也能打开完整政策。
 - 设置页的推送（`PushSection`）：早安播报开关、工作日和周末分开设时间，预警推送开关。推送要发到账号上，所以登录后才能设；设置存在服务端（`PATCH me/settings` 的 `morning_push_*`、`alert_push_on`），推送通道接好后生效。
 - 温度单位（设置页）：摄氏度 / 华氏度，不登录也能设，存在手机上；登录后同步到服务端的 `temp_unit`，早安推送按它写。接口里的温度数字一律是摄氏度（照搬数据源），App 显示时换算（`lib/core/temp_unit.dart`）；服务端拼的句子（秋裤理由、关心群的一句事实、早安推送标题）按请求带的 `unit` 写，没带再看用户设置（`app/Support/TempUnit.php`）。两边换算方法要一致，测试用的是同一组数。
+- 天气卡（`lib/features/card/weather_card_page.dart`）：首页右上角“晒一下”，3:4 的卡片上有城市和实况时间、温度（按温度单位）、形象和吐槽、四张决策卡的结论、“天气服务由和风天气驱动”和 App 图标；能存相册、用系统分享面板发出去（截图和分享在 `packages/series_share`）。预警期间（严肃模式）不显示入口，也不生成卡片。用了导入的照片形象时右下角标“AI生成”（字高不低于卡片宽的 5%），导出的 PNG 写入 AIGC 隐式标识，`ContentProducer` 先写“什么鬼天气”。存相册在 iOS 要 `NSPhotoLibraryAddUsageDescription`，安卓 10 及以下要 `WRITE_EXTERNAL_STORAGE`。
 - 从“再玩我是狗”导入形象：引导页和“设置 › 我的形象”都能填导出码（`lib/features/settings/import_avatar_sheet.dart`），大小写、空格、连字符不讲究。不登录也能导，先存在手机上，登录后传服务端，换手机登录时下载回来；可以用回默认形象（`DELETE me/avatar`），退出登录会删掉手机上的。导入的形象在首页、严肃模式、设置和关心群里显示：`PhotoWeatherAvatar`（`packages/avatar_engine`）在贴纸上叠穿戴和天气，照片里的衣服换不了，冷热改成冒汗、围巾、毛线帽；群里别人的形象从 `avatar_url` 下载，App 开着时同一个地址只下一次。
 - 应用图标：源文件在 `apps/shenme_tianqi/assets/icon/`（翻白眼的云 + 雨和闪电，SVG）。改了 SVG 先导出同名 1024 PNG，例如 `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --user-data-dir=$(mktemp -d) --default-background-color=00000000 --window-size=1024,1024 --screenshot=icon_full.png "file://$PWD/icon_full.svg"`，再运行 `dart run flutter_launcher_icons` 生成两端图标。这个工具（0.14.4）会把 `ios/Runner.xcodeproj/project.pbxproj` 里的 `ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS` 错改成 `AppIcon`，生成后把这个文件还原。iOS 主屏上的名字是“什么鬼天气”（`CFBundleDisplayName`）。
 
