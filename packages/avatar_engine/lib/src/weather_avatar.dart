@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:pop_ui/pop_ui.dart';
 
 import 'photo_sticker.dart';
+import 'widget_images.dart';
 
 /// 衣服档（按体感温度），和后端 config/weather.php 的 outfit_bands 一致。
 enum WeatherTemp { hot, warm, mild, cool, cold, freezing }
@@ -59,17 +60,8 @@ Future<ui.Image> renderWeatherAvatar({
   required WeatherCond cond,
   ui.Image? sticker,
   int pixels = 360,
-}) async {
-  final recorder = ui.PictureRecorder();
-  final painter = sticker == null ? _WeatherAvatarPainter(temp, cond) : _PhotoWeatherPainter(sticker, temp, cond);
-  painter.paint(Canvas(recorder), Size.square(pixels.toDouble()));
-  final picture = recorder.endRecording();
-  try {
-    return await picture.toImage(pixels, pixels);
-  } finally {
-    picture.dispose();
-  }
-}
+}) =>
+    paintToImage(sticker == null ? _WeatherAvatarPainter(temp, cond) : _PhotoWeatherPainter(sticker, temp, cond), pixels);
 
 const _condNames = {
   WeatherCond.sunny: '晴',

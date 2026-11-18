@@ -1,5 +1,6 @@
 import DeviceActivity
 import Foundation
+import WidgetKit
 
 /// 系统在后台调起的监控扩展：每天 0 点开始新的统计周期，选中的 App 用量到阈值时通知。
 /// 两类统计周期：
@@ -11,6 +12,8 @@ final class ScreenTimeMonitor: DeviceActivityMonitor {
     if activity == .daily {
       ScreenTimeStore.startDayIfNeeded()
       ScreenTimeStore.append("统计周期开始")
+      // 新的一天：桌面小组件变回人
+      WidgetCenter.shared.reloadTimelines(ofKind: GouWidgetShared.kind)
     } else if let id = ScreenTimeStore.lockId(of: activity) {
       // 新的一天解锁。刚开始监控时如果已经因为补算今天的用量锁上了，就别解开
       if !ScreenTimeStore.isLockedToday(id) { LockShield.clear(id) }
@@ -37,6 +40,8 @@ final class ScreenTimeMonitor: DeviceActivityMonitor {
       let thresholds = ScreenTimeStore.thresholds
       let minutes = thresholds.indices.contains(stage - 1) ? "（\(thresholds[stage - 1]) 分钟）" : ""
       ScreenTimeStore.append("到达阶段 \(stage)\(minutes)")
+      // 桌面小组件马上换成新阶段的样子
+      WidgetCenter.shared.reloadTimelines(ofKind: GouWidgetShared.kind)
     } else if let id = ScreenTimeStore.lockId(of: activity), let lock = ScreenTimeStore.lock(id) {
       // 正在紧急解锁的几分钟里不打断，等那几分钟用满再锁
       guard !ScreenTimeStore.isGraceActive(id) else { return }

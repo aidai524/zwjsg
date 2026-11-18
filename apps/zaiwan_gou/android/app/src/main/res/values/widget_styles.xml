@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 桌面小组件的文字样式 -->
+<resources>
+    <style name="DogWidgetText">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/widget_ink</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
+    <style name="DogWidgetTitle" parent="DogWidgetText">
+        <item name="android:textSize">15sp</item>
+        <item name="android:fontFamily">sans-serif-black</item>
+    </style>
+
+    <style name="DogWidgetLabel" parent="DogWidgetText">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="DogWidgetPercent" parent="DogWidgetText">
+        <item name="android:textSize">30sp</item>
+        <item name="android:fontFamily">sans-serif-black</item>
+    </style>
+
+    <style name="DogWidgetBody" parent="DogWidgetText">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="DogWidgetSmall" parent="DogWidgetText">
+        <item name="android:textSize">10sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/widget_muted_on_yellow</item>
+    </style>
+
+    <!-- 阶段牌：黑底黄字，和“今天”页一样 -->
+    <style name="DogWidgetPill" parent="DogWidgetText">
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingEnd">8dp</item>
+        <item name="android:paddingTop">3dp</item>
+        <item name="android:paddingBottom">3dp</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:fontFamily">sans-serif-black</item>
+        <item name="android:textColor">@color/widget_yellow</item>
+        <item name="android:background">@drawable/widget_stage_pill</item>
+    </style>
+</resources>

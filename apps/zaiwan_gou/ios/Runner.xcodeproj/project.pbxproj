@@ -14,26 +14,34 @@
 		16EE164CC569BE1E2768AD7A /* ShieldConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50454BE297654605FBC0E8EC /* ShieldConfig.swift */; };
 		17D3E1EE6E9B654E7C423182 /* cartoon_sample.jpg in Resources */ = {isa = PBXBuildFile; fileRef = BADF39D8CD430CDE183ACB38 /* cartoon_sample.jpg */; };
 		2EB73B7F73D9C64CF3B78136 /* ScreenTimeMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 458F5D0C80E76AB546BB5989 /* ScreenTimeMonitor.swift */; };
+		32759C8BD637F533F4E2691C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 3A4B86DF2E935284E34ED2A5 /* PrivacyInfo.xcprivacy */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3402007AD349A884E8C31C19 /* ScreenTimePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C517AF0AC8EBBE6C827FBDE /* ScreenTimePlugin.swift */; };
 		37CB9613277723F298D4C79A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4137344AA6C3FE0FBB225000 /* Foundation.framework */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		46ECC3EAFA350E3209D9C752 /* LockShield.swift in Sources */ = {isa = PBXBuildFile; fileRef = F39F0FA3539EE5C66E3CCA3C /* LockShield.swift */; };
+		47A4189EA74C0288F6627C3F /* GouWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2F3F3BACB7FCB5F774C2EF1F /* GouWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		59F80BD025BE5F2EC15C2009 /* HomeWidgetPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B99AF8E5814613235C8653E /* HomeWidgetPlugin.swift */; };
 		5E564E5FA37214C779BC7E7E /* CartoonLab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63172128E7891473D0180040 /* CartoonLab.swift */; };
+		6406898D5CBCFB6602AA65C8 /* GouWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 218314AC4BFEA3B4214FB144 /* GouWidget.swift */; };
 		6DB21AC89CF01BCD6B48A497 /* ShieldConfig.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1F05B2FE2D4FA9567A7953E3 /* ShieldConfig.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		7BC833DE31F8EF8AACEB5BB5 /* DCTNetAnimeHead.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 2CFC3C0BD25055B03AAFE293 /* DCTNetAnimeHead.mlpackage */; };
+		7C153AFA0A94F0E9A922DA3D /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4137344AA6C3FE0FBB225000 /* Foundation.framework */; };
 		7D95E50FE3B3F84EA04AE0FC /* ReportContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAE12289BF5AC79138CE8E49 /* ReportContext.swift */; };
 		7EB2B41625BCDE798A508F4B /* ScreenTimeMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 635A04D9397B53805A9026E5 /* ScreenTimeMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		85BD8A6107FDD876ADBCBE67 /* GouWidgetShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D5252AC53E4BF369F2DD6B6 /* GouWidgetShared.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		9AA455574BF43AE481FF0E5A /* ScreenTimeReport.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = 81AB97AA8782B29D64620A64 /* ScreenTimeReport.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		9CB6D1649D97041CD7F5BB0B /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E53FD82AED1F893B6676529 /* Pods_Runner.framework */; };
+		B15BFC28EC9D12DB9ACDBA8C /* GouWidgetShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D5252AC53E4BF369F2DD6B6 /* GouWidgetShared.swift */; };
 		BD7784A593CE2E3335FF4CFD /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4137344AA6C3FE0FBB225000 /* Foundation.framework */; };
 		BECB1DB1C26A3889F8C7770F /* ScreenTimeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E5C9A85AC300E17F02E7E5 /* ScreenTimeStore.swift */; };
 		CD5C7A2957BE86DC0AD0A327 /* ReportContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAE12289BF5AC79138CE8E49 /* ReportContext.swift */; };
 		D4351BDFB1981D1EDAB7AA03 /* ScreenTimeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E5C9A85AC300E17F02E7E5 /* ScreenTimeStore.swift */; };
+		E9FAE507D3329B87BABEE421 /* GouWidgetShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D5252AC53E4BF369F2DD6B6 /* GouWidgetShared.swift */; };
 		F5DDB7F29B7F6612CAB2DC32 /* ScreenTimeReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E656AB5FD0A64AB07DC614BC /* ScreenTimeReport.swift */; };
 		FC972C5FEAF5F6A68A3B5798 /* LockShield.swift in Sources */ = {isa = PBXBuildFile; fileRef = F39F0FA3539EE5C66E3CCA3C /* LockShield.swift */; };
 /* End PBXBuildFile section */
@@ -52,6 +60,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 8323E8B702A4AE2838621849;
 			remoteInfo = ShieldConfig;
+		};
+		4FC60838EC80625A5C4EF0CF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BF610874A2B7E47F68A31814;
+			remoteInfo = GouWidget;
 		};
 		B29D16EFF52C6645EA7BC122 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -99,6 +114,7 @@
 			files = (
 				7EB2B41625BCDE798A508F4B /* ScreenTimeMonitor.appex in Embed Foundation Extensions */,
 				6DB21AC89CF01BCD6B48A497 /* ShieldConfig.appex in Embed Foundation Extensions */,
+				47A4189EA74C0288F6627C3F /* GouWidget.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -110,19 +126,25 @@
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
 		1E869665F5DD3BD668347CF3 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1F05B2FE2D4FA9567A7953E3 /* ShieldConfig.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShieldConfig.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		218314AC4BFEA3B4214FB144 /* GouWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GouWidget.swift; sourceTree = "<group>"; };
 		29E5C9A85AC300E17F02E7E5 /* ScreenTimeStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScreenTimeStore.swift; sourceTree = "<group>"; };
+		2BB24DF7B00A43C780A1033D /* GouWidget.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = GouWidget.xcconfig; sourceTree = "<group>"; };
 		2CFC3C0BD25055B03AAFE293 /* DCTNetAnimeHead.mlpackage */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.mlpackage; path = DCTNetAnimeHead.mlpackage; sourceTree = "<group>"; };
 		2DC8E45991209208E2264B38 /* Runner.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
+		2F3F3BACB7FCB5F774C2EF1F /* GouWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GouWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3A4B86DF2E935284E34ED2A5 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
 		3E53FD82AED1F893B6676529 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4137344AA6C3FE0FBB225000 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		458F5D0C80E76AB546BB5989 /* ScreenTimeMonitor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScreenTimeMonitor.swift; sourceTree = "<group>"; };
 		50454BE297654605FBC0E8EC /* ShieldConfig.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShieldConfig.swift; sourceTree = "<group>"; };
 		51CE83D1DD6661F01B8F6F95 /* ShieldConfig.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = ShieldConfig.xcconfig; sourceTree = "<group>"; };
+		5D5252AC53E4BF369F2DD6B6 /* GouWidgetShared.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GouWidgetShared.swift; sourceTree = "<group>"; };
 		63172128E7891473D0180040 /* CartoonLab.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CartoonLab.swift; sourceTree = "<group>"; };
 		635A04D9397B53805A9026E5 /* ScreenTimeMonitor.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ScreenTimeMonitor.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		6B99AF8E5814613235C8653E /* HomeWidgetPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeWidgetPlugin.swift; sourceTree = "<group>"; };
 		6C517AF0AC8EBBE6C827FBDE /* ScreenTimePlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScreenTimePlugin.swift; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -141,6 +163,7 @@
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9B5CBB8BE74EA51A9E040979 /* Pods-RunnerTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile.xcconfig"; sourceTree = "<group>"; };
+		A06A595F9A94BFA60EE758ED /* GouWidget.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = GouWidget.entitlements; sourceTree = "<group>"; };
 		B24BB189BD97E2FA77A87F7E /* ScreenTimeReport.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = ScreenTimeReport.xcconfig; sourceTree = "<group>"; };
 		B6181CEFBFF5ECFADDADF63C /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
 		BA2FF97FEFF6C869CF13A553 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -148,6 +171,7 @@
 		CD8A1CE1F650190D22721FE6 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		D12B8E2201D24267FB022E49 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		D4614ABD399FA34B2DD30B1D /* ScreenTimeMonitor.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = ScreenTimeMonitor.entitlements; sourceTree = "<group>"; };
+		E34732222292738737305F51 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E656AB5FD0A64AB07DC614BC /* ScreenTimeReport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScreenTimeReport.swift; sourceTree = "<group>"; };
 		EAE12289BF5AC79138CE8E49 /* ReportContext.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReportContext.swift; sourceTree = "<group>"; };
 		F39F0FA3539EE5C66E3CCA3C /* LockShield.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LockShield.swift; sourceTree = "<group>"; };
@@ -194,6 +218,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				9CB6D1649D97041CD7F5BB0B /* Pods_Runner.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F2B4F2545A63CE54562B978C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7C153AFA0A94F0E9A922DA3D /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -263,6 +295,20 @@
 			path = ScreenTimeReport;
 			sourceTree = "<group>";
 		};
+		7D05E8E1AF1607CC605070FE /* GouWidget */ = {
+			isa = PBXGroup;
+			children = (
+				218314AC4BFEA3B4214FB144 /* GouWidget.swift */,
+				5D5252AC53E4BF369F2DD6B6 /* GouWidgetShared.swift */,
+				3A4B86DF2E935284E34ED2A5 /* PrivacyInfo.xcprivacy */,
+				E34732222292738737305F51 /* Info.plist */,
+				A06A595F9A94BFA60EE758ED /* GouWidget.entitlements */,
+				2BB24DF7B00A43C780A1033D /* GouWidget.xcconfig */,
+			);
+			name = GouWidget;
+			path = GouWidget;
+			sourceTree = "<group>";
+		};
 		88ABFF0C238BB77160508F40 /* ShieldConfig */ = {
 			isa = PBXGroup;
 			children = (
@@ -299,6 +345,7 @@
 				63A02A3B7417E8B0B35992B5 /* ScreenTimeMonitor */,
 				72F7A3D02801F7D2C6B60A21 /* ScreenTimeReport */,
 				88ABFF0C238BB77160508F40 /* ShieldConfig */,
+				7D05E8E1AF1607CC605070FE /* GouWidget */,
 			);
 			sourceTree = "<group>";
 		};
@@ -310,6 +357,7 @@
 				635A04D9397B53805A9026E5 /* ScreenTimeMonitor.appex */,
 				81AB97AA8782B29D64620A64 /* ScreenTimeReport.appex */,
 				1F05B2FE2D4FA9567A7953E3 /* ShieldConfig.appex */,
+				2F3F3BACB7FCB5F774C2EF1F /* GouWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -329,6 +377,7 @@
 				6C517AF0AC8EBBE6C827FBDE /* ScreenTimePlugin.swift */,
 				63172128E7891473D0180040 /* CartoonLab.swift */,
 				61FC0379F69A021C60FD0E17 /* Models */,
+				6B99AF8E5814613235C8653E /* HomeWidgetPlugin.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -441,11 +490,29 @@
 				2E2F7B2853E80FE8D66C0F5A /* PBXTargetDependency */,
 				19C1D7A598206020F38B750C /* PBXTargetDependency */,
 				1133DA74CAA7612C16F1D1C6 /* PBXTargetDependency */,
+				858C8C64740C4F1F1A4031C0 /* PBXTargetDependency */,
 			);
 			name = Runner;
 			productName = Runner;
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
 			productType = "com.apple.product-type.application";
+		};
+		BF610874A2B7E47F68A31814 /* GouWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9B281B149ED50CD805DF9E54 /* Build configuration list for PBXNativeTarget "GouWidget" */;
+			buildPhases = (
+				E7D68D6D6BA8E28038C30F1C /* Sources */,
+				F2B4F2545A63CE54562B978C /* Frameworks */,
+				EE38C9038F919114B515BE5D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GouWidget;
+			productName = GouWidget;
+			productReference = 2F3F3BACB7FCB5F774C2EF1F /* GouWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -485,6 +552,7 @@
 				04176EE1486B2632C50DB809 /* ScreenTimeMonitor */,
 				05C2EEEFF348DBF1B0229AF3 /* ScreenTimeReport */,
 				8323E8B702A4AE2838621849 /* ShieldConfig */,
+				BF610874A2B7E47F68A31814 /* GouWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -528,6 +596,14 @@
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
 				17D3E1EE6E9B654E7C423182 /* cartoon_sample.jpg in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE38C9038F919114B515BE5D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				32759C8BD637F533F4E2691C /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -652,6 +728,7 @@
 				2EB73B7F73D9C64CF3B78136 /* ScreenTimeMonitor.swift in Sources */,
 				D4351BDFB1981D1EDAB7AA03 /* ScreenTimeStore.swift in Sources */,
 				FC972C5FEAF5F6A68A3B5798 /* LockShield.swift in Sources */,
+				85BD8A6107FDD876ADBCBE67 /* GouWidgetShared.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -667,6 +744,8 @@
 				46ECC3EAFA350E3209D9C752 /* LockShield.swift in Sources */,
 				5E564E5FA37214C779BC7E7E /* CartoonLab.swift in Sources */,
 				7BC833DE31F8EF8AACEB5BB5 /* DCTNetAnimeHead.mlpackage in Sources */,
+				59F80BD025BE5F2EC15C2009 /* HomeWidgetPlugin.swift in Sources */,
+				E9FAE507D3329B87BABEE421 /* GouWidgetShared.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -676,6 +755,15 @@
 			files = (
 				F5DDB7F29B7F6612CAB2DC32 /* ScreenTimeReport.swift in Sources */,
 				CD5C7A2957BE86DC0AD0A327 /* ReportContext.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E7D68D6D6BA8E28038C30F1C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6406898D5CBCFB6602AA65C8 /* GouWidget.swift in Sources */,
+				B15BFC28EC9D12DB9ACDBA8C /* GouWidgetShared.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -704,6 +792,12 @@
 			isa = PBXTargetDependency;
 			target = 97C146ED1CF9000F007C117D /* Runner */;
 			targetProxy = 331C8085294A63A400263BE5 /* PBXContainerItemProxy */;
+		};
+		858C8C64740C4F1F1A4031C0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = GouWidget;
+			target = BF610874A2B7E47F68A31814 /* GouWidget */;
+			targetProxy = 4FC60838EC80625A5C4EF0CF /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -938,6 +1032,35 @@
 			};
 			name = Debug;
 		};
+		5408D6D65E99B76180E4B5A4 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2BB24DF7B00A43C780A1033D /* GouWidget.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = GouWidget/GouWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = 5H4N969ZA3;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = GouWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.zwjsg.zwjsgApp.GouWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Profile;
+		};
 		5B8BD836AA90184404BC1504 /* Release */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = B24BB189BD97E2FA77A87F7E /* ScreenTimeReport.xcconfig */;
@@ -958,6 +1081,35 @@
 				);
 				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.zwjsg.zwjsgApp.ScreenTimeReport;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		7C011F804E71FFA47C89B1C5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2BB24DF7B00A43C780A1033D /* GouWidget.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = GouWidget/GouWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = 5H4N969ZA3;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = GouWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.zwjsg.zwjsgApp.GouWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -1185,6 +1337,34 @@
 			};
 			name = Profile;
 		};
+		BE7FB3A9CB2D14B1FF1ECDA7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2BB24DF7B00A43C780A1033D /* GouWidget.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = GouWidget/GouWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = 5H4N969ZA3;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = GouWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.zwjsg.zwjsgApp.GouWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 		CA4A7E1D71990CCAE6F55516 /* Release */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 88C831D8B95230CC19851D36 /* ScreenTimeMonitor.xcconfig */;
@@ -1331,6 +1511,16 @@
 				5B8BD836AA90184404BC1504 /* Release */,
 				3889162B366C74F73768B159 /* Debug */,
 				0C3EE2B1DCC2AD4A2D463775 /* Profile */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9B281B149ED50CD805DF9E54 /* Build configuration list for PBXNativeTarget "GouWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7C011F804E71FFA47C89B1C5 /* Release */,
+				BE7FB3A9CB2D14B1FF1ECDA7 /* Debug */,
+				5408D6D65E99B76180E4B5A4 /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

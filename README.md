@@ -11,7 +11,7 @@
 ```
 packages/
   pop_ui/            黄黑波普设计规范：颜色、描边、硬阴影、主题、波普按钮（Flutter）
-  avatar_engine/     卡通形象引擎：人物底层 + 各 app 的叠加层（变狗 DogAvatar、天气 WeatherAvatar，照片形象的 PhotoDogAvatar、PhotoWeatherAvatar），形象存在手机上（AvatarStore）
+  avatar_engine/     卡通形象引擎：人物底层 + 各 app 的叠加层（变狗 DogAvatar、天气 WeatherAvatar，照片形象的 PhotoDogAvatar、PhotoWeatherAvatar），形象存在手机上（AvatarStore），给桌面小组件预先画形象图（WidgetImages）
   series_core/       接口客户端基类：token、错误处理、短信登录、退出、注销、上传和下载形象（Flutter）
   series_share/      分享：卡片截图、存相册、系统分享，AI 生成内容的显式标识（AiTag）和隐式标识（AigcLabel），用系统分享面板发文字（TextSharer）（Flutter）
   php/series-auth/   短信验证码服务 + 发送接口（Laravel，composer 本地路径包）
@@ -95,6 +95,7 @@ flutter run --dart-define=API_BASE=http://10.0.2.2:8000/api/v1
 - 每晚提醒：本地通知（flutter_local_notifications），不经过服务器。设目标页点“开始做人”时请求通知权限，默认 22:00；在“我的 › 结算卡提醒”里开关、换时间，点通知直接打开结算卡。登录后提醒时间同步到 `remind_at`，以后做服务端推送时用。安卓用非精确闹钟，可能晚几分钟，国内部分系统还要用户允许后台运行。
 - 昵称：“我的”页点名字修改，最长 16 个字，登录后同步到服务端，也显示在结算卡上。
 - 隐私政策：`lib/features/me/privacy_page.dart`，“我的”页和登录页都能打开。内容按现在的数据处理写成，上架前要补运营者名称和联系方式，并请法务审核。
+- 桌面小组件（iOS `ios/GouWidget/`，安卓 `android/app/src/main/kotlin/.../widget/`）：小号（2×2）是狗度、形象、阶段牌和一句吐槽；中号（4×2）再加今日已刷、目标和“再刷多久你就会……”，点小组件打开 App。狗度只在手机上算、不联网：安卓的小组件自己用 `TodayUsage` 算当天的使用时长（和 App 同一个算法），系统大约每 30 分钟叫醒一次，0 点另有闹钟让它变回人；iOS 只知道到了哪个阶段（监控扩展记在 App Group 里），到了新阶段监控扩展马上叫小组件刷新，狗度显示成“≥60%”，0 点变回人。阈值和文案由 App 交过去（照搬 `dog_meter.dart`），原生只做“分钟 ÷ 目标 → 数越过了几个阈值”。没开权限、没做完引导时提示打开 App，不显示演示数据。App 这边是 `lib/core/home_widget.dart` 的 `HomeWidgetSync`，6 张形象图（阶段 0–5）预先画好放进共享目录，换了形象或画法版本（`dogAvatarArtVersion`）才重画。iOS 的小组件要 iOS 17 以上，带隐私清单（读 App Group 的 UserDefaults）。
 - 新犬种解锁动画（`lib/widgets/unlock_celebration.dart`）：上报每日结果时服务端返回这次新解锁的犬种，App 先存在手机上（`pending_unlocks`，服务端只告诉一次），在底部导航的哪个页面都会弹；看过一个删一个，一次解锁几种就一个个弹。现在只有登录了的安卓用户会上报，iOS 还拿不到犬种解锁。
 
 App 时间锁（免费的基础功能，“我的 › App 时间锁”）：选几个 App 和每天的额度，合计用满就锁到第二天 0 点；最多 10 个锁，只存在手机上，不上传。苹果审核指南 4.10 不允许对屏幕使用时间相关的功能收费，所以不能做成会员功能。

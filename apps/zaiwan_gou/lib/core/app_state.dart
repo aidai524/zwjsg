@@ -146,6 +146,11 @@ class AppState extends ChangeNotifier {
   }
 
   UsageSnapshot get usage => _usage ?? UsageSnapshot.demo(demoMinutes);
+
+  bool _usageChecked = false;
+
+  /// 打开 App 后读过一次使用情况了（读到了真实数据，或者确认拿不到、用演示数据）
+  bool get usageChecked => _usageChecked;
   int get minutesUsed => usage.totalMinutes;
   int get percent => DogMeter.percentFor(minutesUsed, _goalMinutes);
   int get stage => DogMeter.stageFor(percent);
@@ -226,6 +231,9 @@ class AppState extends ChangeNotifier {
 
   /// 拍照做的卡通形象（平涂墨线贴纸）；没有时各处用代码画的默认形象
   ui.Image? get photoAvatar => _photoAvatar;
+
+  /// [photoAvatar] 的原图（PNG）。桌面小组件按它判断形象换没换、要不要重画形象图
+  Uint8List? get photoAvatarPng => _photoAvatarPng;
 
   /// 登录后服务端给的“还能换几次形象”；没登录、还没拉到时是 null
   int? get avatarRegenLeft => _avatarRegenLeft;
@@ -449,6 +457,7 @@ class AppState extends ChangeNotifier {
     if (ScreenTimeChannel.isSupported) {
       _screenTime = await _readScreenTime();
       _usage = screenTimeActive ? _screenTime!.toUsage() : null;
+      _usageChecked = true;
       notifyListeners();
       await _recordToday();
       // iOS 的阶段数据先只在手机上用、不上传：苹果开发者协议 3.3.3(P) 不允许把使用数据传出设备，
@@ -457,6 +466,7 @@ class AppState extends ChangeNotifier {
     }
     _hasPermission = await UsageChannel.hasPermission();
     _usage = _hasPermission ? await UsageChannel.todayUsage() : null;
+    _usageChecked = true;
     notifyListeners();
     await _recordToday();
     await _sync();

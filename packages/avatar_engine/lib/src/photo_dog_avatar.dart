@@ -5,6 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:pop_ui/pop_ui.dart';
 
 import 'photo_sticker.dart';
+import 'widget_images.dart';
+
+/// 不经过 Widget 树，把照片形象画成 [pixels] x [pixels] 的图片（背景透明），和 [PhotoDogAvatar] 一样。
+/// 给桌面小组件用，返回的图片用完要 dispose
+Future<ui.Image> renderPhotoDogAvatar({required ui.Image sticker, required int stage, int pixels = 360}) =>
+    paintToImage(_PhotoDogPainter(sticker, stage.clamp(0, 5)), pixels);
 
 /// 照片形象（[PhotoSticker] 画出来的平涂墨线贴纸）+ 变狗图层，带硬阴影。
 ///
