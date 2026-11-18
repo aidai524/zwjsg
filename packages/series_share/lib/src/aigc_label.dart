@@ -17,13 +17,11 @@ class AigcLabel {
 
   static const keyword = 'AIGC';
 
-  /// 生成合成服务提供者：先写 App 名，公司和备案号定了再换
-  static const producer = '再玩我是狗';
-
   static const _signature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
 
-  /// 给 PNG 加上隐式标识；不是完整的 PNG 时原样返回（宁可少个标识，也不能把图弄坏）
-  static Uint8List embed(Uint8List png, {String? produceId}) {
+  /// 给 PNG 加上隐式标识；不是完整的 PNG 时原样返回（宁可少个标识，也不能把图弄坏）。
+  /// [producer] 是生成合成服务提供者：先写 App 名，公司和备案号定了再换
+  static Uint8List embed(Uint8List png, {required String producer, String? produceId}) {
     final iend = _findIend(png);
     if (iend == null) return png;
     final json = jsonEncode({

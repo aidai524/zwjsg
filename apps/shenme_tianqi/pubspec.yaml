@@ -18,6 +18,9 @@ dependencies:
     path: ../../packages/avatar_engine
   series_core:
     path: ../../packages/series_core
+  # 天气卡的截图、存相册、系统分享和 AI 标识，和狗 App 共用
+  series_share:
+    path: ../../packages/series_share
   url_launcher: ^6.3.2
 
 dev_dependencies:
@@ -28,6 +31,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    # 天气卡右下角的 App 图标
+    - assets/icon/icon_full.png
 
 # 应用图标：SVG 源文件在 assets/icon，改了之后重新导出同名 PNG，再运行 `dart run flutter_launcher_icons` 生成两端图标
 flutter_launcher_icons:

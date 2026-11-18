@@ -1,0 +1,20 @@
+name: series_share
+description: 梗名 App 系列共用的分享卡片：截图、存相册、系统分享，AI 生成内容的显式和隐式标识
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  pop_ui:
+    path: ../pop_ui
+  gal: ^2.3.3
+  path_provider: ^2.1.6
+  share_plus: ^13.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

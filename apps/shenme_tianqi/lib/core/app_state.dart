@@ -50,7 +50,8 @@ class AppState extends ChangeNotifier {
 
   /// 隐私政策的版本。内容有重要变化时加 1，所有人打开 App 时重新同意一次。
   /// 2：2026-11-18 可以从“再玩我是狗”导入卡通形象，登录后存服务端、关心群里的家人能看到
-  static const privacyVersion = 2;
+  /// 3：2026-11-18 天气卡能存进相册（只写入）、用系统分享面板发出去
+  static const privacyVersion = 3;
 
   bool _privacyAccepted = false;
 

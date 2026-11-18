@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:pop_ui/pop_ui.dart';
 
 import 'core/app_state.dart';
+import 'features/card/weather_card_page.dart';
 import 'features/care/care_page.dart';
 import 'features/care/group_page.dart';
 import 'features/cities/cities_page.dart';
@@ -74,6 +75,7 @@ GoRouter buildRouter(AppState state) {
       ),
       GoRoute(path: '/cities', builder: (_, __) => const CitiesPage()),
       GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
+      GoRoute(path: '/card/:locationId', builder: (_, s) => WeatherCardPage(locationId: s.pathParameters['locationId']!)),
       GoRoute(path: '/login', builder: (_, s) => LoginPage(next: s.uri.queryParameters['next'])),
       GoRoute(
         path: '/care',

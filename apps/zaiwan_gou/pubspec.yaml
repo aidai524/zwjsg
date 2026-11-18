@@ -17,9 +17,10 @@ dependencies:
     path: ../../packages/avatar_engine
   series_core:
     path: ../../packages/series_core
+  # 结算卡的截图、存相册、系统分享和 AI 标识，和天气 App 共用
+  series_share:
+    path: ../../packages/series_share
   shared_preferences: ^2.2.0
-  gal: ^2.3.3
-  share_plus: ^13.3.1
   path_provider: ^2.1.6
   flutter_local_notifications: ^22.3.3
   timezone: ^0.11.2

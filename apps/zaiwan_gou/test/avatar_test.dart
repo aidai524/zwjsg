@@ -8,11 +8,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pop_ui/pop_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:zwjsg_app/core/aigc_label.dart';
+import 'package:series_share/series_share.dart';
 import 'package:zwjsg_app/core/api_client.dart';
 import 'package:zwjsg_app/core/app_state.dart';
 
-import 'package:zwjsg_app/core/card_exporter.dart';
+
 import 'package:zwjsg_app/core/cartoonizer.dart';
 import 'package:zwjsg_app/features/card/card_page.dart';
 import 'package:zwjsg_app/features/me/me_page.dart';
@@ -486,37 +486,8 @@ void main() {
     });
   });
 
+  // 隐式标识本身的格式在 packages/series_share 的测试里
   group('AI 标识', () {
-    test('导出的 PNG 里写上 AIGC 隐式标识，图本身不变；不是 PNG 时原样返回', () {
-      final labeled = AigcLabel.embed(onePixelPng, produceId: 'zwjsg-1');
-      expect(AigcLabel.read(labeled), {
-        'Label': '1',
-        'ContentProducer': '再玩我是狗',
-        'ProduceID': 'zwjsg-1',
-        'ReservedCode1': '',
-        'ContentPropagator': '',
-        'PropagateID': '',
-        'ReservedCode2': '',
-      });
-      expect(AigcLabel.read(onePixelPng), isNull);
-      // 原来的块原样保留，标识插在 IEND 前面
-      expect(labeled.sublist(0, onePixelPng.length - 12), onePixelPng.sublist(0, onePixelPng.length - 12));
-      expect(labeled.sublist(labeled.length - 12), onePixelPng.sublist(onePixelPng.length - 12));
-      expect(AigcLabel.crc32(latin1.encode('IEND')), 0xAE426082);
-      final junk = Uint8List.fromList([1, 2, 3]);
-      expect(AigcLabel.embed(junk), same(junk));
-    });
-
-    testWidgets('加了标识的 PNG 还能正常打开', (tester) async {
-      final labeled = AigcLabel.embed(onePixelPng);
-      final size = await tester.runAsync(() async {
-        final codec = await ui.instantiateImageCodec(labeled);
-        final frame = await codec.getNextFrame();
-        return Size(frame.image.width.toDouble(), frame.image.height.toDouble());
-      });
-      expect(size, const Size(1, 1));
-    });
-
     Future<PngExporter> pumpCard(WidgetTester tester, {required bool photo}) async {
       usePhoneScreen(tester);
       final sticker = await whiteSticker(tester);
@@ -542,6 +513,7 @@ void main() {
       await tester.tap(find.text('保存图片'));
       await tester.pumpAndSettle();
       expect(AigcLabel.read(exporter.saved.single)?['Label'], '1');
+      expect(AigcLabel.read(exporter.saved.single)?['ContentProducer'], '再玩我是狗');
     });
 
     testWidgets('默认形象（代码画的）不是 AI 生成的，不加标识', (tester) async {

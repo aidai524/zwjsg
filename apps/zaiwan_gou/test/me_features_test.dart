@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zwjsg_app/app.dart';
 import 'package:zwjsg_app/core/app_state.dart';
-import 'package:zwjsg_app/core/card_exporter.dart';
+import 'package:series_share/series_share.dart';
 import 'package:zwjsg_app/core/reminders.dart';
 import 'package:zwjsg_app/features/card/card_page.dart';
 import 'package:zwjsg_app/features/me/privacy_page.dart';
