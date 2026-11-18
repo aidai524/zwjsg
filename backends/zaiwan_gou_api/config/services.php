@@ -14,6 +14,12 @@ return [
     |
     */
 
+    // 系列 App 之间一次性导出形象：“什么鬼天气”的后端凭导出码来取图时带的密钥，两边配成一样的值。
+    // 没配时导出码照样能生成，但谁都取不到图
+    'series' => [
+        'export_key' => env('SERIES_EXPORT_KEY'),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],
