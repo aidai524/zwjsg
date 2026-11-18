@@ -17,7 +17,7 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory;
 
     protected $fillable = [
-        'phone', 'wechat_openid', 'nickname', 'timezone', 'snark_level',
+        'phone', 'wechat_openid', 'nickname', 'timezone', 'snark_level', 'temp_unit',
         'morning_push_on', 'morning_push_weekday', 'morning_push_weekend', 'alert_push_on',
         'push_token', 'avatar_path',
     ];

@@ -7,13 +7,16 @@ use App\Services\CareService;
 use App\Services\QuipPicker;
 use App\Services\WeatherInterpreter;
 use App\Services\WeatherService;
+use App\Support\TempUnit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 /**
  * 首页天气：官方数据原样给出 + 玩法结论（形象状态、决策卡、吐槽）。
  * 不登录也能看（游客用 query 里的 level / adm），登录后按用户设置。
+ * 温度数字一律是摄氏度，App 按用户选的单位换算显示；unit 只影响句子里的温度。
  */
 class WeatherController extends Controller
 {
@@ -30,9 +33,12 @@ class WeatherController extends Controller
         $q = $request->validate([
             'level' => ['sometimes', 'integer', 'in:0,1,2'],
             'adm' => ['sometimes', 'nullable', 'string', 'max:64'],
+            'unit' => ['sometimes', Rule::in(TempUnit::ALL)],
         ]);
 
         $level = $user?->snark_level ?? (int) ($q['level'] ?? 1);
+        // 单位以这次请求为准（App 每次都带），没带再看用户设置：刚切换单位时，设置可能还没传到服务端
+        $unit = $q['unit'] ?? $user?->temp_unit ?? TempUnit::CELSIUS;
         $adm = $user?->cities()->where('location_id', $locationId)->value('adm') ?? ($q['adm'] ?? null);
 
         try {
@@ -41,7 +47,7 @@ class WeatherController extends Controller
             abort(503, '天气数据暂时拿不到，稍后再试');
         }
 
-        $view = $interpreter->interpret($snap, $adm);
+        $view = $interpreter->interpret($snap, $adm, $unit);
         $view['quip'] = $quips->pick($view['quip_trigger'], $level, $user ? 'u'.$user->id : 'ip'.$request->ip());
         $view['level'] = $level;
 
@@ -61,7 +67,7 @@ class WeatherController extends Controller
             $view['serious'] => $view['serious_warnings'][0]['type_name'].'预警中',
             in_array($d['umbrella']['verdict'], ['take', 'maybe'], true) => $d['umbrella']['reason'],
             $d['long_johns']['verdict'] === 'yes' => $d['long_johns']['reason'],
-            default => '体感 '.$view['outfit']['feels_like'].'°，'.$view['outfit']['label'],
+            default => '体感 '.TempUnit::deg($view['outfit']['feels_like'], $view['unit'] ?? TempUnit::CELSIUS).'，'.$view['outfit']['label'],
         };
     }
 

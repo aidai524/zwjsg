@@ -2,15 +2,17 @@
 
 namespace App\Services;
 
+use App\Support\TempUnit;
 use Carbon\CarbonImmutable;
 
 /**
  * 把天气快照翻译成玩法结论：形象状态、穿衣档、严肃模式、四张决策卡、吐槽触发、关心话题。
  * 纯函数，不访问网络和数据库，方便测试。规则阈值都在 config/weather.php。
+ * 规则一律按摄氏度判断；$unit 只决定句子里的温度怎么写（见 TempUnit）。
  */
 class WeatherInterpreter
 {
-    public function interpret(array $snap, ?string $adm = null): array
+    public function interpret(array $snap, ?string $adm = null, string $unit = TempUnit::CELSIUS): array
     {
         $now = $snap['now'];
         $daily = array_values($snap['daily']);
@@ -27,12 +29,14 @@ class WeatherInterpreter
 
         $decisions = [
             'umbrella' => $this->umbrella($hours, $target),
-            'long_johns' => $this->longJohns($now, $target, $targetIdx === 0),
+            'long_johns' => $this->longJohns($now, $target, $targetIdx === 0, $unit),
             'car_wash' => $this->carWash($daily, $targetIdx),
             'laundry' => $this->laundry($hours, $target),
         ];
 
         return [
+            // 句子里的温度用的单位；数字字段仍是摄氏度
+            'unit' => $unit,
             'cond' => $cond,
             'outfit' => $outfit,
             'serious' => $serious,
@@ -161,7 +165,7 @@ class WeatherInterpreter
         return ['verdict' => 'no', 'label' => '不带', 'reason' => '不会下雨', 'pop' => $peak['pop'], 'hour' => null];
     }
 
-    private function longJohns(array $now, ?array $target, bool $isToday): array
+    private function longJohns(array $now, ?array $target, bool $isToday, string $unit): array
     {
         $min = $target['temp_min'] ?? $now['feels_like'];
         if ($isToday) {
@@ -172,7 +176,7 @@ class WeatherInterpreter
         return [
             'verdict' => $wear ? 'yes' : 'no',
             'label' => $wear ? '穿' : '不用',
-            'reason' => "最低体感约 {$min}°",
+            'reason' => '最低体感约 '.TempUnit::deg($min, $unit),
             'min_feels' => $min,
         ];
     }

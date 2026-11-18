@@ -9,9 +9,11 @@ use App\Models\User;
 use App\Services\CareService;
 use App\Services\WeatherInterpreter;
 use App\Services\WeatherService;
+use App\Support\TempUnit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class CareGroupController extends Controller
@@ -76,8 +78,11 @@ class CareGroupController extends Controller
     public function show(Request $request, CareGroup $careGroup): JsonResponse
     {
         abort_unless($careGroup->hasMember($request->user()), 404);
+        // 家人卡片上的“一句事实”按看的人选的单位写；和首页一样以请求为准，没带再看设置
+        $unit = $request->validate(['unit' => ['sometimes', Rule::in(TempUnit::ALL)]])['unit']
+            ?? $request->user()->temp_unit ?? TempUnit::CELSIUS;
 
-        return response()->json(['data' => $this->groupPayload($careGroup, $request->user(), withWeather: true)]);
+        return response()->json(['data' => $this->groupPayload($careGroup, $request->user(), withWeather: true, unit: $unit)]);
     }
 
     public function update(Request $request, CareGroup $careGroup): JsonResponse
@@ -116,7 +121,7 @@ class CareGroupController extends Controller
         }
     }
 
-    private function groupPayload(CareGroup $group, User $me, bool $withWeather = false): array
+    private function groupPayload(CareGroup $group, User $me, bool $withWeather = false, string $unit = TempUnit::CELSIUS): array
     {
         $care = app(CareService::class);
         $members = $group->members()->with('homeCity')->orderBy('care_group_members.id')->get();
@@ -129,7 +134,7 @@ class CareGroupController extends Controller
             'max_members' => config('weather.care.max_members'),
         ];
 
-        $payload['members'] = $members->map(function (User $m) use ($me, $care, $withWeather) {
+        $payload['members'] = $members->map(function (User $m) use ($me, $care, $withWeather, $unit) {
             $row = [
                 'id' => $m->id,
                 'nickname' => $m->displayName(),
@@ -144,7 +149,7 @@ class CareGroupController extends Controller
                     ->whereNotNull('acked_at')->latest('acked_at')->value('acked_at'),
             ];
             if ($withWeather) {
-                $row['weather'] = $this->memberWeather($m);
+                $row['weather'] = $this->memberWeather($m, $unit);
             }
 
             return $row;
@@ -168,7 +173,7 @@ class CareGroupController extends Controller
         return $payload;
     }
 
-    private function memberWeather(User $m): ?array
+    private function memberWeather(User $m, string $unit): ?array
     {
         if (! $m->homeCity) {
             return null;
@@ -179,7 +184,7 @@ class CareGroupController extends Controller
         } catch (\RuntimeException) {
             return null;
         }
-        $view = app(WeatherInterpreter::class)->interpret($snap, $m->homeCity->adm);
+        $view = app(WeatherInterpreter::class)->interpret($snap, $m->homeCity->adm, $unit);
 
         return WeatherController::summary($snap, $view);
     }
