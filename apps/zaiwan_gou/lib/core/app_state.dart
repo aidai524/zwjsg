@@ -56,7 +56,8 @@ class AppState extends ChangeNotifier {
 
   /// 隐私政策的版本。内容有重要变化时加 1，所有人打开 App 时重新同意一次
   /// 2：2026-11-16 加了拍照形象（相机、人脸单独同意、AI 生成标识）
-  static const privacyVersion = 2;
+  /// 3：2026-11-18 可以把卡通形象导出给“什么鬼天气”
+  static const privacyVersion = 3;
 
   bool _privacyAccepted = false;
 
@@ -295,6 +296,17 @@ class AppState extends ChangeNotifier {
       // 服务端不收就不再补传，手机上的形象照用；没网就等下次
       if (e.statusCode == 422) await _prefs.setBool(_kAvatarPending, false);
     }
+  }
+
+  /// 把卡通形象一次性导出给“什么鬼天气”，返回导出码（8 位，10 分钟内有效，只能用一次）。
+  /// 要先登录：天气 App 是从服务端取图的。手机上的形象还没传上去的先补传，传不上去时抛 [ApiException]
+  Future<({String code, DateTime expiresAt})> exportAvatar() async {
+    final png = _photoAvatarPng;
+    if (png != null && (_prefs.getBool(_kAvatarPending) ?? false)) {
+      await _uploadAvatar(png);
+      await _prefs.setBool(_kAvatarPending, false);
+    }
+    return api.exportAvatar();
   }
 
   /// 登录后对一下形象：手机上有没传上去的就补传；手机上没有、服务端有（比如换了手机），就下载回来

@@ -6,7 +6,7 @@ import 'package:pop_ui/pop_ui.dart';
 class PrivacyPage extends StatelessWidget {
   const PrivacyPage({super.key});
 
-  static const updated = '2026 年 11 月 16 日';
+  static const updated = '2026 年 11 月 18 日';
 
   static const summary = '我们只为了算出“你今天有多狗”使用你的数据。具体用了哪些 App 只在你手机上计算，不上传；'
       '自拍只在手机上变成卡通，原图不上传。';
@@ -23,6 +23,8 @@ class PrivacyPage extends StatelessWidget {
         '卡通形象：用自拍做形象时，照片只在你手机的内存里处理，变成卡通后就丢掉，不保存、不上传；第一次用照片前会单独征得你同意。'
             '卡通形象存在你的手机上，登录后上传到服务器（只传卡通形象，不传照片），换手机时能找回来。请只用你本人的照片。',
         'AI 生成标识：卡通形象由 AI 模型在你手机上生成。导出、分享的结算卡上会标“AI生成”，图片文件里也写有 AI 生成的标识。',
+        '导出到「什么鬼天气」（你主动操作时）：在“我的 › 形象”里生成导出码，填进「什么鬼天气」后，它的服务器凭码从我们这里取一次你的卡通形象（不是照片）。'
+            '导出码 10 分钟内有效、只能用一次；两边账号不互通，导过去以后互不影响。',
       ],
     ),
     (

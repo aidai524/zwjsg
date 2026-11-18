@@ -7,6 +7,7 @@ import '../../core/dog_meter.dart';
 import '../../core/screen_time_channel.dart';
 import 'package:pop_ui/pop_ui.dart';
 import '../../widgets/my_avatar.dart';
+import 'export_avatar_sheet.dart';
 
 class MePage extends StatelessWidget {
   const MePage({super.key});
@@ -42,6 +43,37 @@ class MePage extends StatelessWidget {
       builder: (_) => _NicknameDialog(initial: state.nickname ?? ''),
     );
     if (name != null) await state.setNickname(name);
+  }
+
+  /// 导出到“什么鬼天气”：要先登录（天气 App 从服务端取图），再生成导出码
+  Future<void> _exportAvatar(BuildContext context) async {
+    final state = AppScope.read(context);
+    if (!state.isLoggedIn) {
+      final login = await showDialog<bool>(
+        context: context,
+        builder: (c) => AlertDialog(
+          title: const Text('导出要先登录'),
+          content: const Text('「什么鬼天气」是从我们的服务器取你的卡通形象，所以要先登录，把形象存上去。'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('算了')),
+            TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('去登录')),
+          ],
+        ),
+      );
+      if (login == true && context.mounted) context.push('/login');
+      return;
+    }
+    try {
+      final export = await state.exportAvatar();
+      if (!context.mounted) return;
+      await showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: Pop.white,
+        builder: (_) => ExportAvatarSheet(code: export.code, expiresAt: export.expiresAt),
+      );
+    } on ApiException catch (e) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 
   Future<void> _editReminder(BuildContext context) => showModalBottomSheet<void>(
@@ -143,6 +175,7 @@ class MePage extends StatelessWidget {
                 trailing: state.photoAvatar == null ? '默认形象' : '拍照形象',
                 onTap: () => context.push('/avatar?edit=1'),
               ),
+              if (state.photoAvatar != null) _Row(title: '导出到「什么鬼天气」', onTap: () => _exportAvatar(context)),
             ]),
             const _Section('目标与提醒'),
             _Group(children: [
