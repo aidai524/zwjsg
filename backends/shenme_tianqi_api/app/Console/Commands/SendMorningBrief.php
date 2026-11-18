@@ -7,6 +7,7 @@ use App\Services\Push\PushGateway;
 use App\Services\QuipPicker;
 use App\Services\WeatherInterpreter;
 use App\Services\WeatherService;
+use App\Support\TempUnit;
 use Illuminate\Console\Command;
 
 /**
@@ -40,14 +41,16 @@ class SendMorningBrief extends Command
                     } catch (\RuntimeException) {
                         continue;
                     }
-                    $view = $interpreter->interpret($snap, $user->homeCity->adm);
+                    $unit = $user->temp_unit ?? TempUnit::CELSIUS;
+                    $view = $interpreter->interpret($snap, $user->homeCity->adm, $unit);
 
                     if ($view['serious']) {
                         $w = $view['serious_warnings'][0];
                         $push->send($user, $w['title'], "{$w['sender']} 发布，点开看原文", ['type' => 'morning']);
                     } else {
                         $d = $view['decisions'];
-                        $title = "{$user->homeCity->name} {$snap['now']['temp']}° · 伞：{$d['umbrella']['label']} · 秋裤：{$d['long_johns']['label']}";
+                        $temp = TempUnit::deg($snap['now']['temp'], $unit);
+                        $title = "{$user->homeCity->name} {$temp} · 伞：{$d['umbrella']['label']} · 秋裤：{$d['long_johns']['label']}";
                         $body = $quips->pick($view['quip_trigger'], $user->snark_level, 'u'.$user->id) ?? $view['outfit']['label'];
                         $push->send($user, $title, $body, ['type' => 'morning']);
                     }

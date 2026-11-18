@@ -135,6 +135,8 @@ iOS 屏幕使用时间（技术验证中）：
 
 - 首次打开先弹隐私政策（`lib/features/privacy/consent_page.dart`）：同意之前路由只放行隐私政策页，不查天气、不请求权限。政策有重要变化时把 `AppState.privacyVersion` 加 1，所有人重新同意。设置页也能打开完整政策。
 - 设置页的推送（`PushSection`）：早安播报开关、工作日和周末分开设时间，预警推送开关。推送要发到账号上，所以登录后才能设；设置存在服务端（`PATCH me/settings` 的 `morning_push_*`、`alert_push_on`），推送通道接好后生效。
+- 温度单位（设置页）：摄氏度 / 华氏度，不登录也能设，存在手机上；登录后同步到服务端的 `temp_unit`，早安推送按它写。接口里的温度数字一律是摄氏度（照搬数据源），App 显示时换算（`lib/core/temp_unit.dart`）；服务端拼的句子（秋裤理由、关心群的一句事实、早安推送标题）按请求带的 `unit` 写，没带再看用户设置（`app/Support/TempUnit.php`）。两边换算方法要一致，测试用的是同一组数。
+- 应用图标：源文件在 `apps/shenme_tianqi/assets/icon/`（翻白眼的云 + 雨和闪电，SVG）。改了 SVG 先导出同名 1024 PNG，例如 `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --user-data-dir=$(mktemp -d) --default-background-color=00000000 --window-size=1024,1024 --screenshot=icon_full.png "file://$PWD/icon_full.svg"`，再运行 `dart run flutter_launcher_icons` 生成两端图标。这个工具（0.14.4）会把 `ios/Runner.xcodeproj/project.pbxproj` 里的 `ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS` 错改成 `AppIcon`，生成后把这个文件还原。iOS 主屏上的名字是“什么鬼天气”（`CFBundleDisplayName`）。
 
 ### 配置
 

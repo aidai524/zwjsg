@@ -247,6 +247,61 @@ class WeatherApiTest extends TestCase
             ->assertJsonPath('data.view.level', 0);
     }
 
+    public function test_fahrenheit_only_changes_sentences_and_numbers_stay_celsius(): void
+    {
+        $this->fakeQWeather();
+
+        // 数字照搬数据源（摄氏度），App 显示时再换算；只有服务端拼的句子换成华氏度
+        $this->getJson('/api/v1/weather/101010100?unit=f')->assertOk()
+            ->assertJsonPath('data.view.unit', 'f')
+            ->assertJsonPath('data.now.temp', 20)
+            ->assertJsonPath('data.now.feels_like', 19)
+            ->assertJsonPath('data.daily.0.temp_min', 14)
+            ->assertJsonPath('data.view.outfit.feels_like', 19)
+            ->assertJsonPath('data.view.decisions.long_johns.min_feels', 14)
+            ->assertJsonPath('data.view.decisions.long_johns.reason', '最低体感约 57°');
+
+        $this->getJson('/api/v1/weather/101010100')->assertOk()
+            ->assertJsonPath('data.view.unit', 'c')
+            ->assertJsonPath('data.view.decisions.long_johns.reason', '最低体感约 14°');
+    }
+
+    public function test_unit_follows_the_request_then_the_user_setting(): void
+    {
+        $this->fakeQWeather();
+        $user = User::factory()->create(['temp_unit' => 'f']);
+
+        $this->actingAs($user, 'sanctum')->getJson('/api/v1/weather/101010100')
+            ->assertJsonPath('data.view.unit', 'f');
+        // 刚在 App 里切回摄氏度、设置还没传上来时，以请求为准
+        $this->actingAs($user, 'sanctum')->getJson('/api/v1/weather/101010100?unit=c')
+            ->assertJsonPath('data.view.unit', 'c');
+    }
+
+    public function test_unknown_unit_is_rejected(): void
+    {
+        $this->fakeQWeather();
+        $this->getJson('/api/v1/weather/101010100?unit=k')->assertUnprocessable();
+    }
+
+    public function test_care_group_fact_uses_the_viewers_unit(): void
+    {
+        $this->fakeQWeather();
+        $mom = User::factory()->create(['temp_unit' => 'c']);
+        $mom->cities()->create(['location_id' => '101280101', 'name' => '广州', 'adm' => '广东省', 'is_home' => true]);
+        $me = User::factory()->create(['temp_unit' => 'f']);
+        $group = CareGroup::create(['name' => '我们家', 'invite_code' => 'TESTHOME', 'owner_id' => $mom->id]);
+        $group->members()->attach([$mom->id, $me->id]);
+
+        $res = $this->actingAs($me, 'sanctum')->getJson("/api/v1/care-groups/{$group->id}")->assertOk()
+            ->assertJsonPath('data.members.0.nickname', $mom->displayName())
+            ->assertJsonPath('data.members.0.weather.temp', 20);
+        $this->assertStringStartsWith('体感 66°，', $res->json('data.members.0.weather.fact'));
+
+        $res = $this->actingAs($me, 'sanctum')->getJson("/api/v1/care-groups/{$group->id}?unit=c")->assertOk();
+        $this->assertStringStartsWith('体感 19°，', $res->json('data.members.0.weather.fact'));
+    }
+
     public function test_upstream_failure_returns_503(): void
     {
         Http::fake(['*' => Http::response(['code' => '401'], 200)]);

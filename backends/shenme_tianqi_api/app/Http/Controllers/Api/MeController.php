@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\CareGroup;
+use App\Support\TempUnit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class MeController extends Controller
 {
@@ -23,6 +25,7 @@ class MeController extends Controller
             'nickname' => ['sometimes', 'nullable', 'string', 'max:16'],
             'timezone' => ['sometimes', 'timezone:all'],
             'snark_level' => ['sometimes', 'integer', 'in:0,1,2'],
+            'temp_unit' => ['sometimes', Rule::in(TempUnit::ALL)],
             'morning_push_on' => ['sometimes', 'boolean'],
             'morning_push_weekday' => ['sometimes', 'date_format:H:i'],
             'morning_push_weekend' => ['sometimes', 'date_format:H:i'],

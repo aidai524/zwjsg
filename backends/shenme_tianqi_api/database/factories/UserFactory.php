@@ -17,6 +17,7 @@ class UserFactory extends Factory
             'nickname' => fake()->firstName(),
             'timezone' => 'Asia/Shanghai',
             'snark_level' => 1,
+            'temp_unit' => 'c',
         ];
     }
 }

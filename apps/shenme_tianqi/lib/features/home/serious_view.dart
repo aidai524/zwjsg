@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pop_ui/pop_ui.dart';
 
+import '../../core/app_state.dart';
 import '../../core/models.dart';
 import '../../core/scene.dart';
 import '../../widgets/common.dart';
@@ -18,6 +19,7 @@ class SeriousView extends StatelessWidget {
   Widget build(BuildContext context) {
     final w = weather;
     final umbrella = w.decision('umbrella');
+    final unit = AppScope.of(context).tempUnit;
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -57,7 +59,7 @@ class SeriousView extends StatelessWidget {
                   ],
                 ),
               ),
-              Text('${w.temp}°\n${w.text}', textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w900)),
+              Text('${unit.deg(w.temp)}\n${w.text}', textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w900)),
             ],
           ),
         ),

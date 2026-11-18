@@ -7,6 +7,7 @@ import '../../core/api_client.dart';
 import '../../core/app_state.dart';
 import '../../core/models.dart';
 import '../../core/scene.dart';
+import '../../core/temp_unit.dart';
 import '../../widgets/common.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -27,27 +28,16 @@ class SettingsPage extends StatelessWidget {
           const SizedBox(height: 4),
           const Text('只影响吐槽，不影响天气。预警时自动切成正经。', style: TextStyle(fontSize: 12, color: Pop.muted)),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              for (var i = 0; i < snarkLevels.length; i++) ...[
-                if (i > 0) const SizedBox(width: 10),
-                Expanded(
-                  child: Semantics(
-                    button: true,
-                    selected: state.snarkLevel == i,
-                    child: GestureDetector(
-                      onTap: () => state.setSnark(i),
-                      child: Container(
-                        height: 52,
-                        alignment: Alignment.center,
-                        decoration: Pop.card(color: state.snarkLevel == i ? Pop.yellow : Pop.white, shadow: state.snarkLevel == i),
-                        child: Text(snarkLevels[i], style: const TextStyle(fontWeight: FontWeight.w900)),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ],
+          _Choices(labels: snarkLevels, selected: state.snarkLevel, onSelect: state.setSnark),
+          const SizedBox(height: 28),
+          const Text('温度单位', style: _heading),
+          const SizedBox(height: 4),
+          const Text('数据源给的是摄氏度，选华氏度时换算后显示。', style: TextStyle(fontSize: 12, color: Pop.muted)),
+          const SizedBox(height: 12),
+          _Choices(
+            labels: [for (final u in TempUnit.values) u.label],
+            selected: state.tempUnit.index,
+            onSelect: (i) => state.setTempUnit(TempUnit.values[i]),
           ),
           const SizedBox(height: 28),
           const PushSection(),
@@ -121,6 +111,41 @@ class SettingsPage extends StatelessWidget {
     } on ApiException catch (e) {
       if (context.mounted) showToast(context, e.message);
     }
+  }
+}
+
+/// 一排只能选一个的卡片：毒舌档位、温度单位
+class _Choices extends StatelessWidget {
+  const _Choices({required this.labels, required this.selected, required this.onSelect});
+
+  final List<String> labels;
+  final int selected;
+  final ValueChanged<int> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        for (var i = 0; i < labels.length; i++) ...[
+          if (i > 0) const SizedBox(width: 10),
+          Expanded(
+            child: Semantics(
+              button: true,
+              selected: selected == i,
+              child: GestureDetector(
+                onTap: () => onSelect(i),
+                child: Container(
+                  height: 52,
+                  alignment: Alignment.center,
+                  decoration: Pop.card(color: selected == i ? Pop.yellow : Pop.white, shadow: selected == i),
+                  child: Text(labels[i], style: const TextStyle(fontWeight: FontWeight.w900)),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
   }
 }
 

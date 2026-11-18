@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <!-- 云：三块圆加一条圆角长条拼成；阴影、描边、填色都用它 -->
+    <g id="cloud">
+      <circle cx="340" cy="468" r="118"/>
+      <circle cx="528" cy="392" r="168"/>
+      <circle cx="692" cy="486" r="110"/>
+      <rect x="224" y="448" width="576" height="196" rx="98"/>
+    </g>
+    <path id="drop" d="M0 -62 C14 -38 36 -10 36 14 A36 36 0 0 1 -36 14 C-36 -10 -14 -38 0 -62 Z"/>
+    <path id="bolt" d="M14 -92 L-50 14 L-8 14 L-32 104 L54 -20 L10 -20 L46 -92 Z"/>
+    <!-- 单色图标只要云的外轮廓：把描边在云里面的那一半挖掉 -->
+    <mask id="outside" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <rect width="1024" height="1024" fill="#fff"/>
+      <use href="#cloud" fill="#000"/>
+    </mask>
+  </defs>
+  <g transform="translate(512 512) scale(0.68) translate(-512 -512)">
+  <g id="mark" transform="translate(512 512) rotate(-6) translate(-512 -546)">
+    <use href="#cloud" transform="translate(28 28)" fill="#1B1B1F" stroke="#1B1B1F" stroke-width="72" stroke-linejoin="round"/>
+    <use href="#cloud" fill="#FFFFFF" stroke="#1B1B1F" stroke-width="72" stroke-linejoin="round"/>
+    <use href="#cloud" fill="#FFFFFF"/>
+    <ellipse cx="376" cy="574" rx="32" ry="18" fill="#FF8FA8"/>
+    <ellipse cx="648" cy="574" rx="32" ry="18" fill="#FF8FA8"/>
+    <path d="M400.06 514 A36 36 0 1 0 471.94 514 Z M552.06 514 A36 36 0 1 0 623.94 514 Z" fill="#1B1B1F"/>
+    <path d="M394 512 H478 M546 512 H630" stroke="#1B1B1F" stroke-width="16" stroke-linecap="round"/>
+    <path d="M400 450 L470 462" stroke="#1B1B1F" stroke-width="16" stroke-linecap="round"/>
+    <path d="M552 444 Q592 404 634 430" fill="none" stroke="#1B1B1F" stroke-width="16" stroke-linecap="round"/>
+    <path d="M474 596 q13 -14 26 0 t26 0 t26 0" fill="none" stroke="#1B1B1F" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="448" cy="532" r="9" fill="#FFFFFF"/>
+    <circle cx="600" cy="532" r="9" fill="#FFFFFF"/>
+    <g fill="#2F6BFF" stroke="#1B1B1F" stroke-width="18" stroke-linejoin="round">
+      <use href="#drop" transform="translate(352 796) rotate(16)"/>
+      <use href="#drop" transform="translate(676 808) rotate(16)"/>
+    </g>
+    <use href="#bolt" transform="translate(512 820) rotate(6)" fill="#FFFFFF" stroke="#1B1B1F" stroke-width="16" stroke-linejoin="round"/>
+  </g>
+  </g>
+</svg>

@@ -4,6 +4,7 @@ import 'package:pop_ui/pop_ui.dart';
 
 import '../../core/app_state.dart';
 import '../../core/models.dart';
+import '../../core/temp_unit.dart';
 import '../../widgets/common.dart';
 
 /// 关注的城市（最多 5 个）。常驻城市决定早安推送和关心群里家人看到的天气。
@@ -23,7 +24,7 @@ class CitiesPage extends StatelessWidget {
           for (var i = 0; i < cities.length; i++) ...[
             _CityRow(
               city: cities[i],
-              weatherText: _brief(state.weatherOf(cities[i].locationId)),
+              weatherText: _brief(state.weatherOf(cities[i].locationId), state.tempUnit),
               onTap: () {
                 state.currentCity = i;
                 context.pop();
@@ -42,7 +43,7 @@ class CitiesPage extends StatelessWidget {
     );
   }
 
-  static String _brief(WeatherData? w) => w == null ? '' : '${w.temp}° ${w.text}';
+  static String _brief(WeatherData? w, TempUnit unit) => w == null ? '' : '${unit.deg(w.temp)} ${w.text}';
 }
 
 class _CityRow extends StatelessWidget {

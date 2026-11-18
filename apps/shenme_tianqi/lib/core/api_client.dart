@@ -23,10 +23,12 @@ class WeatherApi extends SeriesApiClient {
         (d) => _dataList(d).map(CityHit.fromJson).toList(),
       );
 
-  Future<WeatherData> weather(String locationId, {int? level, String? adm}) => request(
+  /// [unit] 只影响服务端拼的句子（如秋裤理由）；数字一律是摄氏度
+  Future<WeatherData> weather(String locationId, {int? level, String? adm, String? unit}) => request(
         () => dio.get('/weather/$locationId', queryParameters: {
           if (level != null) 'level': level,
           if (adm != null) 'adm': adm,
+          if (unit != null) 'unit': unit,
         }),
         (d) => WeatherData(_data(d)),
       );
@@ -55,7 +57,11 @@ class WeatherApi extends SeriesApiClient {
   Future<GroupDetail> joinGroup(String code) =>
       request(() => dio.post('/care-groups/join', data: {'invite_code': code}), (d) => GroupDetail.fromJson(_data(d)));
 
-  Future<GroupDetail> group(int id) => request(() => dio.get('/care-groups/$id'), (d) => GroupDetail.fromJson(_data(d)));
+  /// [unit] 决定家人卡片上那句事实里的温度怎么写
+  Future<GroupDetail> group(int id, {String? unit}) => request(
+        () => dio.get('/care-groups/$id', queryParameters: {if (unit != null) 'unit': unit}),
+        (d) => GroupDetail.fromJson(_data(d)),
+      );
 
   Future<void> leaveGroup(int id) => request(() => dio.post('/care-groups/$id/leave'), (_) {});
 

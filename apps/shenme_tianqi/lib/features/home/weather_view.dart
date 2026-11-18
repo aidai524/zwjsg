@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pop_ui/pop_ui.dart';
 
+import '../../core/app_state.dart';
 import '../../core/models.dart';
 import '../../core/scene.dart';
+import '../../core/temp_unit.dart';
 import '../../widgets/common.dart';
 
 /// 普通模式：形象 + 吐槽 + 温度 + 四张决策卡 + 逐小时 + 7 天
@@ -17,6 +19,7 @@ class WeatherView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final w = weather;
+    final unit = AppScope.of(context).tempUnit;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -34,7 +37,7 @@ class WeatherView extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text('${w.temp}°', style: const TextStyle(fontSize: 76, height: 1, fontWeight: FontWeight.w900)),
+            Text(unit.deg(w.temp), style: const TextStyle(fontSize: 76, height: 1, fontWeight: FontWeight.w900)),
             const SizedBox(width: 12),
             Expanded(
               child: Padding(
@@ -43,8 +46,8 @@ class WeatherView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(w.text, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-                    Text('体感 ${w.feelsLike}°'
-                        '${w.todayMax != null ? ' · ${w.todayMax}° / ${w.todayMin}°' : ''}'),
+                    Text('体感 ${unit.deg(w.feelsLike)}'
+                        '${w.todayMax != null ? ' · ${unit.deg(w.todayMax!)} / ${unit.deg(w.todayMin!)}' : ''}'),
                   ],
                 ),
               ),
@@ -77,9 +80,9 @@ class WeatherView extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 20),
-        _HourlyStrip(w.hourly.take(12).toList()),
+        _HourlyStrip(w.hourly.take(12).toList(), unit),
         const SizedBox(height: 16),
-        _DailyList(w.daily),
+        _DailyList(w.daily, unit),
         const SizedBox(height: 16),
         _Extras(w),
         SourceNote('${w.attribution}${w.obsTime != null ? ' · ${hm(DateTime.parse(w.obsTime!).toLocal())} 更新' : ''}\n'
@@ -153,8 +156,9 @@ class _DecisionCard extends StatelessWidget {
 }
 
 class _HourlyStrip extends StatelessWidget {
-  const _HourlyStrip(this.hours);
+  const _HourlyStrip(this.hours, this.unit);
   final List<HourItem> hours;
+  final TempUnit unit;
 
   @override
   Widget build(BuildContext context) {
@@ -180,7 +184,7 @@ class _HourlyStrip extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(h.text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 4),
-                    Text('${h.temp}°', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                    Text(unit.deg(h.temp), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
                     Text((h.pop ?? 0) > 0 ? '${h.pop}%' : '',
                         style: const TextStyle(fontSize: 11, color: Pop.rareBlue, fontWeight: FontWeight.w800)),
                   ],
@@ -195,8 +199,9 @@ class _HourlyStrip extends StatelessWidget {
 }
 
 class _DailyList extends StatelessWidget {
-  const _DailyList(this.days);
+  const _DailyList(this.days, this.unit);
   final List<DayItem> days;
+  final TempUnit unit;
 
   @override
   Widget build(BuildContext context) {
@@ -220,7 +225,8 @@ class _DailyList extends StatelessWidget {
                 children: [
                   SizedBox(width: 44, child: Text(dayLabel(days[i].date, i), style: const TextStyle(fontWeight: FontWeight.w700))),
                   SizedBox(width: 64, child: Text(days[i].text, overflow: TextOverflow.ellipsis)),
-                  SizedBox(width: 34, child: Text('${days[i].min}°', textAlign: TextAlign.right)),
+                  // 华氏度会有三位数，留宽一点
+                  SizedBox(width: 40, child: Text(unit.deg(days[i].min), textAlign: TextAlign.right)),
                   const SizedBox(width: 8),
                   Expanded(
                     child: LayoutBuilder(builder: (_, c) {
@@ -240,7 +246,7 @@ class _DailyList extends StatelessWidget {
                     }),
                   ),
                   const SizedBox(width: 8),
-                  SizedBox(width: 34, child: Text('${days[i].max}°', style: const TextStyle(fontWeight: FontWeight.w900))),
+                  SizedBox(width: 40, child: Text(unit.deg(days[i].max), style: const TextStyle(fontWeight: FontWeight.w900))),
                 ],
               ),
             ),
