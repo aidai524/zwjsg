@@ -23,7 +23,7 @@ backends/            各 app 的 Laravel 工程，用 composer path 仓库引用
 ## 系列约定
 
 - 改了 `packages/` 里的东西，所有 app 都要跑一遍测试。
-- 用户可以把“再玩我是狗”的卡通形象**主动、一次性**导入其他 app（导出码方案，待做）；除此之外各 app 之间不传任何用户数据。
+- 用户可以把“再玩我是狗”的卡通形象**主动、一次性**导入其他 app（导出码方案，见下面“形象导出和导入”）；除此之外各 app 之间不传任何用户数据。
 - 原始照片只在手机内存里处理，**不落盘、不上传**；服务端只存卡通形象。
 
 ---
@@ -57,13 +57,19 @@ php artisan test
 | GET / PATCH / DELETE | `me`、`me/settings`、`me` | 当前用户 / 修改设置 / 注销并删除所有数据 |
 | POST | `me/avatar` | 上传卡通形象（png/webp，≤1MB） |
 
+形象导出和导入（两个后端之间唯一的调用）：
+- 狗 App 在“我的 › 形象 › 导出到「什么鬼天气」”调 `POST me/avatar/export`，拿到 8 位导出码（去掉了容易看错的 0 1 I L O），10 分钟内有效、只能用一次。要先登录、有拍照形象。
+- 用户把码填进天气 App，天气 App 调自己后端的 `POST avatar/import`（不用登录）；天气后端带请求头 `X-Series-Key` 去调狗后端的 `POST avatar-exports/redeem`，拿到卡通形象（PNG）原样交回 App。只认 1MB、1024 像素以内的 PNG。
+- 天气 App 把形象存在手机上，登录了再用 `POST me/avatar` 存到天气后端。两边账号不互通，导过去以后互不影响。
+- 配置：两个后端的 `.env` 配同一个 `SERIES_EXPORT_KEY`（随机长字符串，比如 `openssl rand -hex 32` 生成的），天气后端再配 `GOU_API_BASE`（狗后端地址，写到 `/api/v1`，本地是 `http://127.0.0.1:8000/api/v1`）。没配时狗后端不让取图，天气后端的导入返回 503。
+
 ---
 
 ## 再玩我是狗
 
 隐私：具体 app 的名称、图标和用时**只在手机上用**，可以交给 Flutter 显示今日排行，**绝不传给服务端**；服务端只接收每天的狗度、分钟数、犬种（`test/ranking_test.dart` 锁定了上报内容）。iOS 的排行由系统报告扩展 `ios/ScreenTimeReport/` 画出来，App 读不到里面的数字。狗度规则两处同步：`apps/zaiwan_gou/lib/core/dog_meter.dart`、`breeds.dart` ↔ `backends/zaiwan_gou_api/config/dog.php`、`app/Services/DogMeter.php`。
 
-本 app 的接口：`GET daily-records?from=&to=`（历史）、`PUT daily-records/{YYYY-MM-DD}`（上报狗度，返回新解锁犬种）、`GET breeds`（图鉴）。
+本 app 的接口：`GET daily-records?from=&to=`（历史）、`PUT daily-records/{YYYY-MM-DD}`（上报狗度，返回新解锁犬种）、`GET breeds`（图鉴）、`POST me/avatar/export`（生成形象导出码）、`POST avatar-exports/redeem`（给天气后端凭码取图，要带系列密钥）。
 
 App 第一次需要先生成平台工程（已有的文件不会被覆盖）：
 
@@ -112,8 +118,9 @@ iOS 屏幕使用时间（技术验证中）：
 - 第一次用照片前单独弹一次同意（人脸信息，`FaceConsentSheet`），说清照片不保存不上传、卡通形象会上传、AI 生成会标注、只用本人照片。同意记在本机，退出登录后也不用再同意。
 - 流程：苹果 Vision 找五官 → 对齐成 288×288 → Core ML 跑 DCT-Net 日漫头像模型（Apache 2.0，`ios/Runner/Models/`，3 MB）→ Vision 抠出人像，代码在 `ios/Runner/CartoonLab.swift`。形象创建走 `zwjsg/cartoon` 通道，只把卡通图和人像蒙版交给 Flutter，照片本身不出原生层、不存盘、不上传。
 - 画风（2026-11-16 定）：日漫 + 平涂墨线。卡通图再压成平涂色块、描墨线，抠成白边黑描边的贴纸，在 `packages/avatar_engine` 的 `PhotoSticker`（纯 Dart，iOS、安卓共用）。变狗图层是 `PhotoDogAvatar`：阶段 1 耳朵、2 狗鼻子、3 狗毛、4 舌头和尾巴、5 狗嘴筒，现在是代码画的示意，等美术按 288 的对齐模板画正式素材。
-- 保存：贴纸（PNG）存在 App 支持目录（`lib/core/avatar_store.dart`）。登录了就传服务端（`POST /me/avatar`，只传贴纸）；没登录或没网时先存手机上，登录或下次打开时补传；换手机登录后从 `avatar_url` 下载回来。换掉已有的拍照形象按服务端次数算（默认 3 次），用完时服务端回 422，手机上的形象不变。退出登录会删掉手机上的形象。
+- 保存：贴纸（PNG）存在 App 支持目录（`AvatarStore`，在 `packages/avatar_engine`，和天气 App 共用）。登录了就传服务端（`POST /me/avatar`，只传贴纸）；没登录或没网时先存手机上，登录或下次打开时补传；换手机登录后从 `avatar_url` 下载回来。换掉已有的拍照形象按服务端次数算（默认 3 次），用完时服务端回 422，手机上的形象不变。退出登录会删掉手机上的形象。
 - 各处显示用 `MyAvatar`：有拍照形象就用它，没有就用代码画的默认形象。
+- 导出到「什么鬼天气」：有拍照形象时“我的 › 形象”里多一行，没登录先去登录；形象还没传上服务端的先补传，再生成导出码，弹层里分两段显示（ABCD-EFGH），可以复制（`lib/features/me/export_avatar_sheet.dart`）。
 - AI 标识：用了拍照形象的结算卡，右下角印“AI生成”（文字高度不低于卡片短边的 5%），导出、分享的 PNG 里写入 GB 45438-2025 的 AIGC 元数据（`lib/core/aigc_label.dart`）。上线前请法务确认，`ContentProducer` 换成公司名称或备案号。
 - 技术验证页还在“我的 › 技术验证 › 拍照形象（本地卡通化）”，能看对齐后的照片和各步耗时。模型来源、转换脚本和实测数据见 `tools/cartoon/README.md`。验证页和样图上线前要删掉；开源许可页要附 Apache 2.0 许可证。
 
@@ -136,6 +143,7 @@ iOS 屏幕使用时间（技术验证中）：
 - 首次打开先弹隐私政策（`lib/features/privacy/consent_page.dart`）：同意之前路由只放行隐私政策页，不查天气、不请求权限。政策有重要变化时把 `AppState.privacyVersion` 加 1，所有人重新同意。设置页也能打开完整政策。
 - 设置页的推送（`PushSection`）：早安播报开关、工作日和周末分开设时间，预警推送开关。推送要发到账号上，所以登录后才能设；设置存在服务端（`PATCH me/settings` 的 `morning_push_*`、`alert_push_on`），推送通道接好后生效。
 - 温度单位（设置页）：摄氏度 / 华氏度，不登录也能设，存在手机上；登录后同步到服务端的 `temp_unit`，早安推送按它写。接口里的温度数字一律是摄氏度（照搬数据源），App 显示时换算（`lib/core/temp_unit.dart`）；服务端拼的句子（秋裤理由、关心群的一句事实、早安推送标题）按请求带的 `unit` 写，没带再看用户设置（`app/Support/TempUnit.php`）。两边换算方法要一致，测试用的是同一组数。
+- 从“再玩我是狗”导入形象：引导页和“设置 › 我的形象”都能填导出码（`lib/features/settings/import_avatar_sheet.dart`），大小写、空格、连字符不讲究。不登录也能导，先存在手机上，登录后传服务端，换手机登录时下载回来；可以用回默认形象（`DELETE me/avatar`），退出登录会删掉手机上的。导入的形象在首页、严肃模式、设置和关心群里显示：`PhotoWeatherAvatar`（`packages/avatar_engine`）在贴纸上叠穿戴和天气，照片里的衣服换不了，冷热改成冒汗、围巾、毛线帽；群里别人的形象从 `avatar_url` 下载，App 开着时同一个地址只下一次。
 - 应用图标：源文件在 `apps/shenme_tianqi/assets/icon/`（翻白眼的云 + 雨和闪电，SVG）。改了 SVG 先导出同名 1024 PNG，例如 `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --user-data-dir=$(mktemp -d) --default-background-color=00000000 --window-size=1024,1024 --screenshot=icon_full.png "file://$PWD/icon_full.svg"`，再运行 `dart run flutter_launcher_icons` 生成两端图标。这个工具（0.14.4）会把 `ios/Runner.xcodeproj/project.pbxproj` 里的 `ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS` 错改成 `AppIcon`，生成后把这个文件还原。iOS 主屏上的名字是“什么鬼天气”（`CFBundleDisplayName`）。
 
 ### 配置
@@ -146,6 +154,8 @@ iOS 屏幕使用时间（技术验证中）：
 QWEATHER_HOST=xxxxxx.re.qweatherapi.com
 QWEATHER_KEY=你的key
 PUSH_DRIVER=log      # 推送先写日志，上线前接统一推送 / 厂商通道 / APNs
+GOU_API_BASE=http://127.0.0.1:8000/api/v1   # 导入形象：狗后端地址
+SERIES_EXPORT_KEY=和狗后端一样的随机串
 ```
 
 定时任务（`routes/console.php`）：`care:deliver` 每分钟推送到点的提醒；`weather:morning` 每分钟找到点的用户发早安播报；`care:prune` 每天删 30 天前的提醒记录。本地调试用 `php artisan schedule:work`。
@@ -155,7 +165,9 @@ PUSH_DRIVER=log      # 推送先写日志，上线前接统一推送 / 厂商通
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
 | GET | `cities/search?q=` | 城市搜索（不用登录） |
-| GET | `weather/{locationId}?level=&adm=` | 天气 + 玩法结论 + 吐槽（不用登录；登录后按用户设置的档位） |
+| GET | `weather/{locationId}?level=&adm=&unit=` | 天气 + 玩法结论 + 吐槽（不用登录；登录后按用户设置的档位） |
+| POST | `avatar/import` | 凭“再玩我是狗”的导出码取一次卡通形象（不用登录，返回 base64 的 PNG） |
+| DELETE | `me/avatar` | 用回默认形象，删掉服务端存的形象 |
 | GET / POST | `cities` | 关注的城市（最多 5 个，第一个自动设为常驻） |
 | PATCH / DELETE | `cities/{id}` | 设为常驻 / 删除 |
 | GET / POST | `care-groups` | 我的关心群 / 建群 |
@@ -194,8 +206,9 @@ flutter run --dart-define=API_BASE=http://127.0.0.1:8001/api/v1
 什么鬼天气：
 - [ ] 确认和风天气商用授权和数据来源资质；接入真实推送通道
 - [ ] 预警推送（新出现的黄色及以上预警推给用户）；定位（只取区县级）
-- [ ] 从“再玩我是狗”一次性导入形象（导出码）；关心群微信分享卡片
-- [ ] 吐槽文案扩充到每格 10 条以上；应用图标
+- [ ] 关心群微信分享卡片
+- [ ] 吐槽文案扩充到每格 10 条以上（必须人工写）
+- [ ] 照片形象的正式穿戴和遭罪素材（现在是代码画的示意）
 
 系列：
 - [ ] 短信服务商接入（阿里云 / 腾讯云）、微信登录（每个 app 单独的开放平台应用）
