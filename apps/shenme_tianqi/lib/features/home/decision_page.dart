@@ -15,7 +15,8 @@ class DecisionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final w = AppScope.of(context).weatherOf(locationId);
+    final state = AppScope.of(context);
+    final w = state.weatherOf(locationId);
     final title = decisionTitles[decisionKey] ?? '';
     if (w == null) {
       return Scaffold(appBar: AppBar(title: Text(title)), body: const Center(child: Text('天气还没加载好')));
@@ -50,7 +51,7 @@ class DecisionPage extends StatelessWidget {
               children: [
                 const Text('怎么判断的', style: TextStyle(fontWeight: FontWeight.w900)),
                 const SizedBox(height: 6),
-                Text(decisionRules[decisionKey] ?? '', style: const TextStyle(height: 1.6)),
+                Text(decisionRule(decisionKey, state.tempUnit), style: const TextStyle(height: 1.6)),
               ],
             ),
           ),

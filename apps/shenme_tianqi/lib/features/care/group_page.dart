@@ -33,7 +33,8 @@ class _GroupPageState extends State<GroupPage> {
 
   Future<void> _load() async {
     try {
-      final g = await AppScope.read(context).api.group(widget.groupId);
+      final state = AppScope.read(context);
+      final g = await state.api.group(widget.groupId, unit: state.tempUnit.key);
       if (mounted) setState(() => _group = g);
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
@@ -147,6 +148,8 @@ class _MemberCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final m = member;
     final hasWeather = m.weather != null;
+    final unit = AppScope.of(context).tempUnit;
+    final temp = m.temp == null ? '' : '${unit.deg(m.temp!)} ';
     final bg = !hasWeather ? Pop.white : (m.alert != null ? const Color(0xFFFFF4C2) : sceneColor(m.cond, m.outfit).withAlpha(110));
     final remaining = m.remainingToday ?? 0;
 
@@ -166,7 +169,7 @@ class _MemberCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(m.nickname, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
-                Text(m.city == null ? '还没设置常驻城市' : '${m.city}${hasWeather ? ' · ${m.temp}° ${m.weatherText}' : ''}'),
+                Text(m.city == null ? '还没设置常驻城市' : '${m.city}${hasWeather ? ' · $temp${m.weatherText}' : ''}'),
                 if (m.alert != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),

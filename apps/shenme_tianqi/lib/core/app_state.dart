@@ -5,8 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_client.dart';
 import 'models.dart';
+import 'temp_unit.dart';
 
-/// 全局状态。游客也能用：城市和毒舌档位存本机；登录后同步到服务端（关心群需要常驻城市）。
+/// 全局状态。游客也能用：城市、毒舌档位和温度单位存本机；登录后同步到服务端（关心群需要常驻城市）。
 class AppState extends ChangeNotifier {
   /// [api] 只在测试里传，换成假的
   AppState(this._prefs, {WeatherApi? api}) : api = api ?? WeatherApi() {
@@ -14,6 +15,7 @@ class AppState extends ChangeNotifier {
     _privacyAccepted = (_prefs.getInt(_kPrivacyVersion) ?? 0) >= privacyVersion;
     _onboarded = _prefs.getBool(_kOnboarded) ?? false;
     _snark = _prefs.getInt(_kSnark) ?? 1;
+    _unit = TempUnit.fromKey(_prefs.getString(_kTempUnit));
     final raw = _prefs.getString(_kCities);
     if (raw != null) {
       _cities = (jsonDecode(raw) as List).map((e) => City.fromJson(Map<String, dynamic>.from(e as Map))).toList();
@@ -58,6 +60,7 @@ class AppState extends ChangeNotifier {
   static const _kToken = 'token';
   static const _kOnboarded = 'onboarded';
   static const _kSnark = 'snark_level';
+  static const _kTempUnit = 'temp_unit';
   static const _kCities = 'cities';
   static const _kPrivacyVersion = 'privacy_version';
 
@@ -67,6 +70,7 @@ class AppState extends ChangeNotifier {
   String? _token;
   bool _onboarded = false;
   int _snark = 1;
+  TempUnit _unit = TempUnit.celsius;
   List<City> _cities = [];
   int _currentCity = 0;
 
@@ -79,6 +83,9 @@ class AppState extends ChangeNotifier {
 
   /// 0 正经、1 损友、2 毒舌
   int get snarkLevel => _snark;
+
+  /// 显示温度用的单位：接口给的数字都是摄氏度，显示时用它换算
+  TempUnit get tempUnit => _unit;
   List<City> get cities => List.unmodifiable(_cities);
   City? get homeCity => _cities.where((c) => c.isHome).firstOrNull ?? _cities.firstOrNull;
 
@@ -100,7 +107,7 @@ class AppState extends ChangeNotifier {
     final last = _fetchedAt[city.locationId];
     if (!force && last != null && DateTime.now().difference(last) < const Duration(minutes: 10)) return;
     try {
-      _weather[city.locationId] = await api.weather(city.locationId, level: _snark, adm: city.adm);
+      _weather[city.locationId] = await api.weather(city.locationId, level: _snark, adm: city.adm, unit: _unit.key);
       _fetchedAt[city.locationId] = DateTime.now();
       _errors.remove(city.locationId);
     } on ApiException catch (e) {
@@ -205,6 +212,23 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// 换温度单位：数字马上按新单位显示；秋裤理由这类服务端拼好的句子要重新取。
+  /// 登录了就同步到服务端，早安推送按这个单位写
+  Future<void> setTempUnit(TempUnit unit) async {
+    if (unit == _unit) return;
+    _unit = unit;
+    await _prefs.setString(_kTempUnit, unit.key);
+    _fetchedAt.clear();
+    notifyListeners();
+    if (isLoggedIn) {
+      try {
+        await api.updateSettings({'temp_unit': unit.key});
+      } on ApiException {
+        // 天气请求每次都带单位，传失败只影响推送里的写法；下次登录时再同步
+      }
+    }
+  }
+
   PushSettings? _push;
   bool _pushLoading = false;
   String? _pushError;
@@ -260,7 +284,7 @@ class AppState extends ChangeNotifier {
     api.token = token;
     await _prefs.setString(_kToken, token);
     try {
-      await api.updateSettings({'snark_level': _snark, 'timezone': 'Asia/Shanghai'});
+      await api.updateSettings({'snark_level': _snark, 'temp_unit': _unit.key, 'timezone': 'Asia/Shanghai'});
     } on ApiException {
       // 忽略
     }

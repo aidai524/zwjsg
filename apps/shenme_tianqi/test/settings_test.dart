@@ -6,6 +6,7 @@ import 'package:shenme_tianqi/app.dart';
 import 'package:shenme_tianqi/core/api_client.dart';
 import 'package:shenme_tianqi/core/app_state.dart';
 import 'package:shenme_tianqi/core/models.dart';
+import 'package:shenme_tianqi/core/temp_unit.dart';
 import 'package:shenme_tianqi/features/home/home_page.dart';
 import 'package:shenme_tianqi/features/privacy/privacy_page.dart';
 
@@ -29,6 +30,15 @@ class FakeApi extends WeatherApi {
     if (e != null) throw e;
     updates.add(settings);
   }
+}
+
+/// 登录用：短信验证直接通过，服务端还没有城市
+class LoginApi extends FakeApi {
+  @override
+  Future<String> smsLogin(String phone, String code) async => 'token';
+
+  @override
+  Future<List<City>> cities() async => const [];
 }
 
 Future<AppState> openSettings(WidgetTester tester, {bool loggedIn = false, FakeApi? api}) async {
@@ -66,6 +76,35 @@ void main() {
     expect(p.alertOn, isFalse);
     expect(p.copyWith(weekday: '08:00', alertOn: true).changesFrom(p), {'morning_push_weekday': '08:00', 'alert_push_on': true});
     expect(p.changesFrom(p), isEmpty);
+  });
+
+  testWidgets('温度单位：没登录也能选，存在手机上，不传服务端', (tester) async {
+    final api = FakeApi();
+    final state = await openSettings(tester, api: api);
+    await tester.tap(find.text(TempUnit.fahrenheit.label));
+    await tester.pumpAndSettle();
+
+    expect(state.tempUnit, TempUnit.fahrenheit);
+    expect((await SharedPreferences.getInstance()).getString('temp_unit'), 'f');
+    expect(api.updates, isEmpty);
+  });
+
+  testWidgets('温度单位：登录后换单位传到服务端，早安推送按它写', (tester) async {
+    final api = FakeApi();
+    await openSettings(tester, loggedIn: true, api: api);
+    await tester.tap(find.text(TempUnit.fahrenheit.label));
+    await tester.pumpAndSettle();
+
+    expect(api.updates.last, {'temp_unit': 'f'});
+  });
+
+  test('登录时把手机上的温度单位一起传给服务端', () async {
+    SharedPreferences.setMockInitialValues({'temp_unit': 'f'});
+    final api = LoginApi();
+    final state = AppState(await SharedPreferences.getInstance(), api: api);
+    await state.login('13800000000', '123456');
+
+    expect(api.updates.first, {'snark_level': 1, 'temp_unit': 'f', 'timezone': 'Asia/Shanghai'});
   });
 
   testWidgets('设置页能打开隐私政策', (tester) async {
