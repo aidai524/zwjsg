@@ -13,7 +13,7 @@ packages/
   pop_ui/            黄黑波普设计规范：颜色、描边、硬阴影、主题、波普按钮（Flutter）
   avatar_engine/     卡通形象引擎：人物底层 + 各 app 的叠加层（变狗 DogAvatar、天气 WeatherAvatar，照片形象的 PhotoDogAvatar、PhotoWeatherAvatar），形象存在手机上（AvatarStore）
   series_core/       接口客户端基类：token、错误处理、短信登录、退出、注销、上传和下载形象（Flutter）
-  series_share/      分享卡片：截图、存相册、系统分享，AI 生成内容的显式标识（AiTag）和隐式标识（AigcLabel）（Flutter）
+  series_share/      分享：卡片截图、存相册、系统分享，AI 生成内容的显式标识（AiTag）和隐式标识（AigcLabel），用系统分享面板发文字（TextSharer）（Flutter）
   php/series-auth/   短信验证码服务 + 发送接口（Laravel，composer 本地路径包）
 apps/                各 app 的 Flutter 工程，用 path 依赖引用 packages/
 backends/            各 app 的 Laravel 工程，用 composer path 仓库引用 packages/php/
@@ -146,6 +146,7 @@ iOS 屏幕使用时间（技术验证中）：
 - 温度单位（设置页）：摄氏度 / 华氏度，不登录也能设，存在手机上；登录后同步到服务端的 `temp_unit`，早安推送按它写。接口里的温度数字一律是摄氏度（照搬数据源），App 显示时换算（`lib/core/temp_unit.dart`）；服务端拼的句子（秋裤理由、关心群的一句事实、早安推送标题）按请求带的 `unit` 写，没带再看用户设置（`app/Support/TempUnit.php`）。两边换算方法要一致，测试用的是同一组数。
 - 天气卡（`lib/features/card/weather_card_page.dart`）：首页右上角“晒一下”，3:4 的卡片上有城市和实况时间、温度（按温度单位）、形象和吐槽、四张决策卡的结论、“天气服务由和风天气驱动”和 App 图标；能存相册、用系统分享面板发出去（截图和分享在 `packages/series_share`）。预警期间（严肃模式）不显示入口，也不生成卡片。用了导入的照片形象时右下角标“AI生成”（字高不低于卡片宽的 5%），导出的 PNG 写入 AIGC 隐式标识，`ContentProducer` 先写“什么鬼天气”。存相册在 iOS 要 `NSPhotoLibraryAddUsageDescription`，安卓 10 及以下要 `WRITE_EXTERNAL_STORAGE`。
 - 从“再玩我是狗”导入形象：引导页和“设置 › 我的形象”都能填导出码（`lib/features/settings/import_avatar_sheet.dart`），大小写、空格、连字符不讲究。不登录也能导，先存在手机上，登录后传服务端，换手机登录时下载回来；可以用回默认形象（`DELETE me/avatar`），退出登录会删掉手机上的。导入的形象在首页、严肃模式、设置和关心群里显示：`PhotoWeatherAvatar`（`packages/avatar_engine`）在贴纸上叠穿戴和天气，照片里的衣服换不了，冷热改成冒汗、围巾、毛线帽；群里别人的形象从 `avatar_url` 下载，App 开着时同一个地址只下一次。
+- 关心群邀请（`lib/features/care/group_page.dart`）：右上角“+ 邀请”和群里只有自己时的大按钮都弹手机系统的分享面板（`packages/series_share` 的 `TextSharer`），发一段写清楚怎么加入的话（带邀请码，不带链接，还没有下载页）；面板打不开时复制下来。页面上能看到邀请码，点一下只复制邀请码；群满 8 人后不再显示邀请。微信邀请卡片等微信开放平台账号。
 - 桌面小组件（iOS `ios/WeatherWidget/`，安卓 `android/app/src/main/kotlin/.../widget/`）：小号（2×2）是城市、天气、温度、形象和伞、秋裤两张决策卡；中号（4×2）再加实况时间、最低最高温、一句话结论（和关心群的“一句事实”同一套规则）和四张决策卡，点小组件打开 App。小组件大约每 30 分钟自己取一次 `GET widget/{locationId}`：不登录、不带吐槽，温度和句子服务端按单位写好，两端原样显示；取不到时显示 3 小时内的旧数据，再久就提示取不到。预警期间（严肃模式）只显示第一条预警的标题原文、发布单位和时间，形象举伞，不显示决策卡。App 这边是 `lib/core/home_widget.dart` 的 `HomeWidgetSync`：同意隐私政策、选了城市以后把常驻城市和温度单位交给小组件；小组件跑不了 Flutter，所以 App 把 61 张形象图（6 档衣服 × 10 种天气，加预警时举伞的一张）预先画好放进共享目录（iOS 是 App Group `group.com.zwjsg.shenmeTianqi`，安卓是 `files/avatars`），形象换了或者画法版本（`weatherAvatarArtVersion`）变了才重画。iOS 的小组件要 iOS 17 以上。
 - 应用图标：源文件在 `apps/shenme_tianqi/assets/icon/`（翻白眼的云 + 雨和闪电，SVG）。改了 SVG 先导出同名 1024 PNG，例如 `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --user-data-dir=$(mktemp -d) --default-background-color=00000000 --window-size=1024,1024 --screenshot=icon_full.png "file://$PWD/icon_full.svg"`，再运行 `dart run flutter_launcher_icons` 生成两端图标。这个工具（0.14.4）会把 `ios/Runner.xcodeproj/project.pbxproj` 里的 `ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS` 错改成 `AppIcon`，生成后把这个文件还原。iOS 主屏上的名字是“什么鬼天气”（`CFBundleDisplayName`）。
 
