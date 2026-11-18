@@ -1,5 +1,5 @@
 name: series_share
-description: 梗名 App 系列共用的分享卡片：截图、存相册、系统分享，AI 生成内容的显式和隐式标识
+description: 梗名 App 系列共用的分享：卡片截图、存相册、系统分享，AI 生成内容的显式和隐式标识，用系统分享面板发文字
 publish_to: "none"
 version: 0.1.0
 
