@@ -11,6 +11,8 @@ dependencies:
     sdk: flutter
   pop_ui:
     path: ../pop_ui
+  # 形象存在手机上（AvatarStore）
+  path_provider: ^2.1.6
 
 dev_dependencies:
   flutter_test:
