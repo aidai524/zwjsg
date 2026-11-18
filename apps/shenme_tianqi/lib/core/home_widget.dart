@@ -1,7 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
-import 'dart:ui' as ui;
 
 import 'package:avatar_engine/avatar_engine.dart';
 import 'package:flutter/services.dart';
@@ -87,8 +85,8 @@ class HomeWidgetSync {
   /// 形象图的边长（像素）。小组件上最大约 140 点，3 倍屏 420 像素，360 已经够清楚
   static const avatarPixels = 360;
 
-  /// 记录目录里的形象图画的是哪个形象
-  static const versionFile = 'avatars.version';
+  /// 记录目录里的形象图画的是哪个形象（见 [WidgetImages]）
+  static const versionFile = WidgetImages.versionFile;
 
   /// 要画的形象：6 档衣服 × 10 种天气，加上预警时举着伞的一张（严肃模式不分衣服档），共 61 张
   static final List<(WeatherTemp, WeatherCond)> avatarStates = [
@@ -149,62 +147,26 @@ class HomeWidgetSync {
     await bridge.configure(config);
   }
 
-  /// 现在的形象对应的记号：画法版本 + 形象原图的指纹
-  String get _wanted {
-    final png = state.avatarPng;
-    return 'v$weatherAvatarArtVersion:${png == null ? 'default' : '${png.length}-${_fnv1a(png)}'}';
-  }
-
   Future<void> _syncAvatars() async {
     final dir = await bridge.directory();
     if (dir == null) return;
-    final wanted = _wanted;
-    final version = File('$dir/$versionFile');
-    // 版本对得上、图也在，就不重画（卸载重装时目录会被清空）
-    if (await version.exists() &&
-        await File('$dir/${fileName(WeatherTemp.mild, WeatherCond.serious)}').exists() &&
-        await version.readAsString() == wanted) {
-      return;
-    }
-
     final png = state.avatarPng;
     final sticker = state.avatar;
-    await Directory(dir).create(recursive: true);
-    for (final (t, c) in avatarStates) {
-      // 画到一半形象又换了：这一轮作废，重新画
-      if (!identical(state.avatarPng, png)) {
-        _again = true;
-        return;
-      }
-      await _write(dir, fileName(t, c), await _render(t, c, sticker));
+    // 签名 = 画法版本 + 形象原图的指纹；对得上、图也都在就不重画（卸载重装时目录会被清空）
+    final drew = await WidgetImages.sync(
+      dir: dir,
+      signature: 'v$weatherAvatarArtVersion:${png == null ? 'default' : WidgetImages.fingerprint(png)}',
+      images: {
+        for (final (t, c) in avatarStates)
+          fileName(t, c): () => renderWeatherAvatar(temp: t, cond: c, sticker: sticker, pixels: avatarPixels),
+      },
+      stale: () => !identical(state.avatarPng, png),
+    );
+    // 画到一半形象又换了：这一轮作废，再来一轮
+    if (!identical(state.avatarPng, png)) {
+      _again = true;
+      return;
     }
-    await version.writeAsString(wanted, flush: true);
-    await bridge.reload();
-  }
-
-  static Future<Uint8List> _render(WeatherTemp t, WeatherCond c, ui.Image? sticker) async {
-    final image = await renderWeatherAvatar(temp: t, cond: c, sticker: sticker, pixels: avatarPixels);
-    try {
-      final data = await image.toByteData(format: ui.ImageByteFormat.png);
-      return data!.buffer.asUint8List();
-    } finally {
-      image.dispose();
-    }
-  }
-
-  /// 先写临时文件再改名：小组件正好在读时，读到的是旧图或新图，不会是写了一半的图
-  static Future<void> _write(String dir, String name, Uint8List bytes) async {
-    final tmp = File('$dir/$name.tmp');
-    await tmp.writeAsBytes(bytes, flush: true);
-    await tmp.rename('$dir/$name');
-  }
-
-  /// 32 位 FNV-1a：只用来判断形象换没换
-  static String _fnv1a(Uint8List bytes) {
-    var h = 0x811c9dc5;
-    for (final b in bytes) {
-      h = ((h ^ b) * 0x01000193) & 0xffffffff;
-    }
-    return h.toRadixString(16);
+    if (drew) await bridge.reload();
   }
 }
