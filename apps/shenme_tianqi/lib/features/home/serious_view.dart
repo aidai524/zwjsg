@@ -7,6 +7,7 @@ import '../../core/app_state.dart';
 import '../../core/models.dart';
 import '../../core/scene.dart';
 import '../../widgets/common.dart';
+import '../../widgets/weather_avatars.dart';
 
 /// 严肃模式：黄色及以上预警。吐槽暂停，预警原文照登（标题、正文、发布单位、时间都不改）。
 class SeriousView extends StatelessWidget {
@@ -47,7 +48,7 @@ class SeriousView extends StatelessWidget {
           decoration: Pop.card(),
           child: Row(
             children: [
-              const WeatherAvatar(temp: WeatherTemp.mild, cond: WeatherCond.serious, size: 92),
+              const MyWeatherAvatar(temp: WeatherTemp.mild, cond: WeatherCond.serious, size: 92),
               const SizedBox(width: 12),
               const Expanded(
                 child: Column(

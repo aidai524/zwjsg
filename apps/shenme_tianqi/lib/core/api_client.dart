@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:series_core/series_core.dart';
 
 import 'models.dart';
@@ -64,6 +67,17 @@ class WeatherApi extends SeriesApiClient {
       );
 
   Future<void> leaveGroup(int id) => request(() => dio.post('/care-groups/$id/leave'), (_) {});
+
+  // ---- 形象（上传、下载在 SeriesApiClient 里） ----
+
+  /// 凭“再玩我是狗”的导出码取一次卡通形象（PNG）。不登录也能用；码不对、过期时抛 [ApiException]，带着给用户看的话
+  Future<Uint8List> importAvatar(String code) => request(
+        () => dio.post('/avatar/import', data: {'code': code}),
+        (d) => base64Decode(_data(d)['png'] as String),
+      );
+
+  /// 用回默认形象：删掉服务端存的形象
+  Future<void> deleteAvatar() => request(() => dio.delete('/me/avatar'), (_) {});
 
   Future<SentReminder> remind({required int groupId, required int recipientId, required String phraseKey}) => request(
         () => dio.post('/reminders', data: {'care_group_id': groupId, 'recipient_id': recipientId, 'phrase_key': phraseKey}),

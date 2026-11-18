@@ -11,10 +11,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zwjsg_app/core/aigc_label.dart';
 import 'package:zwjsg_app/core/api_client.dart';
 import 'package:zwjsg_app/core/app_state.dart';
-import 'package:zwjsg_app/core/avatar_store.dart';
+
 import 'package:zwjsg_app/core/card_exporter.dart';
 import 'package:zwjsg_app/core/cartoonizer.dart';
 import 'package:zwjsg_app/features/card/card_page.dart';
+import 'package:zwjsg_app/features/me/me_page.dart';
 import 'package:zwjsg_app/features/onboarding/avatar_page.dart';
 
 import 'me_features_test.dart' show FakeReminders;
@@ -80,6 +81,17 @@ class FakeApi extends ApiClient {
   Future<Uint8List> downloadAvatar(String url) async {
     downloads.add(url);
     return remoteAvatar!;
+  }
+
+  int exports = 0;
+  ApiException? exportError;
+
+  @override
+  Future<({String code, DateTime expiresAt})> exportAvatar() async {
+    final e = exportError;
+    if (e != null) throw e;
+    exports++;
+    return (code: 'ABCDEFGH', expiresAt: DateTime.now().add(const Duration(minutes: 10)));
   }
 
   @override
@@ -397,6 +409,80 @@ void main() {
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getBool('avatar_pending_upload'), isFalse);
       sticker.dispose();
+    });
+  });
+
+  group('导出到“什么鬼天气”', () {
+    Future<AppState> pumpMe(WidgetTester tester, {bool loggedIn = true, bool photo = true, FakeApi? api, bool pending = false}) async {
+      final store = MemoryAvatarStore();
+      if (photo) {
+        final sticker = await whiteSticker(tester);
+        store.png = await stickerPng(tester, sticker);
+        sticker.dispose();
+      }
+      final state = await newState(tester,
+          prefs: {if (loggedIn) 'token': 't', if (pending) 'avatar_pending_upload': true}, api: api, store: store);
+      await tester.runAsync(state.loadAvatar);
+      usePhoneScreen(tester);
+      final router = GoRouter(initialLocation: '/me', routes: [
+        GoRoute(path: '/me', builder: (_, __) => const MePage()),
+        GoRoute(path: '/login', builder: (_, __) => const Scaffold(body: Text('登录页'))),
+      ]);
+      await tester.pumpWidget(AppScope(state: state, child: MaterialApp.router(theme: Pop.theme(), routerConfig: router)));
+      await tester.pumpAndSettle();
+      return state;
+    }
+
+    testWidgets('有拍照形象才能导出', (tester) async {
+      await pumpMe(tester, photo: false);
+      expect(find.text('导出到「什么鬼天气」'), findsNothing);
+    });
+
+    testWidgets('没登录时先去登录', (tester) async {
+      final api = FakeApi();
+      await pumpMe(tester, loggedIn: false, api: api);
+      await tester.tap(find.text('导出到「什么鬼天气」'));
+      await tester.pumpAndSettle();
+      expect(find.text('导出要先登录'), findsOneWidget);
+      await tester.tap(find.text('去登录'));
+      await tester.pumpAndSettle();
+      expect(find.text('登录页'), findsOneWidget);
+      expect(api.exports, 0);
+    });
+
+    testWidgets('生成导出码，分成两段显示，能复制', (tester) async {
+      final api = FakeApi();
+      String? copied;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'Clipboard.setData') copied = (call.arguments as Map)['text'] as String;
+        return null;
+      });
+      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+
+      await pumpMe(tester, api: api);
+      await tester.tap(find.text('导出到「什么鬼天气」'));
+      await tester.pumpAndSettle();
+      expect(api.exports, 1);
+      expect(find.text('ABCD-EFGH'), findsOneWidget);
+      expect(find.textContaining('只能用一次'), findsOneWidget);
+
+      await tester.tap(find.text('复制导出码'));
+      await tester.pumpAndSettle();
+      expect(copied, 'ABCDEFGH');
+      expect(find.text('复制好了'), findsOneWidget);
+    });
+
+    testWidgets('形象还没传上去的先补传再导出；出错时说原因', (tester) async {
+      final api = FakeApi();
+      final state = await pumpMe(tester, api: api, pending: true);
+      await tester.runAsync(state.exportAvatar);
+      expect(api.uploads, hasLength(1));
+      expect(api.exports, 1);
+
+      api.exportError = ApiException('还没有拍照形象，先在“我的 › 形象”里做一个', statusCode: 422);
+      await tester.tap(find.text('导出到「什么鬼天气」'));
+      await tester.pumpAndSettle();
+      expect(find.text('还没有拍照形象，先在“我的 › 形象”里做一个'), findsOneWidget);
     });
   });
 

@@ -10,5 +10,6 @@ Future<void> main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   final prefs = await SharedPreferences.getInstance();
   final state = AppState(prefs);
+  await state.loadAvatar();
   runApp(AppScope(state: state, child: ShenmeTianqiApp(state: state)));
 }

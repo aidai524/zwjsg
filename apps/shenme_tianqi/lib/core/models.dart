@@ -175,6 +175,7 @@ class Member {
     this.remainingToday,
     this.lastAckAt,
     this.weather,
+    this.avatarUrl,
   });
 
   final int id;
@@ -185,6 +186,9 @@ class Member {
   final String? lastAckAt;
   final Map<String, dynamic>? weather;
 
+  /// TA 导入过“再玩我是狗”的形象时，服务端给的图片地址
+  final String? avatarUrl;
+
   factory Member.fromJson(Map<String, dynamic> j) => Member(
         id: _i(j['id']),
         nickname: _s(j['nickname']),
@@ -193,6 +197,7 @@ class Member {
         remainingToday: _ni(j['remaining_today']),
         lastAckAt: j['last_ack_at'] as String?,
         weather: j['weather'] == null ? null : Map<String, dynamic>.from(j['weather'] as Map),
+        avatarUrl: j['avatar_url'] as String?,
       );
 
   int? get temp => _ni(weather?['temp']);

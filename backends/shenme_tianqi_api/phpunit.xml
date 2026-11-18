@@ -31,6 +31,8 @@
         <!-- 测试不用 .env 里的真实和风凭据；.invalid 域名保证漏拦截的请求发不出去 -->
         <env name="QWEATHER_HOST" value="test.invalid"/>
         <env name="QWEATHER_KEY" value="test-key"/>
+        <env name="GOU_API_BASE" value="https://gou.test/api/v1"/>
+        <env name="SERIES_EXPORT_KEY" value="series-test-key"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>

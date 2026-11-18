@@ -21,6 +21,15 @@ return [
         'timeout' => 5,
     ],
 
+    // 从“再玩我是狗”一次性导入形象：狗后端的接口地址（写到 /api/v1）和系列密钥（两个后端配成一样的值）
+    'gou' => [
+        'api_base' => env('GOU_API_BASE'),
+        'timeout' => 10,
+    ],
+    'series' => [
+        'export_key' => env('SERIES_EXPORT_KEY'),
+    ],
+
     'push' => [
         // log：只写日志；上线前接统一推送联盟 / 厂商通道 / APNs
         'driver' => env('PUSH_DRIVER', 'log'),

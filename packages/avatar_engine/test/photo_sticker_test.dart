@@ -87,4 +87,21 @@ void main() {
     }
     expect(image, isA<ui.Image>());
   });
+
+  testWidgets('照片形象叠天气图层：每种衣服档 × 天气状态都能画出来', (tester) async {
+    final image = await tester.runAsync(() async {
+      final (rgba, mask) = fakeFace();
+      return PhotoSticker.toImage(PhotoSticker.render(rgba, mask));
+    });
+    for (final temp in WeatherTemp.values) {
+      for (final cond in WeatherCond.values) {
+        await tester.pumpWidget(Directionality(
+          textDirection: TextDirection.ltr,
+          child: Center(child: PhotoWeatherAvatar(sticker: image!, temp: temp, cond: cond, size: 120)),
+        ));
+        expect(tester.takeException(), isNull, reason: '$temp $cond');
+      }
+    }
+    expect(find.bySemanticsLabel('照片卡通形象，天气：预警中'), findsOneWidget);
+  });
 }
