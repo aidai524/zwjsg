@@ -14,6 +14,8 @@ Route::prefix('v1')->group(function () {
     Route::post('auth/sms/send', [AuthController::class, 'sendSms'])->middleware('throttle:sms');
     Route::post('auth/sms/login', [AuthController::class, 'smsLogin'])->middleware('throttle:10,1');
     Route::post('auth/wechat/login', [AuthController::class, 'wechatLogin']);
+    // 从“再玩我是狗”导入形象：不登录也能用，App 先存在手机上，登录后再传上来
+    Route::post('avatar/import', [AvatarController::class, 'import'])->middleware('throttle:10,1');
 
     // 不登录也能看天气（先看再注册）
     Route::middleware('throttle:weather')->group(function () {
@@ -28,6 +30,7 @@ Route::prefix('v1')->group(function () {
         Route::patch('me/settings', [MeController::class, 'updateSettings']);
         Route::delete('me', [MeController::class, 'destroy']);
         Route::post('me/avatar', [AvatarController::class, 'store']);
+        Route::delete('me/avatar', [AvatarController::class, 'destroy']);
 
         Route::get('cities', [CityController::class, 'index']);
         Route::post('cities', [CityController::class, 'store']);
