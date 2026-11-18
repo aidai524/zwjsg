@@ -76,6 +76,15 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
+                    // 晒天气卡：预警期间不能晒（严肃模式不生成带吐槽的卡片）
+                    if (w != null && !w.serious) ...[
+                      RoundIconButton(
+                        icon: Icons.ios_share,
+                        label: '晒一下',
+                        onTap: () => context.push('/card/${current.locationId}'),
+                      ),
+                      const SizedBox(width: 10),
+                    ],
                     RoundIconButton(icon: Icons.favorite_border, label: '关心群', onTap: () => context.push('/care')),
                     const SizedBox(width: 10),
                     RoundIconButton(icon: Icons.settings_outlined, label: '设置', onTap: () => context.push('/settings')),
