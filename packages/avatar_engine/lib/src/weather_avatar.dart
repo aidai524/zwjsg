@@ -36,6 +36,41 @@ WeatherCond weatherCondFromKey(String? key) => switch (key) {
       _ => WeatherCond.sunny,
     };
 
+/// 天气形象画法的版本：改了画法（包括换成美术素材）就加 1，
+/// 桌面小组件用的形象图是 App 预先画好存在手机上的，版本变了才会重画
+const weatherAvatarArtVersion = 1;
+
+/// 服务端的衣服档名字（outfit_bands 的 key），和 [weatherTempFromKey] 互逆
+String weatherTempKey(WeatherTemp t) => t.name;
+
+/// 服务端的天气状态名字（WeatherInterpreter::cond），和 [weatherCondFromKey] 互逆
+String weatherCondKey(WeatherCond c) => switch (c) {
+      WeatherCond.lightRain => 'light_rain',
+      WeatherCond.heavyRain => 'heavy_rain',
+      _ => c.name,
+    };
+
+/// 不经过 Widget 树，把天气形象直接画成 [pixels] x [pixels] 的图片（背景透明）。
+/// 给桌面小组件用：小组件跑不了 Flutter，App 预先画好每种天气下的样子，小组件按服务端给的衣服档和天气状态挑一张。
+/// [sticker] 不为空时画照片形象（和 [PhotoWeatherAvatar] 一样），否则画默认形象（和 [WeatherAvatar] 一样）。
+/// 返回的图片用完要 dispose。
+Future<ui.Image> renderWeatherAvatar({
+  required WeatherTemp temp,
+  required WeatherCond cond,
+  ui.Image? sticker,
+  int pixels = 360,
+}) async {
+  final recorder = ui.PictureRecorder();
+  final painter = sticker == null ? _WeatherAvatarPainter(temp, cond) : _PhotoWeatherPainter(sticker, temp, cond);
+  painter.paint(Canvas(recorder), Size.square(pixels.toDouble()));
+  final picture = recorder.endRecording();
+  try {
+    return await picture.toImage(pixels, pixels);
+  } finally {
+    picture.dispose();
+  }
+}
+
 const _condNames = {
   WeatherCond.sunny: '晴',
   WeatherCond.cloudy: '多云',

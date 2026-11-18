@@ -21,6 +21,8 @@ Route::prefix('v1')->group(function () {
     Route::middleware('throttle:weather')->group(function () {
         Route::get('cities/search', [CityController::class, 'search']);
         Route::get('weather/{locationId}', [WeatherController::class, 'show']);
+        // 桌面小组件自己定时来取，不登录
+        Route::get('widget/{locationId}', [WeatherController::class, 'widget']);
     });
 
     Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {

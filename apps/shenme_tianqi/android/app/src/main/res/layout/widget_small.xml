@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 小号桌面小组件（2×2）：城市、天气、温度；形象；伞和秋裤两张决策卡。
+     三组内容按情况显示一组：平常 / 严肃模式（黄色及以上预警）/ 还没选城市或取不到天气。
+     只能用 RemoteViews 支持的控件（FrameLayout、LinearLayout、TextView、ImageView）。 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:id="@+id/weather_group"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/city"
+                    style="@style/WidgetTitle"
+                    android:text="什么鬼天气" />
+
+                <TextView
+                    android:id="@+id/text"
+                    style="@style/WidgetSmall"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/temp"
+                style="@style/WidgetTemp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="bottom"
+            android:orientation="horizontal">
+
+            <FrameLayout
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:background="@drawable/widget_avatar_frame"
+                android:padding="2.5dp">
+
+                <ImageView
+                    android:id="@+id/avatar"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/widget_avatar"
+                    android:scaleType="fitCenter" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/chip0"
+                    style="@style/WidgetChip" />
+
+                <TextView
+                    android:id="@+id/chip1"
+                    style="@style/WidgetChip"
+                    android:layout_marginTop="5dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView style="@style/WidgetCredit" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/serious_group"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/serious_city"
+                style="@style/WidgetTitle"
+                android:layout_width="0dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/serious_temp"
+                style="@style/WidgetTemp"
+                android:textSize="24sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/warning_title"
+            style="@style/WidgetWarning"
+            android:layout_marginTop="6dp"
+            android:maxLines="4" />
+
+        <TextView
+            android:id="@+id/warning_source"
+            style="@style/WidgetTiny"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            android:id="@+id/warning_hint"
+            style="@style/WidgetTiny"
+            android:textColor="@color/widget_muted" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView style="@style/WidgetCredit" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/message_group"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/message_title"
+            style="@style/WidgetTitle" />
+
+        <TextView
+            android:id="@+id/message_text"
+            style="@style/WidgetBody"
+            android:layout_marginTop="6dp"
+            android:maxLines="3"
+            android:textColor="@color/widget_muted_on_yellow" />
+    </LinearLayout>
+</FrameLayout>
