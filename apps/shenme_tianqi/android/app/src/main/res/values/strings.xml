@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_small_label">天气（小）</string>
+    <string name="widget_medium_label">天气和决策卡</string>
+    <string name="widget_small_description">温度和你的形象，今天要不要带伞、穿秋裤</string>
+    <string name="widget_medium_description">温度、你的形象、一句话结论和四张决策卡</string>
+    <string name="widget_avatar">天气形象</string>
+</resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 决策卡：要行动的（带伞、穿秋裤、洗车、晾衣），黑底黄字 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/widget_ink" />
+    <stroke android:width="2dp" android:color="@color/widget_ink" />
+    <corners android:radius="7dp" />
+</shape>

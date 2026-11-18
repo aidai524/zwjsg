@@ -28,6 +28,29 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- 桌面小组件：小号 2×2、中号 4×2。系统大约每 30 分钟叫醒一次，小组件自己向后端取精简天气 -->
+        <receiver
+            android:name=".widget.SmallWeatherWidget"
+            android:exported="false"
+            android:label="@string/widget_small_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/weather_widget_small" />
+        </receiver>
+        <receiver
+            android:name=".widget.MediumWeatherWidget"
+            android:exported="false"
+            android:label="@string/widget_medium_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/weather_widget_medium" />
+        </receiver>
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

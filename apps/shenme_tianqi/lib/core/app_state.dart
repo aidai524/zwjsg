@@ -288,6 +288,9 @@ class AppState extends ChangeNotifier {
   /// 从“再玩我是狗”导入的卡通形象（贴纸）；没导入时是 null，各处用代码画的默认形象
   ui.Image? get avatar => _avatar;
 
+  /// [avatar] 的原图（PNG）。桌面小组件按它判断形象换没换、要不要重画形象图
+  Uint8List? get avatarPng => _avatarPng;
+
   /// App 启动时读出存在手机上的形象。登录了、上次没传上去的，顺便补传
   Future<void> loadAvatar() async {
     Uint8List? png;
