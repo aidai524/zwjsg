@@ -41,4 +41,19 @@ return [
         ],
     ],
 
+    // 登录验证码短信。log：开发用，验证码只写进 storage/logs/laravel.log（生产环境会拒绝发码）；
+    // aliyun：阿里云短信，要自己开通、申请签名和验证码模板，见 README 的“接真实短信（阿里云）”
+    'sms' => [
+        'driver' => env('SMS_DRIVER', 'log'),
+        'aliyun' => [
+            'access_key_id' => env('ALIYUN_SMS_ACCESS_KEY_ID'),
+            'access_key_secret' => env('ALIYUN_SMS_ACCESS_KEY_SECRET'),
+            'sign_name' => env('ALIYUN_SMS_SIGN_NAME'),
+            'template_code' => env('ALIYUN_SMS_TEMPLATE_CODE'),
+            // 模板里验证码变量的名字，比如模板是“您的验证码是${code}”就填 code
+            'template_param' => env('ALIYUN_SMS_TEMPLATE_PARAM', 'code'),
+            'endpoint' => env('ALIYUN_SMS_ENDPOINT', 'dysmsapi.aliyuncs.com'),
+        ],
+    ],
+
 ];
