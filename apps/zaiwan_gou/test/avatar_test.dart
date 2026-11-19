@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:series_share/series_share.dart';
 import 'package:zwjsg_app/core/api_client.dart';
 import 'package:zwjsg_app/core/app_state.dart';
+import 'package:zwjsg_app/core/usage_channel.dart';
 
 
 import 'package:zwjsg_app/core/cartoonizer.dart';
@@ -492,7 +493,8 @@ void main() {
       usePhoneScreen(tester);
       final sticker = await whiteSticker(tester);
       final store = MemoryAvatarStore()..png = photo ? await stickerPng(tester, sticker) : null;
-      final state = await newState(tester, store: store);
+      final state = await newState(tester, store: store)
+        ..debugSetUsage(const UsageSnapshot(totalMinutes: 130, pickups: 0, lateNightMinutes: 0, categoryMinutes: {}));
       await tester.runAsync(state.loadAvatar);
       final exporter = PngExporter();
       await tester.pumpWidget(AppScope(state: state, child: MaterialApp(home: CardPage(exporter: exporter))));

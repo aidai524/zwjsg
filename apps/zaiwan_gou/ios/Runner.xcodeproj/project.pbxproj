@@ -14,11 +14,13 @@
 		157C8B4052CA41D132A599DF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 5F6C74C0E10E3F4F93200261 /* PrivacyInfo.xcprivacy */; };
 		16EE164CC569BE1E2768AD7A /* ShieldConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50454BE297654605FBC0E8EC /* ShieldConfig.swift */; };
 		17D3E1EE6E9B654E7C423182 /* cartoon_sample.jpg in Resources */ = {isa = PBXBuildFile; fileRef = BADF39D8CD430CDE183ACB38 /* cartoon_sample.jpg */; };
+		244C1C17D0DEE2FC46E0D0B4 /* ShieldActions.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CA569748931C2DFDDFBDAEA3 /* ShieldActions.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		2EB73B7F73D9C64CF3B78136 /* ScreenTimeMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 458F5D0C80E76AB546BB5989 /* ScreenTimeMonitor.swift */; };
 		32759C8BD637F533F4E2691C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 3A4B86DF2E935284E34ED2A5 /* PrivacyInfo.xcprivacy */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3402007AD349A884E8C31C19 /* ScreenTimePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C517AF0AC8EBBE6C827FBDE /* ScreenTimePlugin.swift */; };
 		37CB9613277723F298D4C79A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4137344AA6C3FE0FBB225000 /* Foundation.framework */; };
+		3A36F886083134265FE8073D /* GouWidgetShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D5252AC53E4BF369F2DD6B6 /* GouWidgetShared.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		46ECC3EAFA350E3209D9C752 /* LockShield.swift in Sources */ = {isa = PBXBuildFile; fileRef = F39F0FA3539EE5C66E3CCA3C /* LockShield.swift */; };
 		47A4189EA74C0288F6627C3F /* GouWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2F3F3BACB7FCB5F774C2EF1F /* GouWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -26,25 +28,33 @@
 		5E564E5FA37214C779BC7E7E /* CartoonLab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63172128E7891473D0180040 /* CartoonLab.swift */; };
 		6406898D5CBCFB6602AA65C8 /* GouWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 218314AC4BFEA3B4214FB144 /* GouWidget.swift */; };
 		6DB21AC89CF01BCD6B48A497 /* ShieldConfig.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1F05B2FE2D4FA9567A7953E3 /* ShieldConfig.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7257CBC4C2E5CCF3DD3C41C4 /* LockShield.swift in Sources */ = {isa = PBXBuildFile; fileRef = F39F0FA3539EE5C66E3CCA3C /* LockShield.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		7BC833DE31F8EF8AACEB5BB5 /* DCTNetAnimeHead.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 2CFC3C0BD25055B03AAFE293 /* DCTNetAnimeHead.mlpackage */; };
 		7C153AFA0A94F0E9A922DA3D /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4137344AA6C3FE0FBB225000 /* Foundation.framework */; };
 		7D95E50FE3B3F84EA04AE0FC /* ReportContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAE12289BF5AC79138CE8E49 /* ReportContext.swift */; };
 		7EB2B41625BCDE798A508F4B /* ScreenTimeMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 635A04D9397B53805A9026E5 /* ScreenTimeMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		85BD8A6107FDD876ADBCBE67 /* GouWidgetShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D5252AC53E4BF369F2DD6B6 /* GouWidgetShared.swift */; };
+		87B1C53E29E6FBB36DBD2D98 /* ShieldActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 589AE903F71ED1E47455135C /* ShieldActionHandler.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		9AA455574BF43AE481FF0E5A /* ScreenTimeReport.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = 81AB97AA8782B29D64620A64 /* ScreenTimeReport.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		9CB6D1649D97041CD7F5BB0B /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E53FD82AED1F893B6676529 /* Pods_Runner.framework */; };
 		A933D3E54C79B68344AD9C2B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F8AD157A760FFA7BD50A0DD7 /* PrivacyInfo.xcprivacy */; };
+		AA853301F99BBA06A897A460 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = CCFC1C2B342D3842D3D445AA /* PrivacyInfo.xcprivacy */; };
+		AD47F6FDD99FB98DF2D65910 /* LockShield.swift in Sources */ = {isa = PBXBuildFile; fileRef = F39F0FA3539EE5C66E3CCA3C /* LockShield.swift */; };
 		B15BFC28EC9D12DB9ACDBA8C /* GouWidgetShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D5252AC53E4BF369F2DD6B6 /* GouWidgetShared.swift */; };
+		B6E610A747135306BD95E448 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 3BCDB50891214B22211C28A0 /* PrivacyInfo.xcprivacy */; };
 		BD7784A593CE2E3335FF4CFD /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4137344AA6C3FE0FBB225000 /* Foundation.framework */; };
 		BECB1DB1C26A3889F8C7770F /* ScreenTimeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E5C9A85AC300E17F02E7E5 /* ScreenTimeStore.swift */; };
+		C67C30D4651A161F21DBAB20 /* ScreenTimeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E5C9A85AC300E17F02E7E5 /* ScreenTimeStore.swift */; };
 		CD5C7A2957BE86DC0AD0A327 /* ReportContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAE12289BF5AC79138CE8E49 /* ReportContext.swift */; };
+		D3D4A994011B0FEBD1897875 /* ScreenTimeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E5C9A85AC300E17F02E7E5 /* ScreenTimeStore.swift */; };
 		D4351BDFB1981D1EDAB7AA03 /* ScreenTimeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E5C9A85AC300E17F02E7E5 /* ScreenTimeStore.swift */; };
 		E9FAE507D3329B87BABEE421 /* GouWidgetShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D5252AC53E4BF369F2DD6B6 /* GouWidgetShared.swift */; };
 		F5DDB7F29B7F6612CAB2DC32 /* ScreenTimeReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E656AB5FD0A64AB07DC614BC /* ScreenTimeReport.swift */; };
+		FB84DB7C8F600080488B86BF /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4137344AA6C3FE0FBB225000 /* Foundation.framework */; };
 		FC972C5FEAF5F6A68A3B5798 /* LockShield.swift in Sources */ = {isa = PBXBuildFile; fileRef = F39F0FA3539EE5C66E3CCA3C /* LockShield.swift */; };
 /* End PBXBuildFile section */
 
@@ -76,6 +86,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 04176EE1486B2632C50DB809;
 			remoteInfo = ScreenTimeMonitor;
+		};
+		BF9804EA3F855771A440E746 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 244A8B6B06C4B63F7B4B30A7;
+			remoteInfo = ShieldActions;
 		};
 		C9311EA466296EB5952C2D9E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -117,6 +134,7 @@
 				7EB2B41625BCDE798A508F4B /* ScreenTimeMonitor.appex in Embed Foundation Extensions */,
 				6DB21AC89CF01BCD6B48A497 /* ShieldConfig.appex in Embed Foundation Extensions */,
 				47A4189EA74C0288F6627C3F /* GouWidget.appex in Embed Foundation Extensions */,
+				244C1C17D0DEE2FC46E0D0B4 /* ShieldActions.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -126,6 +144,7 @@
 /* Begin PBXFileReference section */
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
+		187A3513E402254DD02C7B15 /* ShieldActions.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = ShieldActions.xcconfig; sourceTree = "<group>"; };
 		1E869665F5DD3BD668347CF3 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1F05B2FE2D4FA9567A7953E3 /* ShieldConfig.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShieldConfig.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		218314AC4BFEA3B4214FB144 /* GouWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GouWidget.swift; sourceTree = "<group>"; };
@@ -138,12 +157,15 @@
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3A4B86DF2E935284E34ED2A5 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
+		3BCDB50891214B22211C28A0 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		3E53FD82AED1F893B6676529 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4137344AA6C3FE0FBB225000 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		458F5D0C80E76AB546BB5989 /* ScreenTimeMonitor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScreenTimeMonitor.swift; sourceTree = "<group>"; };
 		50454BE297654605FBC0E8EC /* ShieldConfig.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShieldConfig.swift; sourceTree = "<group>"; };
 		51CE83D1DD6661F01B8F6F95 /* ShieldConfig.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = ShieldConfig.xcconfig; sourceTree = "<group>"; };
+		589AE903F71ED1E47455135C /* ShieldActionHandler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShieldActionHandler.swift; sourceTree = "<group>"; };
 		5D5252AC53E4BF369F2DD6B6 /* GouWidgetShared.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GouWidgetShared.swift; sourceTree = "<group>"; };
+		5E25983CEAE1572A4A41C3B0 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		5F6C74C0E10E3F4F93200261 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		63172128E7891473D0180040 /* CartoonLab.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CartoonLab.swift; sourceTree = "<group>"; };
 		635A04D9397B53805A9026E5 /* ScreenTimeMonitor.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ScreenTimeMonitor.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -171,6 +193,9 @@
 		B6181CEFBFF5ECFADDADF63C /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
 		BA2FF97FEFF6C869CF13A553 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BADF39D8CD430CDE183ACB38 /* cartoon_sample.jpg */ = {isa = PBXFileReference; includeInIndex = 1; path = cartoon_sample.jpg; sourceTree = "<group>"; };
+		CA569748931C2DFDDFBDAEA3 /* ShieldActions.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShieldActions.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		CB463B897F29F57A5A35CB11 /* ShieldActions.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = ShieldActions.entitlements; sourceTree = "<group>"; };
+		CCFC1C2B342D3842D3D445AA /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		CD8A1CE1F650190D22721FE6 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		D12B8E2201D24267FB022E49 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		D4614ABD399FA34B2DD30B1D /* ScreenTimeMonitor.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = ScreenTimeMonitor.entitlements; sourceTree = "<group>"; };
@@ -222,6 +247,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				9CB6D1649D97041CD7F5BB0B /* Pods_Runner.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D566CFD678E511716957A1C6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FB84DB7C8F600080488B86BF /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -322,6 +355,7 @@
 				BA2FF97FEFF6C869CF13A553 /* Info.plist */,
 				91BA09E29F48B4A12F2D3AF3 /* ShieldConfig.entitlements */,
 				51CE83D1DD6661F01B8F6F95 /* ShieldConfig.xcconfig */,
+				3BCDB50891214B22211C28A0 /* PrivacyInfo.xcprivacy */,
 			);
 			name = ShieldConfig;
 			path = ShieldConfig;
@@ -351,6 +385,7 @@
 				72F7A3D02801F7D2C6B60A21 /* ScreenTimeReport */,
 				88ABFF0C238BB77160508F40 /* ShieldConfig */,
 				7D05E8E1AF1607CC605070FE /* GouWidget */,
+				B8F96422370A1772B91F2DA8 /* ShieldActions */,
 			);
 			sourceTree = "<group>";
 		};
@@ -363,6 +398,7 @@
 				81AB97AA8782B29D64620A64 /* ScreenTimeReport.appex */,
 				1F05B2FE2D4FA9567A7953E3 /* ShieldConfig.appex */,
 				2F3F3BACB7FCB5F774C2EF1F /* GouWidget.appex */,
+				CA569748931C2DFDDFBDAEA3 /* ShieldActions.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -386,6 +422,19 @@
 				F8AD157A760FFA7BD50A0DD7 /* PrivacyInfo.xcprivacy */,
 			);
 			path = Runner;
+			sourceTree = "<group>";
+		};
+		B8F96422370A1772B91F2DA8 /* ShieldActions */ = {
+			isa = PBXGroup;
+			children = (
+				589AE903F71ED1E47455135C /* ShieldActionHandler.swift */,
+				CCFC1C2B342D3842D3D445AA /* PrivacyInfo.xcprivacy */,
+				5E25983CEAE1572A4A41C3B0 /* Info.plist */,
+				CB463B897F29F57A5A35CB11 /* ShieldActions.entitlements */,
+				187A3513E402254DD02C7B15 /* ShieldActions.xcconfig */,
+			);
+			name = ShieldActions;
+			path = ShieldActions;
 			sourceTree = "<group>";
 		};
 		CA358A1A7DA126946964BFE3 /* Pods */ = {
@@ -438,6 +487,23 @@
 			productName = ScreenTimeReport;
 			productReference = 81AB97AA8782B29D64620A64 /* ScreenTimeReport.appex */;
 			productType = "com.apple.product-type.extensionkit-extension";
+		};
+		244A8B6B06C4B63F7B4B30A7 /* ShieldActions */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA0AE001A89CE3E42E9FEFC4 /* Build configuration list for PBXNativeTarget "ShieldActions" */;
+			buildPhases = (
+				37C5BD800E9985138DDECB32 /* Sources */,
+				D566CFD678E511716957A1C6 /* Frameworks */,
+				67CE86BF14B05594FE906A70 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ShieldActions;
+			productName = ShieldActions;
+			productReference = CA569748931C2DFDDFBDAEA3 /* ShieldActions.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 		331C8080294A63A400263BE5 /* RunnerTests */ = {
 			isa = PBXNativeTarget;
@@ -497,6 +563,7 @@
 				19C1D7A598206020F38B750C /* PBXTargetDependency */,
 				1133DA74CAA7612C16F1D1C6 /* PBXTargetDependency */,
 				858C8C64740C4F1F1A4031C0 /* PBXTargetDependency */,
+				CDF2E4CFBBF65D50AEB3DEBD /* PBXTargetDependency */,
 			);
 			name = Runner;
 			productName = Runner;
@@ -559,6 +626,7 @@
 				05C2EEEFF348DBF1B0229AF3 /* ScreenTimeReport */,
 				8323E8B702A4AE2838621849 /* ShieldConfig */,
 				BF610874A2B7E47F68A31814 /* GouWidget */,
+				244A8B6B06C4B63F7B4B30A7 /* ShieldActions */,
 			);
 		};
 /* End PBXProject section */
@@ -584,6 +652,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0E377AA7A7619E488B10DF57 /* ShieldIcon.png in Resources */,
+				B6E610A747135306BD95E448 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -591,6 +660,14 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		67CE86BF14B05594FE906A70 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA853301F99BBA06A897A460 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -721,11 +798,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		37C5BD800E9985138DDECB32 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				87B1C53E29E6FBB36DBD2D98 /* ShieldActionHandler.swift in Sources */,
+				D3D4A994011B0FEBD1897875 /* ScreenTimeStore.swift in Sources */,
+				7257CBC4C2E5CCF3DD3C41C4 /* LockShield.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		37ECF5D80A1CC294060173EE /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				16EE164CC569BE1E2768AD7A /* ShieldConfig.swift in Sources */,
+				C67C30D4651A161F21DBAB20 /* ScreenTimeStore.swift in Sources */,
+				AD47F6FDD99FB98DF2D65910 /* LockShield.swift in Sources */,
+				3A36F886083134265FE8073D /* GouWidgetShared.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -807,6 +897,12 @@
 			target = BF610874A2B7E47F68A31814 /* GouWidget */;
 			targetProxy = 4FC60838EC80625A5C4EF0CF /* PBXContainerItemProxy */;
 		};
+		CDF2E4CFBBF65D50AEB3DEBD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = ShieldActions;
+			target = 244A8B6B06C4B63F7B4B30A7 /* ShieldActions */;
+			targetProxy = BF9804EA3F855771A440E746 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
@@ -857,6 +953,34 @@
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Profile;
+		};
+		17BD8907A80E8E259BD21CB1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 187A3513E402254DD02C7B15 /* ShieldActions.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = ShieldActions/ShieldActions.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = 5H4N969ZA3;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ShieldActions/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.zwjsg.zwjsgApp.ShieldActions;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
 		};
 		249021D3217E4FDB00AE95B9 /* Profile */ = {
 			isa = XCBuildConfiguration;
@@ -1316,6 +1440,35 @@
 			};
 			name = Debug;
 		};
+		9FA745547970906B5D0B1BB1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 187A3513E402254DD02C7B15 /* ShieldActions.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = ShieldActions/ShieldActions.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = 5H4N969ZA3;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ShieldActions/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.zwjsg.zwjsgApp.ShieldActions;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		9FB68F3DFD2B7FBA92E8EF12 /* Profile */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 51CE83D1DD6661F01B8F6F95 /* ShieldConfig.xcconfig */;
@@ -1401,6 +1554,35 @@
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
+		};
+		CB339FEB8E3793AD0F895D49 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 187A3513E402254DD02C7B15 /* ShieldActions.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = ShieldActions/ShieldActions.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = 5H4N969ZA3;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ShieldActions/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.zwjsg.zwjsgApp.ShieldActions;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Profile;
 		};
 		D602F62CB2E4E57570CE7913 /* Profile */ = {
 			isa = XCBuildConfiguration;
@@ -1529,6 +1711,16 @@
 				7C011F804E71FFA47C89B1C5 /* Release */,
 				BE7FB3A9CB2D14B1FF1ECDA7 /* Debug */,
 				5408D6D65E99B76180E4B5A4 /* Profile */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA0AE001A89CE3E42E9FEFC4 /* Build configuration list for PBXNativeTarget "ShieldActions" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9FA745547970906B5D0B1BB1 /* Release */,
+				17BD8907A80E8E259BD21CB1 /* Debug */,
+				CB339FEB8E3793AD0F895D49 /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

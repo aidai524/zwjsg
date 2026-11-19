@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zwjsg_app/core/breeds.dart';
 import 'package:zwjsg_app/core/dog_meter.dart';
@@ -34,5 +36,21 @@ void main() {
 
     const work = UsageSnapshot(totalMinutes: 200, pickups: 50, lateNightMinutes: 0, categoryMinutes: {'social': 100, 'productivity': 60, 'video': 30});
     expect(judgeBreed(work, 180), 'shiba');
+  });
+
+  test('每日目标三档：3、5、8 小时，和后端 config/dog.php 的 goal_tiers 一致', () {
+    expect([for (final t in GoalTier.values) t.minutes], [180, 300, 480]);
+    expect([for (final t in GoalTier.values) t.label], ['正常使用', '重度使用', '无可自拔']);
+    final php = File('../../backends/zaiwan_gou_api/config/dog.php').readAsStringSync();
+    expect(RegExp(r"'goal_tiers' => \[([0-9, ]+)\]").firstMatch(php)?.group(1), '180, 300, 480');
+  });
+
+  test('旧版本自己设的小时数换成最接近的一档，正好在中间取严的', () {
+    expect(GoalTier.nearest(60), GoalTier.normal);
+    expect(GoalTier.nearest(240), GoalTier.normal);
+    expect(GoalTier.nearest(241), GoalTier.heavy);
+    expect(GoalTier.nearest(390), GoalTier.heavy);
+    expect(GoalTier.nearest(420), GoalTier.hooked);
+    expect(GoalTier.nearest(480), GoalTier.hooked);
   });
 }

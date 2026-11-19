@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zwjsg_app/app.dart';
 import 'package:zwjsg_app/core/app_state.dart';
+import 'package:zwjsg_app/core/usage_channel.dart';
 import 'package:series_share/series_share.dart';
 import 'package:zwjsg_app/core/reminders.dart';
 import 'package:zwjsg_app/features/card/card_page.dart';
@@ -72,6 +73,8 @@ Future<void> go(WidgetTester tester, String location) async {
 }
 
 Future<void> tapText(WidgetTester tester, String text) async {
+  // 列表只建屏幕附近的行，还没建出来的先往下滚
+  if (find.text(text).evaluate().isEmpty) await tester.scrollUntilVisible(find.text(text), 300);
   await tester.ensureVisible(find.text(text));
   await tester.tap(find.text(text));
   await tester.pumpAndSettle();
@@ -205,7 +208,8 @@ void main() {
     Future<FakeExporter> pumpCard(WidgetTester tester, {DateTime? now}) async {
       usePhoneScreen(tester);
       SharedPreferences.setMockInitialValues({'nickname': '小狗勾'});
-      final state = AppState(await SharedPreferences.getInstance(), reminders: FakeReminders());
+      final state = AppState(await SharedPreferences.getInstance(), reminders: FakeReminders())
+        ..debugSetUsage(const UsageSnapshot(totalMinutes: 130, pickups: 0, lateNightMinutes: 0, categoryMinutes: {}));
       final exporter = FakeExporter();
       await tester.pumpWidget(
           AppScope(state: state, child: MaterialApp(home: CardPage(exporter: exporter, now: now))));

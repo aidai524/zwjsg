@@ -78,8 +78,14 @@ class HistoryStore {
 
   DayRecord? day(String date) => all()[date];
 
-  Future<void> put(DayRecord record) async {
-    final records = all()..[record.date] = record;
+  Future<void> put(DayRecord record) => putAll([record]);
+
+  Future<void> putAll(Iterable<DayRecord> list) async {
+    if (list.isEmpty) return;
+    final records = all();
+    for (final r in list) {
+      records[r.date] = r;
+    }
     // 日期是 yyyy-MM-dd，按字符串排序就是按日期排序
     final dates = records.keys.toList()..sort();
     for (final old in dates.take((dates.length - keepDays).clamp(0, dates.length))) {

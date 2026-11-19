@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zwjsg_app/app.dart';
 import 'package:zwjsg_app/core/app_state.dart';
+import 'package:zwjsg_app/core/dog_meter.dart';
 import 'package:zwjsg_app/features/onboarding/goal_page.dart';
 import 'package:zwjsg_app/features/today/today_page.dart';
 
@@ -81,10 +82,38 @@ void main() {
     expect(find.byType(GoalPage), findsOneWidget);
 
     // 和目标页保存时的顺序一样：先改状态，紧接着返回
-    await AppScope.read(today).setGoal(120);
+    await AppScope.read(today).setGoalTier(GoalTier.heavy);
     router.pop();
     await tester.pumpAndSettle();
 
+    expect(find.byType(GoalPage), findsNothing);
+  });
+
+  testWidgets('目标页只有三档可选：选“无可自拔”保存后按 8 小时算；旧版本的 2 小时换成正常使用', (tester) async {
+    usePhoneScreen(tester);
+    await pumpApp(tester, {'onboarded': true, 'goal_minutes': 120});
+    final today = tester.element(find.byType(TodayPage));
+    final state = AppScope.read(today);
+    expect(state.goalTier, GoalTier.normal);
+    expect(state.goalMinutes, 180);
+
+    GoRouter.of(today).push('/goal?edit=1');
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel(RegExp('^正常使用，每天 3 小时')), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('^重度使用，每天 5 小时')), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('^无可自拔，每天 8 小时')), findsOneWidget);
+    expect(find.text('小时/天'), findsNothing); // 不能再自己填小时数
+
+    await tester.tap(find.bySemanticsLabel(RegExp('^无可自拔')));
+    await tester.pumpAndSettle();
+    expect(find.text('按「无可自拔」，你会这样变狗'), findsOneWidget);
+    expect(find.text('刷到 2 小时 24 分'), findsOneWidget); // 8 小时的 30%
+    await tester.ensureVisible(find.text('保存'));
+    await tester.tap(find.text('保存'));
+    await tester.pumpAndSettle();
+
+    expect(state.goalTier, GoalTier.hooked);
+    expect(state.goalMinutes, 480);
     expect(find.byType(GoalPage), findsNothing);
   });
 

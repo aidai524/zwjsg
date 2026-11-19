@@ -30,7 +30,7 @@ class _HistoryPageState extends State<HistoryPage> {
   Widget build(BuildContext context) {
     final records = AppScope.of(context).history.all();
     return Scaffold(
-      appBar: AppBar(title: const Text('历史记录')),
+      appBar: AppBar(title: const Text('每天的记录')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),

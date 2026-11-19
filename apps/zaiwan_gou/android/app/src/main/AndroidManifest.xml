@@ -4,6 +4,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- 每晚结算提醒：手机重启后重新排上提醒（通知权限由 flutter_local_notifications 自带声明） -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- 超时来电：来电页响铃时震动 -->
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- 结算卡保存到相册：安卓 10 及以下需要 -->
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
@@ -54,14 +56,15 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/lock_accessibility_service" />
         </service>
-        <!-- 时间锁的拦截页：单独的任务栈，不把 App 主界面带出来 -->
+        <!-- 超时来电页：单独的任务栈，不把 App 主界面带出来；盖在超时的 App 上面，不退回桌面 -->
         <activity
-            android:name=".LockedActivity"
+            android:name=".CallReminderActivity"
             android:exported="false"
             android:excludeFromRecents="true"
             android:launchMode="singleTask"
-            android:taskAffinity="com.zwjsg.zwjsg_app.locked"
-            android:theme="@android:style/Theme.Material.Light.NoActionBar" />
+            android:screenOrientation="portrait"
+            android:taskAffinity="com.zwjsg.zwjsg_app.call"
+            android:theme="@android:style/Theme.Material.NoActionBar" />
         <!-- 桌面小组件：小号 2×2、中号 4×2。系统大约每 30 分钟叫醒一次，小组件自己算今天刷了多久 -->
         <receiver
             android:name=".widget.SmallDogWidget"

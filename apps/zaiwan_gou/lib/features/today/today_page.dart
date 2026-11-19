@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/app_lock.dart';
 import '../../core/app_state.dart';
 import '../../core/dog_meter.dart';
 import 'package:pop_ui/pop_ui.dart';
@@ -12,10 +13,11 @@ import 'today_cards.dart';
 import '../../widgets/my_avatar.dart';
 
 class TodayPage extends StatefulWidget {
-  /// [rankingLoader] 只在测试里传，代替安卓原生层的今日排行
-  const TodayPage({super.key, this.rankingLoader});
+  /// [rankingLoader]、[lockService] 只在测试里传，代替原生层的今日排行和单个 App 限时
+  const TodayPage({super.key, this.rankingLoader, this.lockService});
 
   final Future<List<AppUsage>> Function()? rankingLoader;
+  final LockService? lockService;
 
   @override
   State<TodayPage> createState() => _TodayPageState();
@@ -94,20 +96,9 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                           ],
                         ),
                       ),
-                      if (state.usage.isDemo) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Pop.white,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Pop.ink, width: 2),
-                          ),
-                          child: const Text('演示数据', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      // 随时都能晒：打开的是此刻的卡片，到了每晚提醒的时间才是“今日结算”
-                      _ShareChip(onTap: () => context.push('/card')),
+                      // 随时都能晒：打开的是此刻的卡片，到了每晚提醒的时间才是“今日结算”。
+                      // 还没拿到真实数据时没什么可晒的，不显示
+                      if (state.hasUsageData) _ShareChip(onTap: () => context.push('/card')),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -139,11 +130,12 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                     decoration: BoxDecoration(color: Pop.ink, borderRadius: BorderRadius.circular(16)),
-                    child: Text(DogMeter.stageNames[stage],
+                    child: Text(state.hasUsageData ? DogMeter.stageNames[stage] : '还没开始统计',
                         style: const TextStyle(color: Pop.yellow, fontSize: 14, fontWeight: FontWeight.w700)),
                   ),
                   const SizedBox(height: 8),
-                  Text(DogMeter.quips[stage], style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                  Text(state.hasUsageData ? DogMeter.quips[stage] : '开了权限，才知道你今天有多狗',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                 ],
               ),
             ),
@@ -179,23 +171,17 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  _ProgressCard(
-                    used: state.minutesUsedLabel,
-                    goal: state.goalMinutes,
-                    percent: state.percent,
-                    hint: _hint(state),
-                  ),
-                  if (state.usage.isDemo) ...[
-                    const SizedBox(height: 12),
-                    Text('演示：拖动看看不同时长的样子（${DogMeter.formatMinutes(state.demoMinutes)}）', style: PopText.small),
-                    Slider(
-                      value: state.demoMinutes.toDouble(),
-                      min: 0,
-                      max: 330,
-                      activeColor: Pop.ink,
-                      onChanged: (v) => state.setDemoMinutes(v.round()),
+                  if (state.hasUsageData) ...[
+                    _ProgressCard(
+                      used: state.minutesUsedLabel,
+                      goal: state.goalMinutes,
+                      percent: state.percent,
+                      hint: _hint(state),
                     ),
+                    const SizedBox(height: 12),
                   ],
+                  // 单个 App 限时（超时来电）放在前面，比排行更显眼
+                  LimitsCard(service: widget.lockService),
                   const SizedBox(height: 12),
                   // 卡片上直接露出前三名和这周 7 天，点开再看全部
                   TimeSpentCard(loader: widget.rankingLoader),

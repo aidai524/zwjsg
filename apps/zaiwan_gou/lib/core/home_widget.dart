@@ -114,8 +114,8 @@ class HomeWidgetSync {
   void _changed() => unawaited(sync());
 
   /// 看 App 自己拿到的是什么数据：真实分钟数（安卓开了权限）→ 小组件自己按分钟算；
-  /// 只有阶段（iOS 屏幕使用时间）→ 小组件读阶段；演示数据 → 小组件提示打开 App
-  static DogWidgetSource sourceFor(UsageSnapshot usage) => usage.isDemo
+  /// 只有阶段（iOS 屏幕使用时间）→ 小组件读阶段；还拿不到数据 → 小组件提示打开 App
+  static DogWidgetSource sourceFor(UsageSnapshot usage) => !usage.available
       ? DogWidgetSource.none
       : (usage.stageOnly ? DogWidgetSource.screenTime : DogWidgetSource.usage);
 
@@ -148,7 +148,7 @@ class HomeWidgetSync {
   }
 
   Future<bool> _syncConfig() async {
-    // 刚打开 App、还没读过使用情况时先不交：这时只有演示数据，小组件会闪一下“打开 App 开权限”
+    // 刚打开 App、还没读过使用情况时先不交：这时还不知道有没有数据，小组件会闪一下“打开 App 开权限”
     if (!state.usageChecked) return false;
     final c = config;
     final key = jsonEncode(c.toMap());
@@ -184,7 +184,7 @@ class HomeWidgetSync {
     return drew;
   }
 
-  /// App 里刷新用量后阶段变了，小组件也跟着重画（演示数据不算）
+  /// App 里刷新用量后阶段变了，小组件也跟着重画（没拿到数据时不算）
   Future<void> _syncStage() async {
     if (_source == DogWidgetSource.none) return;
     final stage = state.stage;

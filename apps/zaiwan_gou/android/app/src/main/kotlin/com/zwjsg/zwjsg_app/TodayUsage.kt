@@ -37,17 +37,38 @@ class TodayUsage private constructor(
             return mode == AppOpsManager.MODE_ALLOWED
         }
 
+        /** 今天 0 点到现在 */
         fun compute(context: Context): TodayUsage {
+            val startOfDay = dayStart(0)
+            return computeRange(context, startOfDay, System.currentTimeMillis(), startOfDay + 23 * HOUR_MS).first
+        }
+
+        /**
+         * [daysAgo] 天前那一整天（0 点到 24 点）。系统只留最近几天（一般 7–10 天）的使用记录，
+         * 那天一条记录都没有时返回 null：说明数据已经被系统清掉了，不能当成“那天没用手机”。
+         */
+        fun computeDay(context: Context, daysAgo: Int): TodayUsage? {
+            val start = dayStart(daysAgo)
+            val end = dayStart(daysAgo - 1)
+            val (usage, events) = computeRange(context, start, end, start + 23 * HOUR_MS)
+            return if (events == 0) null else usage
+        }
+
+        /** [daysAgo] 天前的 0 点（本地时间）；0 是今天 0 点，-1 是明天 0 点 */
+        fun dayStart(daysAgo: Int): Long = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_YEAR, -daysAgo)
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+
+        private const val HOUR_MS = 3_600_000L
+
+        /** 一段时间里的使用情况，以及读到了几条系统记录 */
+        private fun computeRange(context: Context, start: Long, end: Long, lateNightStart: Long): Pair<TodayUsage, Int> {
             val usm = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-            val now = System.currentTimeMillis()
-            val startOfDay = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
-            }.timeInMillis
-            val lateNightStart = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, 23); set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
-            }.timeInMillis
+            val now = end
+            val startOfDay = start
+            var eventCount = 0
 
             val ignored = ignoredPackages(context)
             val foregroundMs = HashMap<String, Long>()
@@ -76,6 +97,7 @@ class TodayUsage private constructor(
             val e = UsageEvents.Event()
             while (events.hasNextEvent()) {
                 events.getNextEvent(e)
+                eventCount++
                 when (e.eventType) {
                     resumed -> {
                         closeSession(e.timeStamp)
@@ -89,7 +111,7 @@ class TodayUsage private constructor(
             }
             closeSession(now)
 
-            return TodayUsage(foregroundMs, lateNightMs, pickups)
+            return TodayUsage(foregroundMs, lateNightMs, pickups) to eventCount
         }
 
         /** 自己、桌面启动器不计入使用时长，也不能被锁 */

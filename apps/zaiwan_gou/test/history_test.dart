@@ -43,13 +43,13 @@ void main() {
     expect(store.day('2025-01-03'), isNotNull);
   });
 
-  testWidgets('演示数据不记历史', (tester) async {
+  testWidgets('拿不到真实数据时不记历史', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final state = AppState(await SharedPreferences.getInstance());
 
     await state.refreshUsage();
 
-    expect(state.usage.isDemo, isTrue);
+    expect(state.hasUsageData, isFalse);
     expect(state.history.all(), isEmpty);
   });
 

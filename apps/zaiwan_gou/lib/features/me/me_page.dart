@@ -179,15 +179,16 @@ class MePage extends StatelessWidget {
             const _Section('目标与提醒'),
             _Group(children: [
               _Row(
-                title: '每日目标',
-                trailing: DogMeter.formatMinutes(state.goalMinutes),
+                title: '使用程度',
+                trailing: '${state.goalTier.label} · ${DogMeter.formatMinutes(state.goalMinutes)}',
                 onTap: () => context.push('/goal?edit=1'),
               ),
               _Row(title: '结算卡提醒', trailing: state.reminderLabel, onTap: () => _editReminder(context)),
             ]),
             const _Section('玩法'),
             _Group(children: [
-              _Row(title: 'App 时间锁', trailing: '免费', onTap: () => context.push('/locks')),
+              _Row(title: '狗度统计', trailing: '最近 7 / 30 / 90 天', onTap: () => context.push('/stats')),
+              _Row(title: '超时来电', trailing: '单个 App 限时', onTap: () => context.push('/locks')),
               const _Row(title: '装扮商店', trailing: '即将上线'),
             ]),
             if (ScreenTimeChannel.isSupported) ...[

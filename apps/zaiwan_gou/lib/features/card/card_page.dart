@@ -70,6 +70,25 @@ class _CardPageState extends State<CardPage> {
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
+    // 还没拿到真实数据（没开权限）：没有可晒的，不拿假数据凑一张卡（每晚提醒点进来也会到这里）
+    if (!state.hasUsageData) {
+      return Scaffold(
+        backgroundColor: Pop.ink,
+        appBar: AppBar(
+          systemOverlayStyle: Pop.overlayOnDark,
+          foregroundColor: Pop.white,
+          leading: IconButton(tooltip: '关闭', icon: const Icon(Icons.close), onPressed: () => context.pop()),
+        ),
+        body: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(32),
+            child: Text('还没拿到今天的数据。\n回“今天”页开了权限，再来晒。',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Pop.white, fontSize: 16, height: 1.6, fontWeight: FontWeight.w700)),
+          ),
+        ),
+      );
+    }
     final breed = breedByKey(state.breedKey);
     final rarity = breed?.rarity ?? Rarity.common;
     final now = widget.now ?? DateTime.now();

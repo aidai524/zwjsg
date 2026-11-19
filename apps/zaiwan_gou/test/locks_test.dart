@@ -4,6 +4,7 @@ import 'package:zwjsg_app/core/app_lock.dart';
 import 'package:zwjsg_app/core/usage_channel.dart';
 import 'package:zwjsg_app/features/locks/app_picker_page.dart';
 import 'package:zwjsg_app/features/locks/locks_page.dart';
+import 'package:zwjsg_app/features/today/today_cards.dart';
 
 class FakeLockService extends LockService {
   FakeLockService({this.isReady = true, List<AppLock>? locks}) : locks = locks ?? [];
@@ -65,22 +66,6 @@ class FakeLockService extends LockService {
 
   @override
   Future<void> discardDraft() async => discards++;
-
-  @override
-  Future<List<AppLock>> grantGrace(String id) async {
-    final i = locks.indexWhere((l) => l.id == id);
-    final l = locks[i];
-    locks[i] = AppLock(
-      id: l.id,
-      minutes: l.minutes,
-      packages: l.packages,
-      labels: l.labels,
-      usedMinutes: l.usedMinutes,
-      graceLeft: l.graceLeft - 1,
-      graceActive: true,
-    );
-    return list();
-  }
 }
 
 /// 像 iOS：系统选择页只告诉数量，可能整类选中
@@ -121,16 +106,16 @@ void main() {
 
     expect(service.setups, 1);
     expect(find.text('还差一步：打开权限'), findsNothing);
-    expect(find.text('还没有时间锁'), findsOneWidget);
+    expect(find.text('还没设限时'), findsOneWidget);
   });
 
-  testWidgets('新建时间锁：选 App、选额度，保存后出现在列表里', (tester) async {
+  testWidgets('新建限时：选 App、选额度，保存后出现在列表里', (tester) async {
     final service = FakeLockService();
     await pumpLocks(tester, service);
 
-    await tester.tap(find.text('加一个时间锁'));
+    await tester.tap(find.text('加一个限时'));
     await tester.pumpAndSettle();
-    expect(find.text('新的时间锁'), findsOneWidget);
+    expect(find.text('新的限时'), findsOneWidget);
     expect(find.text('还没选 App'), findsOneWidget);
 
     await tester.tap(find.text('选择 App'));
@@ -152,7 +137,7 @@ void main() {
     final service = FakeIosLockService();
     await pumpLocks(tester, service);
 
-    await tester.tap(find.text('加一个时间锁'));
+    await tester.tap(find.text('加一个限时'));
     await tester.pumpAndSettle();
     expect(find.text('点类别名称展开，就能只勾某一个 App'), findsOneWidget);
     expect(find.textContaining('你选了整个类别'), findsNothing);
@@ -167,7 +152,7 @@ void main() {
     final service = FakeLockService();
     await pumpLocks(tester, service);
 
-    await tester.tap(find.text('加一个时间锁'));
+    await tester.tap(find.text('加一个限时'));
     await tester.pumpAndSettle();
     await tester.pageBack();
     await tester.pumpAndSettle();
@@ -185,12 +170,11 @@ void main() {
         labels: ['某游戏'],
         usedMinutes: 42,
         locked: true,
-        graceLeft: 3,
       ),
     ]);
     await pumpLocks(tester, service);
 
-    expect(find.text('每天 30 分钟 · 今天已锁，明天 0 点解开'), findsOneWidget);
+    expect(find.text('每天 30 分钟 · 今天已经超时，打开就来电'), findsOneWidget);
 
     await tester.tap(find.byTooltip('删掉'));
     await tester.pumpAndSettle();
@@ -206,44 +190,42 @@ void main() {
     expect(find.text('某游戏'), findsNothing);
   });
 
-  testWidgets('锁上后可以紧急解锁，确认后显示临时解锁中', (tester) async {
+  testWidgets('超时不禁止：接了电话再玩的那几分钟显示还剩多久又会来电；没有每天几次的临时解锁', (tester) async {
     final service = FakeLockService(locks: [
-      const AppLock(
-        id: 'a',
-        minutes: 30,
-        packages: ['com.example.game'],
-        labels: ['某游戏'],
-        usedMinutes: 42,
-        locked: true,
-        graceLeft: 3,
-      ),
+      const AppLock(id: 'a', minutes: 30, labels: ['某游戏'], packages: ['g'], usedMinutes: 35, graceActive: true),
+      const AppLock(id: 'b', minutes: 60, labels: ['某短视频'], packages: ['v'], usedMinutes: 20),
     ]);
     await pumpLocks(tester, service);
 
-    await tester.tap(find.text('临时解锁 5 分钟（今天还剩 3 次）'));
-    await tester.pumpAndSettle();
-    expect(find.text('真的还要刷？'), findsOneWidget);
-    await tester.tap(find.text('算了，不刷了'));
-    await tester.pumpAndSettle();
-    expect(service.locks.single.graceActive, isFalse);
-
-    await tester.tap(find.text('临时解锁 5 分钟（今天还剩 3 次）'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('再刷 5 分钟'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('每天 30 分钟 · 临时解锁中，再用满 5 分钟就锁回去'), findsOneWidget);
-    expect(find.textContaining('临时解锁 5 分钟（'), findsNothing);
+    expect(find.text('每天 30 分钟 · 再玩中，再用满 10 分钟又会来电'), findsOneWidget);
+    expect(find.text('每天 1 小时 · 今天用了 20 分钟，还剩 40 分钟'), findsOneWidget);
+    expect(find.textContaining('临时解锁'), findsNothing);
+    expect(find.textContaining('你的狗就打电话过来问你'), findsOneWidget);
   });
 
-  testWidgets('临时解锁用完了就不再显示按钮', (tester) async {
-    final service = FakeLockService(locks: [
-      const AppLock(id: 'a', minutes: 30, labels: ['某游戏'], packages: ['g'], locked: true, graceLeft: 0),
-    ]);
-    await pumpLocks(tester, service);
+  testWidgets('“今天”页的超时来电卡：没设时引导去设，设了就露出每个限时用到哪了', (tester) async {
+    Future<void> pumpCard(FakeLockService service) async {
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: ListView(children: [LimitsCard(key: UniqueKey(), service: service)]))));
+      await tester.pumpAndSettle();
+    }
 
-    expect(find.text('每天 30 分钟 · 今天已锁，临时解锁也用完了'), findsOneWidget);
-    expect(find.textContaining('临时解锁 5 分钟（'), findsNothing);
+    await pumpCard(FakeLockService());
+    expect(find.text('超时来电'), findsOneWidget);
+    expect(find.text('去设置'), findsOneWidget);
+    expect(find.textContaining('你的狗会打电话问你还玩不玩'), findsOneWidget);
+
+    await pumpCard(FakeLockService(locks: [
+      const AppLock(id: 'a', minutes: 30, labels: ['某游戏'], packages: ['g'], usedMinutes: 42, locked: true),
+      const AppLock(id: 'b', minutes: 60, labels: ['某短视频'], packages: ['v'], usedMinutes: 20),
+      const AppLock(id: 'c', minutes: 60, labels: ['某购物'], packages: ['s'], usedMinutes: 5),
+      const AppLock(id: 'd', minutes: 90, labels: ['某论坛'], packages: ['f'], usedMinutes: 0),
+    ]));
+    expect(find.text('管理'), findsOneWidget);
+    expect(find.text('某游戏'), findsOneWidget);
+    expect(find.text('今天已经超时，打开就来电'), findsOneWidget);
+    expect(find.text('今天用了 20 分钟，还剩 40 分钟'), findsOneWidget);
+    expect(find.text('某论坛'), findsNothing);
+    expect(find.text('还有 1 个'), findsOneWidget);
   });
 
   testWidgets('安卓选 App：勾选后完成，带回名称', (tester) async {

@@ -11,6 +11,8 @@ final class ScreenTimeMonitor: DeviceActivityMonitor {
     super.intervalDidStart(for: activity)
     if activity == .daily {
       ScreenTimeStore.startDayIfNeeded()
+      // 先记一条阶段 0：这一天在统计，一个阈值都没到就是做人的一天
+      ScreenTimeStore.recordStage(0)
       ScreenTimeStore.append("统计周期开始")
       // 新的一天：桌面小组件变回人
       WidgetCenter.shared.reloadTimelines(ofKind: GouWidgetShared.kind)
@@ -43,14 +45,14 @@ final class ScreenTimeMonitor: DeviceActivityMonitor {
       // 桌面小组件马上换成新阶段的样子
       WidgetCenter.shared.reloadTimelines(ofKind: GouWidgetShared.kind)
     } else if let id = ScreenTimeStore.lockId(of: activity), let lock = ScreenTimeStore.lock(id) {
-      // 正在紧急解锁的几分钟里不打断，等那几分钟用满再锁
+      // 正在“再玩 10 分钟”的时候不打断，等那几分钟用满再挡
       guard !ScreenTimeStore.isGraceActive(id) else { return }
       LockShield.apply(lock)
-      ScreenTimeStore.append("时间锁 \(id.prefix(4))：用满 \(lock.minutes) 分钟，锁上")
+      ScreenTimeStore.append("限时 \(id.prefix(4))：用满 \(lock.minutes) 分钟，来电提醒")
     } else if let id = ScreenTimeStore.graceLockId(of: activity), let lock = ScreenTimeStore.lock(id) {
       ScreenTimeStore.setGraceActive(id, false)
       LockShield.apply(lock)
-      ScreenTimeStore.append("时间锁 \(id.prefix(4))：临时解锁的 \(ScreenTimeStore.graceMinutes) 分钟用完，重新锁上")
+      ScreenTimeStore.append("限时 \(id.prefix(4))：再玩的 \(ScreenTimeStore.snoozeMinutes) 分钟用完，再来电")
       DeviceActivityCenter().stopMonitoring([activity])
     }
   }

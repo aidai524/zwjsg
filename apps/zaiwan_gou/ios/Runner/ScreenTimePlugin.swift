@@ -41,8 +41,6 @@ final class ScreenTimePlugin: NSObject, FlutterPlugin {
       saveLock(call.arguments as? [String: Any] ?? [:], result)
     case "deleteLock":
       deleteLock(call.arguments as? [String: Any] ?? [:], result)
-    case "grantGrace":
-      grantGrace(call.arguments as? [String: Any] ?? [:], result)
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -64,45 +62,12 @@ final class ScreenTimePlugin: NSObject, FlutterPlugin {
         "categories": s?.categoryTokens.count ?? 0,
         "webDomains": s?.webDomainTokens.count ?? 0,
         "locked": ScreenTimeStore.isLockedToday(lock.id),
-        "graceLeft": ScreenTimeStore.graceLeft(lock.id),
         "graceActive": ScreenTimeStore.isGraceActive(lock.id),
       ]
     }
   }
 
   /// 紧急解锁：先撤掉屏蔽，再单独监控“再用几分钟”，用满由监控扩展重新锁上
-  private func grantGrace(_ args: [String: Any], _ result: @escaping FlutterResult) {
-    guard let id = args["id"] as? String, let lock = ScreenTimeStore.lock(id),
-          let selection = LockShield.selection(of: lock)
-    else {
-      return result(FlutterError(code: "bad_args", message: "这个时间锁已经不在了", details: nil))
-    }
-    guard ScreenTimeStore.graceLeft(id) > 0 else {
-      return result(FlutterError(code: "no_grace", message: "今天的临时解锁用完了", details: nil))
-    }
-    ScreenTimeStore.useGrace(id)
-    ScreenTimeStore.setGraceActive(id, true)
-    LockShield.clear(id)
-
-    let center = DeviceActivityCenter()
-    let name = ScreenTimeStore.graceActivity(id)
-    center.stopMonitoring([name])
-    let now = Calendar.current.dateComponents([.hour, .minute, .second], from: Date())
-    let schedule = DeviceActivitySchedule(
-      intervalStart: now, intervalEnd: DateComponents(hour: 23, minute: 59, second: 59), repeats: false)
-    let event = DeviceActivityEvent(
-      applications: selection.applicationTokens, categories: selection.categoryTokens,
-      webDomains: selection.webDomainTokens, threshold: DateComponents(minute: ScreenTimeStore.graceMinutes))
-    do {
-      try center.startMonitoring(name, during: schedule, events: [ScreenTimeStore.lockEvent: event])
-      ScreenTimeStore.append("时间锁 \(id.prefix(4))：临时解锁 \(ScreenTimeStore.graceMinutes) 分钟")
-    } catch {
-      // 快到 0 点时统计周期太短（系统要求至少 15 分钟），就解开到 0 点
-      ScreenTimeStore.append("时间锁 \(id.prefix(4))：快到 0 点了，解开到明天")
-    }
-    result(locksPayload())
-  }
-
   private func pickLockApps(_ args: [String: Any], _ result: @escaping FlutterResult) {
     let saved = (args["id"] as? String).flatMap(ScreenTimeStore.lock).flatMap(LockShield.selection)
     let initial = draftSelection ?? saved ?? FamilyActivitySelection()
@@ -190,6 +155,7 @@ final class ScreenTimePlugin: NSObject, FlutterPlugin {
       "goalMinutes": ScreenTimeStore.goalMinutes,
       "thresholds": ScreenTimeStore.thresholds,
       "stage": ScreenTimeStore.stageToday,
+      "history": ScreenTimeStore.stageHistory,
       "log": ScreenTimeStore.log,
     ]
   }
@@ -313,16 +279,21 @@ final class ScreenTimePlugin: NSObject, FlutterPlugin {
 
 /// 今日排行：把系统的报告视图嵌进 Flutter 页面（UiKitView）。
 /// 排行由报告扩展 ios/ScreenTimeReport/ 画出来，主 App 读不到里面的数字。
-/// Flutter 传 {"compact": true} 时画“今天”页卡片里的精简版（一句话 + 前三名），不传是完整排行。
+/// Flutter 传 {"compact": true} 时画“今天”页卡片里的精简版（一句话 + 前三名），不传是完整排行；
+/// 传 {"days": 7} 是最近 7 天（含今天）的排行，历史统计页用。
 final class ScreenTimeReportFactory: NSObject, FlutterPlatformViewFactory {
   func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol {
     FlutterStandardMessageCodec.sharedInstance()
   }
 
   func create(withFrame frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?) -> FlutterPlatformView {
-    let today = DateInterval(start: Calendar.current.startOfDay(for: Date()), end: Date())
-    let filter = DeviceActivityFilter(segment: .daily(during: today), users: .all, devices: .all)
-    let compact = (args as? [String: Any])?["compact"] as? Bool == true
+    let params = args as? [String: Any] ?? [:]
+    let days = min(max(params["days"] as? Int ?? 1, 1), 30)
+    let calendar = Calendar.current
+    let start = calendar.date(byAdding: .day, value: 1 - days, to: calendar.startOfDay(for: Date())) ?? Date()
+    let filter = DeviceActivityFilter(
+      segment: .daily(during: DateInterval(start: start, end: Date())), users: .all, devices: .all)
+    let compact = params["compact"] as? Bool == true
     return HostedSwiftUIView(
       frame: frame, root: AnyView(DeviceActivityReport(compact ? .topAppsCompact : .topApps, filter: filter)))
   }

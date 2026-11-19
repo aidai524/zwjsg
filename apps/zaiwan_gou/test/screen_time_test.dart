@@ -147,7 +147,7 @@ void main() {
       return calls;
     }
 
-    testWidgets('开启屏幕使用时间后显示真实阶段，不再是演示数据', (tester) async {
+    testWidgets('开启屏幕使用时间后显示真实阶段；开之前不显示任何数字', (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);
@@ -157,7 +157,9 @@ void main() {
       final state = AppState(await SharedPreferences.getInstance());
       await tester.pumpWidget(AppScope(state: state, child: ZwjsgApp(state: state)));
       await tester.pumpAndSettle();
-      expect(find.text('演示数据'), findsOneWidget);
+      expect(find.text('还没开始统计'), findsOneWidget);
+      expect(find.text('？'), findsOneWidget);
+      expect(find.text('晒一下'), findsNothing);
 
       await tester.ensureVisible(find.text('去开启'));
       await tester.tap(find.text('去开启'));
@@ -168,7 +170,7 @@ void main() {
         'goalMinutes': 180,
         'thresholds': [54, 108, 162, 216, 270],
       });
-      expect(find.text('演示数据'), findsNothing);
+      expect(find.text('还没开始统计'), findsNothing);
       expect(find.text('去开启'), findsNothing);
       expect(find.text('≥60%'), findsOneWidget);
       expect(find.text('今日已刷 至少 1 小时 48 分'), findsOneWidget);
@@ -212,17 +214,17 @@ void main() {
       final state = AppState(await SharedPreferences.getInstance());
       await state.refreshUsage();
 
-      expect(state.usage.isDemo, isFalse);
+      expect(state.hasUsageData, isTrue);
       expect(state.percentLabel, '<30%');
       expect(state.minutesUsedLabel, '不到 54 分钟');
 
-      await state.setGoal(120);
+      await state.setGoalTier(GoalTier.heavy);
       expect(calls.lastWhere((c) => c.method == 'startMonitoring').arguments, {
-        'goalMinutes': 120,
-        'thresholds': [36, 72, 108, 144, 180],
+        'goalMinutes': 300,
+        'thresholds': [90, 180, 270, 360, 450],
       });
       expect(state.screenTimeGoalMismatch, isFalse);
-      expect(state.minutesUsedLabel, '不到 36 分钟');
+      expect(state.minutesUsedLabel, '不到 1 小时 30 分');
     }, variant: ios);
 
     testWidgets('验证页的测试目标还在用时，按真实下限显示并提示改回', (tester) async {
