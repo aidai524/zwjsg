@@ -70,7 +70,6 @@ class PrivacyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Pop.gray,
       appBar: AppBar(title: const Text('隐私政策')),
       body: SafeArea(
         child: ListView(

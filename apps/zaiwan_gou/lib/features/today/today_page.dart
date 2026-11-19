@@ -77,13 +77,9 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            // 黄色头部
-            Container(
-              decoration: const BoxDecoration(
-                color: Pop.yellow,
-                border: Border(bottom: BorderSide(color: Pop.ink, width: Pop.stroke)),
-              ),
-              padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 12, 20, 22),
+            // 头部：形象和狗度，直接放在页面的奶油底上
+            Padding(
+              padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 12, 20, 6),
               child: Column(
                 children: [
                   Row(
@@ -93,7 +89,7 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('${now.month} 月 ${now.day} 日 周${weekdays[now.weekday - 1]}',
-                                style: const TextStyle(fontSize: 13, color: Pop.mutedOnYellow)),
+                                style: PopText.small),
                             const Text('今天的你', style: PopText.h2),
                           ],
                         ),
@@ -224,7 +220,7 @@ class _ShareChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Pop.white,
+      color: Pop.yellow,
       shape: const StadiumBorder(side: BorderSide(color: Pop.ink, width: 2)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(

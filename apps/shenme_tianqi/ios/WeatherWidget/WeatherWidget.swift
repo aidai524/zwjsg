@@ -158,8 +158,8 @@ struct Provider: TimelineProvider {
 private enum Pop {
   static let yellow = Color(hex: 0xFFD23F)
   static let ink = Color(hex: 0x1B1B1F)
-  static let gray = Color(hex: 0xF3F4F6)
-  static let mutedOnYellow = Color(hex: 0x3A3A30)
+  static let paper = Color(hex: 0xFBF5E6)
+  static let gray = Color(hex: 0xEFEAE0)
   static let muted = Color(hex: 0x5F6368)
 }
 
@@ -183,7 +183,7 @@ private func warningColor(_ color: String) -> (Color, Color) {
   case "Yellow": return (Color(hex: 0xFFD23F), Pop.ink)
   case "Blue": return (Color(hex: 0x2F6BFF), .white)
   case "Black": return (Pop.ink, .white)
-  default: return (Pop.gray, Pop.ink)
+  default: return (.white, Pop.ink)
   }
 }
 
@@ -231,7 +231,7 @@ struct WeatherWidgetView: View {
 
   private var background: Color {
     if case .weather(_, let w) = entry.content, w.serious { return Pop.gray }
-    return Pop.yellow
+    return Pop.paper
   }
 }
 
@@ -275,7 +275,7 @@ private struct MediumView: View {
           Text(city).font(.pop(15, .black)).lineLimit(1).minimumScaleFactor(0.7)
           Spacer(minLength: 0)
           if let t = hm(w.obsTime) {
-            Text("\(t) 实况").font(.pop(9, .bold)).foregroundStyle(Pop.mutedOnYellow)
+            Text("\(t) 实况").font(.pop(9, .bold)).foregroundStyle(Pop.muted)
           }
         }
         HStack(alignment: .center, spacing: 8) {
@@ -345,7 +345,7 @@ private struct MessageView: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 6) {
       Text(title).font(.pop(15, .black)).lineLimit(1)
-      Text(message).font(.pop(12, .bold)).foregroundStyle(Pop.mutedOnYellow)
+      Text(message).font(.pop(12, .bold)).foregroundStyle(Pop.muted)
     }
   }
 }
@@ -400,7 +400,7 @@ private struct CreditText: View {
   let text: String
 
   var body: some View {
-    Text(text).font(.system(size: 7, weight: .medium)).foregroundStyle(Pop.mutedOnYellow).lineLimit(1)
+    Text(text).font(.system(size: 7, weight: .medium)).foregroundStyle(Pop.muted).lineLimit(1)
   }
 }
 

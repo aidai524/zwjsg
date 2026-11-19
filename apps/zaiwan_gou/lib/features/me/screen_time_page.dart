@@ -75,7 +75,6 @@ class _ScreenTimePageState extends State<ScreenTimePage> with WidgetsBindingObse
     final canStart = s.authorized && s.hasSelection && !_busy;
 
     return Scaffold(
-      backgroundColor: Pop.gray,
       appBar: AppBar(title: const Text('屏幕使用时间（验证）')),
       body: SafeArea(
         child: ListView(
@@ -168,7 +167,7 @@ class _StageCard extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: Pop.card(color: Pop.yellow),
+      decoration: Pop.card(color: Pop.softYellow),
       child: Row(
         children: [
           MyAvatar(stage: stage, size: 88),

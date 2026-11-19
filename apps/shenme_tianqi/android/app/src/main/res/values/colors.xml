@@ -2,9 +2,8 @@
 <resources>
     <color name="ic_launcher_background">#FFD23F</color>
     <!-- 桌面小组件，和 pop_ui 的 Pop 颜色一致 -->
-    <color name="widget_yellow">#FFFFD23F</color>
+    <color name="widget_paper">#FFFBF5E6</color>
     <color name="widget_ink">#FF1B1B1F</color>
-    <color name="widget_gray">#FFF3F4F6</color>
+    <color name="widget_gray">#FFEFEAE0</color>
     <color name="widget_muted">#FF5F6368</color>
-    <color name="widget_muted_on_yellow">#FF3A3A30</color>
 </resources>

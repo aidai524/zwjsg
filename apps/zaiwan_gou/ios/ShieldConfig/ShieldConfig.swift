@@ -7,12 +7,14 @@ import UIKit
 final class ShieldConfig: ShieldConfigurationDataSource {
   private static let ink = UIColor(red: 0x1B / 255, green: 0x1B / 255, blue: 0x1F / 255, alpha: 1)
   private static let yellow = UIColor(red: 1, green: 0xD2 / 255, blue: 0x3F / 255, alpha: 1)
+  /// 奶油底（pop_ui 的 Pop.paper），亮黄只用在按钮文字上
+  private static let paper = UIColor(red: 0xFB / 255, green: 0xF5 / 255, blue: 0xE6 / 255, alpha: 1)
 
   private func shield(_ name: String?) -> ShieldConfiguration {
     let title = name.map { "汪！\($0)今天的时间用完了" } ?? "汪！今天的时间用完了"
     return ShieldConfiguration(
       backgroundBlurStyle: .systemUltraThinMaterialLight,
-      backgroundColor: Self.yellow,
+      backgroundColor: Self.paper,
       icon: UIImage(named: "ShieldIcon"),
       title: .init(text: title, color: Self.ink),
       subtitle: .init(text: "明天 0 点自动解锁。实在要用，去“再玩我是狗 › App 时间锁”临时解锁 5 分钟，每天 3 次。", color: Self.ink),

@@ -1,33 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:pop_ui/pop_ui.dart';
 
 import 'temp_unit.dart';
 
-/// 首页背景色：按天气状态，和设计稿首页的几个场景一致
+/// 首页背景色：按天气状态，和设计稿首页的几个场景对应。
+/// 都是浅一档的柔和色（2026-11-19 调淡，原来晴天是整页亮黄、高温是亮橙，太刺眼），
+/// 黄色的决策卡、白卡片放在上面才显眼。
 Color sceneColor(String cond, String outfitKey) {
-  if (cond == 'sunny' && outfitKey == 'hot') return const Color(0xFFFF9F45);
-  if (cond == 'cloudy' && (outfitKey == 'cold' || outfitKey == 'freezing')) return const Color(0xFFCFE3F7);
+  if (cond == 'sunny' && outfitKey == 'hot') return const Color(0xFFFCDCC2);
+  if (cond == 'cloudy' && (outfitKey == 'cold' || outfitKey == 'freezing')) return const Color(0xFFDCEAF6);
   return switch (cond) {
-    'sunny' => const Color(0xFFFFD23F),
+    'sunny' => const Color(0xFFFDF0C9),
     'cloudy' => const Color(0xFFE6E9EF),
-    'light_rain' || 'heavy_rain' => const Color(0xFFA9C1E8),
-    'thunder' => const Color(0xFF8E8AC7),
+    'light_rain' || 'heavy_rain' => const Color(0xFFCCDBF0),
+    'thunder' => const Color(0xFFDAD6EF),
     'snow' => const Color(0xFFE8F1FA),
-    'wind' => const Color(0xFFDCE9C9),
-    'smog' => const Color(0xFFC9C4B5),
-    'dust' => const Color(0xFFE6CFA3),
-    'humid' => const Color(0xFFBFE3D0),
-    _ => const Color(0xFFF3F4F6),
+    'wind' => const Color(0xFFE2ECD3),
+    'smog' => const Color(0xFFE2DED4),
+    'dust' => const Color(0xFFEEDFC2),
+    'humid' => const Color(0xFFD3EBDD),
+    _ => Pop.paper,
   };
 }
 
-/// 预警颜色（气象部门的 severityColor）
+/// 预警颜色（气象部门的 severityColor）。不在这几种里的（比如没有颜色的防御提醒）用白底，放在哪种天气的底色上都不突兀
 Color warningColor(String color) => switch (color) {
       'Red' => const Color(0xFFD32F2F),
       'Orange' => const Color(0xFFF08C00),
       'Yellow' => const Color(0xFFFFD23F),
       'Blue' => const Color(0xFF2F6BFF),
       'Black' => const Color(0xFF1B1B1F),
-      _ => const Color(0xFFF3F4F6),
+      _ => Pop.white,
     };
 
 Color onWarningColor(String color) => (color == 'Red' || color == 'Blue' || color == 'Black') ? Colors.white : const Color(0xFF1B1B1F);

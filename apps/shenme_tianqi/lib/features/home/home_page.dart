@@ -40,7 +40,7 @@ class _HomePageState extends State<HomePage> {
     final index = state.currentCity.clamp(0, cities.length - 1);
     final current = cities[index];
     final w = state.weatherOf(current.locationId);
-    final bg = w == null ? Pop.gray : (w.serious ? Pop.gray : sceneColor(w.cond, w.outfitKey));
+    final bg = w == null ? Pop.paper : (w.serious ? Pop.gray : sceneColor(w.cond, w.outfitKey));
 
     // 从城市页回来时跳到选中的城市
     WidgetsBinding.instance.addPostFrameCallback((_) {

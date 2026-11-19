@@ -303,7 +303,7 @@ class _Preview extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-      decoration: Pop.card(color: Pop.yellow, radius: 24),
+      decoration: Pop.card(color: Pop.softYellow, radius: 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

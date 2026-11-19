@@ -217,12 +217,12 @@ class _MemberCard extends StatelessWidget {
     final temp = m.temp == null ? '' : '${unit.deg(m.temp!)} ';
     final avatarTemp = weatherTempFromKey(hasWeather ? m.outfit : null);
     final avatarCond = weatherCondFromKey(hasWeather ? m.cond : 'cloudy');
-    final bg = !hasWeather ? Pop.white : (m.alert != null ? const Color(0xFFFFF4C2) : sceneColor(m.cond, m.outfit).withAlpha(110));
+    final bg = !hasWeather ? Pop.white : (m.alert != null ? Pop.softYellow : sceneColor(m.cond, m.outfit));
     final remaining = m.remainingToday ?? 0;
 
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: Pop.card(color: Color.alphaBlend(bg, Pop.white)),
+      decoration: Pop.card(color: bg),
       child: Row(
         children: [
           // 自己用手机上的形象；别人导入过形象的，从服务端下载

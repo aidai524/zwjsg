@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 桌面小组件的底：黄色（Pop.yellow） -->
+<!-- 桌面小组件的底：奶油色（Pop.paper） -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="@color/widget_yellow" />
+    <solid android:color="@color/widget_paper" />
     <corners android:radius="22dp" />
 </shape>

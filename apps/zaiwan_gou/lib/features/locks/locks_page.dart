@@ -125,7 +125,6 @@ class _LocksPageState extends State<LocksPage> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final service = _service;
     return Scaffold(
-      backgroundColor: Pop.gray,
       appBar: AppBar(title: const Text('App 时间锁')),
       body: SafeArea(
         child: service == null

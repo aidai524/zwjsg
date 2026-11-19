@@ -10,7 +10,7 @@
 
 ```
 packages/
-  pop_ui/            黄黑波普设计规范：颜色、描边、硬阴影、主题、波普按钮（Flutter）
+  pop_ui/            设计规范（奶油底 + 黄黑波普）：颜色、描边、硬阴影、主题、波普按钮（Flutter）
   avatar_engine/     卡通形象引擎：人物底层 + 各 app 的叠加层（变狗 DogAvatar、天气 WeatherAvatar，照片形象的 PhotoDogAvatar、PhotoWeatherAvatar），形象存在手机上（AvatarStore），给桌面小组件预先画形象图（WidgetImages）
   series_core/       接口客户端基类：token、错误处理、短信登录、退出、注销、上传和下载形象（Flutter）
   series_share/      分享：卡片截图、存相册、系统分享，AI 生成内容的显式标识（AiTag）和隐式标识（AigcLabel），用系统分享面板发文字（TextSharer）（Flutter）

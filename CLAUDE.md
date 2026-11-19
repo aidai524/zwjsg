@@ -32,9 +32,9 @@ apps/shenme_tianqi     backends/shenme_tianqi_api                什么鬼天气
 
 - 技术栈：App 用 Flutter（安卓原生 Kotlin，iOS 原生 Swift），后端 Laravel 13 + Sanctum。
 - 系列：各 app 独立上架；**每个 app 的后端单独部署、单独数据库，账号和用户数据不互通**；共用的只是代码。用户可主动从“再玩我是狗”一次性导入形象：狗 App 生成 8 位导出码（10 分钟内有效、只能用一次），天气后端带系列密钥（两个后端配同一个 `SERIES_EXPORT_KEY`）凭码向狗后端取一次卡通图；这是两个后端之间唯一的调用，导过去以后两边互不影响（2026-11-18）。
-- 视觉：黄黑波普（#FFD23F / #1B1B1F）、3px 粗描边、不模糊的硬阴影；只做浅色。
+- 视觉：奶油底 + 黄黑波普（2026-11-19 从整页黄底改过来，整页亮黄太刺眼）。页面底色奶油 #FBF5E6、卡片白色；亮黄 #FFD23F 只用在按钮、阶段牌、进度条、选中态这些小面积的地方，原来整块黄的重点卡片用淡黄 #FFF4C2；墨色 #1B1B1F、3px 粗描边、不模糊的硬阴影；只做浅色。天气首页按天气换的底色也是浅一档的柔和色。应用图标还是亮黄底。
 - 文案：损友吐槽语气；不拿身材、长相、成绩开玩笑。
-- 形象：AI 只做一次卡通化，变化靠美术分层素材在本地叠加（成本约 1 张图/用户）。默认形象是代码画的示意（`packages/avatar_engine`）。照片卡通化的画风定为日漫（DCT-Net，手机本地跑）+ 平涂墨线，抠成白边黑描边的贴纸放在黄底卡片上（2026-11-16）；以后可以换成美术定制的画风。拍照形象是 AI 生成的：第一次用照片前单独同意，导出的结算卡要带“AI生成”显式标识和 AIGC 元数据。
+- 形象：AI 只做一次卡通化，变化靠美术分层素材在本地叠加（成本约 1 张图/用户）。默认形象是代码画的示意（`packages/avatar_engine`）。照片卡通化的画风定为日漫（DCT-Net，手机本地跑）+ 平涂墨线，抠成白边黑描边的贴纸（2026-11-16）；以后可以换成美术定制的画风。拍照形象是 AI 生成的：第一次用照片前单独同意，导出的结算卡要带“AI生成”显式标识和 AIGC 元数据。
 
 再玩我是狗：
 - 平台：先安卓（能按 app 读使用时长），iOS 屏幕使用时间接口待技术验证。
@@ -55,7 +55,7 @@ apps/shenme_tianqi     backends/shenme_tianqi_api                什么鬼天气
 ## 必须遵守的约定
 
 1. **隐私**：原始照片不落盘、不上传，服务端只存卡通形象。狗 app 的具体 app 名称、图标和各 app 用时只在手机上用：可以交给 Flutter 显示（今日排行、时间锁选 app，2026-11-14 用户同意放宽），绝不传给服务端；iOS 的排行由系统报告扩展画，App 读不到。狗后端只接收狗度、分钟数、犬种（App 端 `test/ranking_test.dart` 和后端都有测试保证）。天气 app 不存定位轨迹，关心群只给城市名（和导入的卡通形象）。改了收集哪些数据，App 里的隐私政策页和 iOS 的隐私清单（狗 App `ios/Runner/PrivacyInfo.xcprivacy`）一起改；扩展里用到 UserDefaults 等要申报原因的接口时，给那个扩展也加隐私清单。
-2. **规则两处同步**：狗度 `apps/zaiwan_gou/lib/core/dog_meter.dart`、`breeds.dart` ↔ `backends/zaiwan_gou_api/config/dog.php`、`app/Services/DogMeter.php`；天气的形象状态和衣服档 `packages/avatar_engine/lib/src/weather_avatar.dart` 的枚举 ↔ `backends/shenme_tianqi_api/config/weather.php`；天气的温度换算 `apps/shenme_tianqi/lib/core/temp_unit.dart` ↔ `backends/shenme_tianqi_api/app/Support/TempUnit.php`，秋裤阈值的说明文字 `lib/core/scene.dart` 的 `longJohnsFeelsBelow` ↔ `config/weather.php`；天气桌面小组件：决策卡短名字 `WeatherController::WIDGET_TITLES` ↔ 天气卡 `WeatherCard.shortTitles`，预警颜色 `lib/core/scene.dart` 的 `warningColor` ↔ 小组件两端（`ios/WeatherWidget/WeatherWidget.swift`、安卓 `widget/WeatherWidget.kt`），形象图文件名 `HomeWidgetSync.fileName` ↔ 小组件两端；狗桌面小组件：狗度的算法（`DogMeter.percentFor`、`stageFor`、`minutesToNextStage`、`formatMinutes`）↔ `ios/GouWidget/GouWidget.swift`、安卓 `widget/DogWidget.kt`（阈值和文案由 App 交过去，不用改），监控扩展的存储键名 `ScreenTimeStore` ↔ `ios/GouWidget/GouWidgetShared.swift`。
+2. **规则两处同步**：狗度 `apps/zaiwan_gou/lib/core/dog_meter.dart`、`breeds.dart` ↔ `backends/zaiwan_gou_api/config/dog.php`、`app/Services/DogMeter.php`；天气的形象状态和衣服档 `packages/avatar_engine/lib/src/weather_avatar.dart` 的枚举 ↔ `backends/shenme_tianqi_api/config/weather.php`；天气的温度换算 `apps/shenme_tianqi/lib/core/temp_unit.dart` ↔ `backends/shenme_tianqi_api/app/Support/TempUnit.php`，秋裤阈值的说明文字 `lib/core/scene.dart` 的 `longJohnsFeelsBelow` ↔ `config/weather.php`；天气桌面小组件：决策卡短名字 `WeatherController::WIDGET_TITLES` ↔ 天气卡 `WeatherCard.shortTitles`，预警颜色 `lib/core/scene.dart` 的 `warningColor` ↔ 小组件两端（`ios/WeatherWidget/WeatherWidget.swift`、安卓 `widget/WeatherWidget.kt`），形象图文件名 `HomeWidgetSync.fileName` ↔ 小组件两端；狗桌面小组件：狗度的算法（`DogMeter.percentFor`、`stageFor`、`minutesToNextStage`、`formatMinutes`）↔ `ios/GouWidget/GouWidget.swift`、安卓 `widget/DogWidget.kt`（阈值和文案由 App 交过去，不用改），监控扩展的存储键名 `ScreenTimeStore` ↔ `ios/GouWidget/GouWidgetShared.swift`；配色 `packages/pop_ui` 的 `Pop`（奶油底、亮黄、墨色、暖灰）↔ 原生代码里各抄的一份（两个 App 的桌面小组件 iOS、安卓，狗 App 的 iOS 屏蔽页 `ShieldConfig`、排行报告扩展 `ScreenTimeReport`、安卓拦截页 `LockedActivity`）。
 3. 服务端不信任客户端：狗的阶段一律按狗度重算；天气结论只在服务端算。
 4. 改了玩法或接口，同步更新对应 app 的需求文档章节。
 5. 改了 `packages/` 里的东西，所有 app 都要跑测试。

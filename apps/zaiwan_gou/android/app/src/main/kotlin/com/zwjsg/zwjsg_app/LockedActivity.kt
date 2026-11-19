@@ -22,9 +22,10 @@ class LockedActivity : Activity() {
         const val EXTRA_PACKAGE = "package"
         const val EXTRA_GRACE_LEFT = "graceLeft"
 
-        // 和 Flutter 那边的黄黑波普配色一致
+        // 和 Flutter 那边的配色一致（pop_ui 的 Pop）：奶油底，亮黄只用在按钮文字上
         private val INK = Color.parseColor("#1B1B1F")
         private val YELLOW = Color.parseColor("#FFD23F")
+        private val PAPER = Color.parseColor("#FBF5E6")
 
         fun formatMinutes(m: Int) = when {
             m < 60 -> "$m 分钟"
@@ -88,7 +89,7 @@ class LockedActivity : Activity() {
         setContentView(LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setBackgroundColor(YELLOW)
+            setBackgroundColor(PAPER)
             setPadding((32 * dp).toInt(), 0, (32 * dp).toInt(), 0)
             addView(text("汪！", 56f, true, 0))
             addView(text("「$label」今天用满 ${formatMinutes(minutes)} 了", 22f, true, 16))

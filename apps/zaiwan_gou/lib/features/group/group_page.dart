@@ -20,7 +20,7 @@ class GroupPage extends StatelessWidget {
               const Spacer(),
               Container(
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
-                decoration: Pop.card(color: Pop.yellow, radius: 24),
+                decoration: Pop.card(color: Pop.softYellow, radius: 24),
                 child: const Column(
                   children: [
                     Row(

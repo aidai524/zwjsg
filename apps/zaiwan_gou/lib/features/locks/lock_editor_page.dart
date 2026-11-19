@@ -74,7 +74,6 @@ class _LockEditorPageState extends State<LockEditorPage> {
     final preview = _draft.hasApps ? service.selectionPreview(lockId: widget.lock?.id, draft: _picked) : null;
     final hint = service.pickHint;
     return Scaffold(
-      backgroundColor: Pop.gray,
       appBar: AppBar(title: Text(widget.lock == null ? '新的时间锁' : '改时间锁')),
       body: SafeArea(
         child: ListView(

@@ -87,7 +87,6 @@ class MePage extends StatelessWidget {
     final state = AppScope.of(context);
 
     return Scaffold(
-      backgroundColor: Pop.gray,
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -152,7 +151,7 @@ class MePage extends StatelessWidget {
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: Pop.card(color: Pop.yellow),
+              decoration: Pop.card(color: Pop.softYellow),
               child: const Row(
                 children: [
                   Expanded(

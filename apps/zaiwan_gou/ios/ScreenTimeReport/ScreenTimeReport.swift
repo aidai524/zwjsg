@@ -82,10 +82,10 @@ struct TopAppsCompactReport: DeviceActivityReportScene {
 struct TopAppsView: View {
   let report: TopApps
 
-  // 和 Flutter 那边的黄黑波普配色一致
+  // 和 Flutter 那边的配色一致（pop_ui 的 Pop）：底色是排行页的奶油色
   static let ink = Color(red: 0x1B / 255, green: 0x1B / 255, blue: 0x1F / 255)
   static let yellow = Color(red: 1, green: 0xD2 / 255, blue: 0x3F / 255)
-  static let gray = Color(red: 0xF3 / 255, green: 0xF4 / 255, blue: 0xF6 / 255)
+  static let paper = Color(red: 0xFB / 255, green: 0xF5 / 255, blue: 0xE6 / 255)
 
   var body: some View {
     Group {
@@ -107,7 +107,7 @@ struct TopAppsView: View {
         }
       }
     }
-    .background(Self.gray)
+    .background(Self.paper)
     // App 只做浅色：手机开了深色模式也按浅色画，不然白底上的字会变成白色
     .environment(\.colorScheme, .light)
   }

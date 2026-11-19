@@ -30,7 +30,6 @@ class _HistoryPageState extends State<HistoryPage> {
   Widget build(BuildContext context) {
     final records = AppScope.of(context).history.all();
     return Scaffold(
-      backgroundColor: Pop.gray,
       appBar: AppBar(title: const Text('历史记录')),
       body: SafeArea(
         child: ListView(
@@ -131,7 +130,7 @@ class _Summary extends StatelessWidget {
         : '记录了 ${recorded.length} 天：做人 $human 天，变狗 ${recorded.length - human} 天';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: Pop.card(color: Pop.yellow, shadow: false),
+      decoration: Pop.card(color: Pop.softYellow, shadow: false),
       child: Text(text, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
     );
   }

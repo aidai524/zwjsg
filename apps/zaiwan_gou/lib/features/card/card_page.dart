@@ -116,7 +116,7 @@ class _CardPageState extends State<CardPage> {
                           child: Container(
                             padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
                             decoration: BoxDecoration(
-                              color: Pop.yellow,
+                              color: Pop.paper,
                               borderRadius: BorderRadius.circular(28),
                               border: Border.all(color: CardPage.frameColor(rarity), width: 6),
                             ),

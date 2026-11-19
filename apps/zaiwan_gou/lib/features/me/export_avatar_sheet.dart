@@ -42,7 +42,7 @@ class _ExportAvatarSheetState extends State<ExportAvatarSheet> {
             Container(
               padding: const EdgeInsets.symmetric(vertical: 18),
               alignment: Alignment.center,
-              decoration: Pop.card(color: Pop.yellow),
+              decoration: Pop.card(color: Pop.softYellow),
               child: SelectableText(
                 ExportAvatarSheet.display(widget.code),
                 style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, letterSpacing: 4),
