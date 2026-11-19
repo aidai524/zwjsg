@@ -40,7 +40,6 @@ class _AppPickerPageState extends State<AppPickerPage> {
     final apps = _apps;
     final shown = apps?.where((a) => _query.isEmpty || a.label.toLowerCase().contains(_query.toLowerCase())).toList();
     return Scaffold(
-      backgroundColor: Pop.gray,
       appBar: AppBar(
         title: const Text('选要锁的 App'),
         actions: [

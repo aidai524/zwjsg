@@ -8,10 +8,10 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
-/** 一个 App 时间锁：这些 app 每天合计用满 [minutes] 分钟，就拦到 0 点 */
+/** 一个单个 App 限时：这些 app 每天合计用满 [minutes] 分钟，你的狗就打“电话”来问还玩不玩（不禁止） */
 data class AppLock(val id: String, val packages: List<String>, val minutes: Int)
 
-/** 时间锁存在 App 自己的 SharedPreferences 里：只在手机上，不上传。无障碍服务和 Flutter 都从这里读 */
+/** 限时存在 App 自己的 SharedPreferences 里：只在手机上，不上传。无障碍服务和 Flutter 都从这里读 */
 class LockStore(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences("zwjsg_locks", Context.MODE_PRIVATE)
 
@@ -40,43 +40,29 @@ class LockStore(context: Context) {
 
     fun delete(id: String) {
         write(all().filter { it.id != id })
-        prefs.edit().remove(graceDayKey(id)).remove(graceCountKey(id)).remove(graceBaseKey(id)).apply()
+        prefs.edit().remove(graceDayKey(id)).remove(graceBaseKey(id)).apply()
     }
 
-    // 紧急解锁：每个锁每天 GRACES_PER_DAY 次，每次再用 GRACE_MINUTES 分钟（按使用时长算，和 iOS 一致）
+    // 再玩一会儿：接了“电话”选“再玩 10 分钟”就放行，再用满 SNOOZE_MINUTES 又来电。不限次数（按使用时长算，和 iOS 一致）
 
     private fun graceDayKey(id: String) = "grace.$id.day"
-    private fun graceCountKey(id: String) = "grace.$id.count"
 
-    /** 解锁那一刻这个锁已经用了多少毫秒；再用满 GRACE_MINUTES 就重新拦 */
+    /** 放行那一刻这个限时已经用了多少毫秒；再用满 SNOOZE_MINUTES 就再来电 */
     private fun graceBaseKey(id: String) = "grace.$id.base"
 
     private fun today() = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
 
-    private fun usedGracesToday(id: String) =
-        if (prefs.getString(graceDayKey(id), null) == today()) prefs.getInt(graceCountKey(id), 0) else 0
-
-    /** 今天还能紧急解锁几次 */
-    fun graceLeft(id: String) = (GRACES_PER_DAY - usedGracesToday(id)).coerceAtLeast(0)
-
-    /** 临时解锁还剩多少毫秒可用；没在临时解锁中为 0 */
+    /** 还能再玩多少毫秒；没在“再玩”中为 0 */
     fun graceRemainingMs(id: String, usedMs: Long): Long {
-        if (usedGracesToday(id) == 0) return 0L
+        if (prefs.getString(graceDayKey(id), null) != today()) return 0L
         val base = prefs.getLong(graceBaseKey(id), -1L)
         if (base < 0) return 0L
-        return (base + GRACE_MINUTES * 60_000L - usedMs).coerceAtLeast(0L)
+        return (base + SNOOZE_MINUTES * 60_000L - usedMs).coerceAtLeast(0L)
     }
 
-    /** 用掉一次紧急解锁，[usedMs] 是这个锁今天已经用了多久；次数用完返回 false */
-    fun grantGrace(id: String, usedMs: Long): Boolean {
-        val used = usedGracesToday(id)
-        if (used >= GRACES_PER_DAY) return false
-        prefs.edit()
-            .putString(graceDayKey(id), today())
-            .putInt(graceCountKey(id), used + 1)
-            .putLong(graceBaseKey(id), usedMs)
-            .apply()
-        return true
+    /** 再玩 SNOOZE_MINUTES 分钟，[usedMs] 是这个限时今天已经用了多久 */
+    fun snooze(id: String, usedMs: Long) {
+        prefs.edit().putString(graceDayKey(id), today()).putLong(graceBaseKey(id), usedMs).apply()
     }
 
     private fun write(locks: List<AppLock>) {
@@ -94,10 +80,9 @@ class LockStore(context: Context) {
     companion object {
         private const val KEY = "locks"
         const val MAX = 10
-        const val GRACES_PER_DAY = 3
-        const val GRACE_MINUTES = 5
+        const val SNOOZE_MINUTES = 10
 
-        /** 这个锁里的 app 今天合计用了多少毫秒 */
+        /** 这个限时里的 app 今天合计用了多少毫秒 */
         fun usedMs(lock: AppLock, today: TodayUsage) = lock.packages.sumOf { today.foregroundMs[it] ?: 0L }
 
         fun newId() = UUID.randomUUID().toString().take(8)

@@ -18,12 +18,13 @@ class MeController extends Controller
 
     public function updateSettings(Request $request): UserResource
     {
-        $goal = config('dog.goal_minutes');
+        $tiers = implode(',', config('dog.goal_tiers'));
 
         $data = $request->validate([
             'nickname' => ['sometimes', 'nullable', 'string', 'max:16'],
             'timezone' => ['sometimes', 'timezone:all'],
-            'daily_goal_minutes' => ['sometimes', 'integer', "min:{$goal['min']}", "max:{$goal['max']}"],
+            // 目标只能是三档之一
+            'daily_goal_minutes' => ['sometimes', 'integer', "in:{$tiers}"],
             'remind_at' => ['sometimes', 'date_format:H:i'],
         ]);
 

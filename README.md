@@ -10,7 +10,7 @@
 
 ```
 packages/
-  pop_ui/            黄黑波普设计规范：颜色、描边、硬阴影、主题、波普按钮（Flutter）
+  pop_ui/            设计规范（奶油底 + 黄黑波普）：颜色、描边、硬阴影、主题、波普按钮（Flutter）
   avatar_engine/     卡通形象引擎：人物底层 + 各 app 的叠加层（变狗 DogAvatar、天气 WeatherAvatar，照片形象的 PhotoDogAvatar、PhotoWeatherAvatar），形象存在手机上（AvatarStore），给桌面小组件预先画形象图（WidgetImages）
   series_core/       接口客户端基类：token、错误处理、短信登录、退出、注销、上传和下载形象（Flutter）
   series_share/      分享：卡片截图、存相册、系统分享，AI 生成内容的显式标识（AiTag）和隐式标识（AigcLabel），用系统分享面板发文字（TextSharer）（Flutter）
@@ -46,6 +46,17 @@ php artisan test
 ```
 
 本地登录：调用 `POST /api/v1/auth/sms/send` 后，验证码会写进 `storage/logs/laravel.log`（开发环境不真的发短信）。
+
+### 接真实短信（阿里云）
+
+两个后端共用 `series-auth` 里的发送器，按 `.env` 的 `SMS_DRIVER` 选：`log` 只写日志（开发用；`APP_ENV=production` 时会拒绝发码，免得线上悄悄只写日志），`aliyun` 走阿里云短信（SendSms 接口，V3 签名，没用 SDK）。上线前要自己做：
+
+1. 在阿里云开通短信服务，申请**签名**（两个 App 可以各用各的）和**验证码模板**（模板里放一个变量，比如 `您的验证码是${code}，5 分钟内有效`），等审核通过。
+2. 建一个 RAM 子账号，只给短信发送的权限（`AliyunDysmsFullAccess` 或只含 `dysms:SendSms` 的自定义策略），生成 AccessKey。
+3. 在服务器的 `.env` 里填（不要提交到仓库）：`SMS_DRIVER=aliyun`、`ALIYUN_SMS_ACCESS_KEY_ID`、`ALIYUN_SMS_ACCESS_KEY_SECRET`、`ALIYUN_SMS_SIGN_NAME`、`ALIYUN_SMS_TEMPLATE_CODE`，模板变量不叫 `code` 时再填 `ALIYUN_SMS_TEMPLATE_PARAM`。
+4. 发得太频繁、手机号不对时，App 会看到“发得太频繁了，过一会儿再试”这类话；其他错误只说“短信服务暂时不可用”，具体错误码写在日志里（手机号打码，不记验证码）。
+
+真机上用真实账号建关心群，后端还要部署到公网：服务器、备案过的域名和 HTTPS，App 编译时把 `API_BASE` 指过去。
 
 两个后端共有的接口（前缀 `/api/v1`，除登录外都要 `Authorization: Bearer <token>`）：
 
@@ -86,26 +97,27 @@ flutter run --dart-define=API_BASE=http://10.0.2.2:8000/api/v1
 
 应用图标：源文件在 `apps/zaiwan_gou/assets/icon/`，`dart run flutter_launcher_icons` 生成两端图标；iOS 名字用 `plutil -replace CFBundleDisplayName -string "再玩我是狗" ios/Runner/Info.plist`。
 
-第一次打开：引导 → 登录（可跳过）→ 形象 → 设目标 → 今天。安卓“今天”页会提示打开**使用情况访问权限**；没有权限、iOS 或模拟器上显示“演示数据”，可拖滑杆看变狗效果。
+第一次打开：引导 → 登录（可跳过）→ 形象 → 选使用程度 → 今天。使用程度三档：正常使用 3 小时、重度使用 5 小时、无可自拔 8 小时（`dog_meter.dart` 的 `GoalTier`，后端 `config/dog.php` 的 `goal_tiers` 只收这三个值；旧版本自己设的小时数打开时换成最接近的一档）。只用真实数据：安卓“今天”页提示打开**使用情况访问权限**，iOS 提示打开屏幕使用时间；拿不到数据时狗度显示“？”、没有进度卡、不能晒，不用演示数据。
 
-“今天”页从上到下：头部（形象、狗度、阶段，右上角“晒一下”）→ 进度卡 → “今天时间去哪了”（一句吐槽 + 前三名，安卓底部还有拿起次数和 23 点后用时，点开看完整排行）→ “这周”（周一到周日一排小形象，加上连续做人几天、离传说犬种“狼”还差几天，点开看历史记录）。两张卡片的代码在 `lib/features/today/today_cards.dart`。iOS 的前三名是报告扩展的精简版（报告名 `topAppsCompact`），App 读不到数字；“狼”最终以服务端判定为准，卡片上只按手机里的记录给进度。
+“今天”页从上到下：头部（形象、狗度、阶段，右上角“晒一下”）→ 进度卡 → 超时来电（每个单个 App 限时今天用到哪了；没设时引导去设）→ “今天时间去哪了”（一句吐槽 + 前三名，安卓底部还有拿起次数和 23 点后用时，点开看完整排行）→ “这周”（周一到周日一排小形象，加上连续做人几天、离传说犬种“狼”还差几天，点开看狗度统计）。两张卡片的代码在 `lib/features/today/today_cards.dart`。iOS 的前三名是报告扩展的精简版（报告名 `topAppsCompact`），App 读不到数字；“狼”最终以服务端判定为准，卡片上只按手机里的记录给进度。
 
 不依赖外部账号的几块：
 - 结算卡：头部“晒一下”随时打开。到每晚提醒的时间（默认 22:00，没开提醒也按这个时间）之前，标题是“此刻的我”，卡上写“此刻狗度”和时间；之后是“今日结算”。“保存图片”存到相册（gal），“晒给朋友”打开系统分享面板（share_plus），可以直接发微信。用微信 SDK 分享要等开放平台。
 - 每晚提醒：本地通知（flutter_local_notifications），不经过服务器。设目标页点“开始做人”时请求通知权限，默认 22:00；在“我的 › 结算卡提醒”里开关、换时间，点通知直接打开结算卡。登录后提醒时间同步到 `remind_at`，以后做服务端推送时用。安卓用非精确闹钟，可能晚几分钟，国内部分系统还要用户允许后台运行。
 - 昵称：“我的”页点名字修改，最长 16 个字，登录后同步到服务端，也显示在结算卡上。
 - 隐私政策：`lib/features/me/privacy_page.dart`，“我的”页和登录页都能打开。内容按现在的数据处理写成，上架前要补运营者名称和联系方式，并请法务审核。
-- 桌面小组件（iOS `ios/GouWidget/`，安卓 `android/app/src/main/kotlin/.../widget/`）：小号（2×2）是狗度、形象、阶段牌和一句吐槽；中号（4×2）再加今日已刷、目标和“再刷多久你就会……”，点小组件打开 App。狗度只在手机上算、不联网：安卓的小组件自己用 `TodayUsage` 算当天的使用时长（和 App 同一个算法），系统大约每 30 分钟叫醒一次，0 点另有闹钟让它变回人；iOS 只知道到了哪个阶段（监控扩展记在 App Group 里），到了新阶段监控扩展马上叫小组件刷新，狗度显示成“≥60%”，0 点变回人。阈值和文案由 App 交过去（照搬 `dog_meter.dart`），原生只做“分钟 ÷ 目标 → 数越过了几个阈值”。没开权限、没做完引导时提示打开 App，不显示演示数据。App 这边是 `lib/core/home_widget.dart` 的 `HomeWidgetSync`，6 张形象图（阶段 0–5）预先画好放进共享目录，换了形象或画法版本（`dogAvatarArtVersion`）才重画。iOS 的小组件要 iOS 17 以上，带隐私清单（读 App Group 的 UserDefaults）。
+- 桌面小组件（iOS `ios/GouWidget/`，安卓 `android/app/src/main/kotlin/.../widget/`）：小号（2×2）是狗度、形象、阶段牌和一句吐槽；中号（4×2）再加今日已刷、目标和“再刷多久你就会……”，点小组件打开 App。狗度只在手机上算、不联网：安卓的小组件自己用 `TodayUsage` 算当天的使用时长（和 App 同一个算法），系统大约每 30 分钟叫醒一次，0 点另有闹钟让它变回人；iOS 只知道到了哪个阶段（监控扩展记在 App Group 里），到了新阶段监控扩展马上叫小组件刷新，狗度显示成“≥60%”，0 点变回人。阈值和文案由 App 交过去（照搬 `dog_meter.dart`），原生只做“分钟 ÷ 目标 → 数越过了几个阈值”。没开权限、没做完引导时提示打开 App，不显示演示数据。App 这边是 `lib/core/home_widget.dart` 的 `HomeWidgetSync`，6 张形象图（阶段 0–5）预先画好放进共享目录，换了形象或画法版本（`dogAvatarArtVersion`）才重画。iOS 的小组件要 iOS 17 以上。
+- iOS 隐私清单（`PrivacyInfo.xcprivacy`）：主 App、监控扩展、小组件扩展各一份，都申报了读写 App Group 的 UserDefaults（原因 1C8F.1）；屏蔽页扩展、屏蔽页按钮扩展也读 App Group（今天的阶段、形象图、限时），一样申报；报告扩展没用到要申报的接口。主 App 的清单照隐私政策写明收集的数据：手机号、账号和昵称、登录后上传的卡通形象、同步的目标和提醒时间；iOS 现在不上传每天的狗度，所以没写，以后 iOS 要上报时补上。改了隐私政策要一起改。
 - 新犬种解锁动画（`lib/widgets/unlock_celebration.dart`）：上报每日结果时服务端返回这次新解锁的犬种，App 先存在手机上（`pending_unlocks`，服务端只告诉一次），在底部导航的哪个页面都会弹；看过一个删一个，一次解锁几种就一个个弹。现在只有登录了的安卓用户会上报，iOS 还拿不到犬种解锁。
 
-App 时间锁（免费的基础功能，“我的 › App 时间锁”）：选几个 App 和每天的额度，合计用满就锁到第二天 0 点；最多 10 个锁，只存在手机上，不上传。苹果审核指南 4.10 不允许对屏幕使用时间相关的功能收费，所以不能做成会员功能。
-- iOS：系统屏蔽（ManagedSettings）。每个锁一个统计周期 `lock.<id>`，用满时监控扩展打上屏蔽，0 点解开；屏蔽页扩展 `ios/ShieldConfig/` 换上狗的文案和配色。
-- 安卓：无障碍服务 `LockAccessibilityService`，只听切换 App 的事件。被锁的 App 一打开就算今天用了多久：用满就退回桌面、弹出拦截页 `LockedActivity`；没用满就到点再查一次。用户要在系统“无障碍”里手动打开，小米、华为等还要允许自启动。
-- 紧急解锁：每个锁每天 3 次，每次再用 5 分钟（按使用时长算），用满自动锁回去。安卓在拦截页（“还是要刷”）和时间锁页都能解；iOS 在时间锁页里解，原生层撤掉屏蔽，再单独监控 `grace.<id>`，用满由监控扩展重新锁上。次数和分钟数以原生层为准（`LockStore.kt`、`ScreenTimeStore.swift`）。
+超时来电（单个 App 限时，免费的基础功能，“我的 › 超时来电”和“今天”页的卡片）：选几个 App 和每天的额度，合计用满后不禁止，而是“你的狗打电话来”问你还确定要玩吗；最多 10 个限时，只存在手机上，不上传。苹果审核指南 4.10 不允许对屏幕使用时间相关的功能收费，所以不能做成会员功能。
+- 安卓：无障碍服务 `LockAccessibilityService`，只听切换 App 的事件。设了限时的 App 一打开就算今天用了多久：用满就在它上面弹出全屏来电页 `CallReminderActivity`（不退回桌面）：响铃、震动，形象按今天的阶段（用小组件那套图）；“挂断”回桌面，“接听”后它说几句（手机有中文语音时念出来，念的话不带 App 名称），再选“不玩了”或“再玩 10 分钟”。再玩不限次数，用满 10 分钟（按使用时长算）再来电。用户要在系统“无障碍”里手动打开，小米、华为等还要允许自启动。
+- iOS：系统屏蔽（ManagedSettings）。每个限时一个统计周期 `lock.<id>`，用满时监控扩展打上屏蔽；屏蔽页扩展 `ios/ShieldConfig/` 做成来电样式（你的狗打来电话，图标是今天这个阶段的形象）。按钮由屏蔽页按钮扩展 `ios/ShieldActions/` 处理：“不玩了”关掉 App；“再玩 10 分钟”撤掉屏蔽、单独监控 `grace.<id>`，用满由监控扩展再挡上。iOS 不让 App 在别的 App 上弹页面，国内上架也不能用 CallKit，所以没有真的来电和铃声。
+- 再玩的分钟数以原生层为准（`LockStore.SNOOZE_MINUTES`、`ScreenTimeStore.snoozeMinutes`），Flutter 只用来显示。
 
 首次打开先弹隐私政策（`consent_page.dart`，国内商店要求）：同意之前路由只放行隐私政策页，不读使用数据、不读应用列表、不请求权限。政策有重要变化时把 `AppState.privacyVersion` 加 1，所有人重新同意。
 
-历史记录（“今天”页 › “这周”卡片）：每次刷新今天的数据时在手机上存一条（`lib/core/history.dart`），同一天只留最后一次，最多 400 天；可以看最近 7 天或按月的日历。演示数据不记。
+狗度统计（“今天”页 › “这周”卡片，或“我的 › 狗度统计”，`lib/features/history/stats_page.dart`，算法在 `lib/core/history_stats.dart`）：最近 7 / 30 / 90 天的平均每天用时（iOS 是平均阶段）、做人和变狗天数、最长连续做人、最狗的一天、和前一段比、每天的柱状图（虚线是额度）、各阶段几天、星期几最容易变狗、变成过的犬种、最近 7 天最费时间的 App（安卓自己画，iOS 用报告扩展按 7 天画）；底部进“每天的记录”（按周、按月的日历）。数据只在手机上（`lib/core/history.dart`，每天一条，最多 400 天），只记真实数据。没打开 App 的日子也会补上：安卓从系统读最近约 10 天每天的汇总（`getPastDays`，系统已经没有记录的日子不补），登录后把前两天补报给服务端；iOS 的监控扩展每天记下到过的最高阶段（`ScreenTimeStore.stageHistory`）。
 
 iOS 屏幕使用时间（技术验证中）：
 - 最低 iOS 16；签名必须用付费开发者团队，免费的 Personal Team 不支持 Family Controls。
@@ -174,8 +186,8 @@ SERIES_EXPORT_KEY=和狗后端一样的随机串
 | GET | `widget/{locationId}?unit=&adm=` | 桌面小组件的精简天气（不用登录、不带吐槽；温度和句子按 `unit` 写好；严肃模式给第一条预警的标题、发布单位和时间） |
 | POST | `avatar/import` | 凭“再玩我是狗”的导出码取一次卡通形象（不用登录，返回 base64 的 PNG） |
 | DELETE | `me/avatar` | 用回默认形象，删掉服务端存的形象 |
-| GET / POST | `cities` | 关注的城市（最多 5 个，第一个自动设为常驻） |
-| PATCH / DELETE | `cities/{id}` | 设为常驻 / 删除 |
+| GET / POST | `cities` | 关注的城市（不限个数，只有 50 个的防刷上限；第一个长期关注的自动设为常驻；带 `expires_at` 是临时城市，到点不再返回） |
+| PATCH / DELETE | `cities/{id}` | 设为常驻、临时改长期（`expires_at: null`） / 删除 |
 | GET / POST | `care-groups` | 我的关心群 / 建群 |
 | POST | `care-groups/join` | 用邀请码加入（2–8 人） |
 | GET / PATCH | `care-groups/{id}` | 群详情（成员城市天气、一句事实、可选关心话、今天剩余次数）/ 改群名 |
@@ -196,7 +208,7 @@ adb reverse tcp:8001 tcp:8001     # 真机 USB 调试
 flutter run --dart-define=API_BASE=http://127.0.0.1:8001/api/v1
 ```
 
-不登录就能看天气（城市存在本机）；建关心群需要登录，登录后本机城市会同步到服务端。
+不登录就能看天气（城市存在本机）；建关心群需要登录，登录后本机城市会同步到服务端。关注的城市不限个数；加城市时可以选临时看 1 / 3 / 7 天（出差、旅行），到点 App 打开或回到前台时清掉，服务端每小时 `cities:prune` 兜底，临时城市不能当常驻。首页蓝色和其他颜色的预警横幅能点 × 关掉（按条记在手机上），黄色及以上的严肃模式不能关。
 
 iOS：最低 iOS 15（Xcode 27 不支持更低的版本，`Podfile` 的 post_install 也把插件统一设成 15）；和“再玩我是狗”一样用 UIScene 生命周期（iOS 27 的要求），原生插件在 `AppDelegate.swift` 的 `PluginsRegistrant` 里注册。模拟器上用 `flutter run -d <模拟器>`；`flutter build ios --simulator` 在 Flutter 3.38 + Xcode 27 上同时打两种架构时会报 “does not contain architectures”，跟代码无关。
 
@@ -208,7 +220,7 @@ iOS：最低 iOS 15（Xcode 27 不支持更低的版本，`Podfile` 的 post_ins
 - [ ] 技术验证：iOS 屏幕使用时间接口
 - [ ] 形象创建：安卓的本地卡通化、捏脸；正式的变狗图层素材
 - [ ] 结算卡用微信 SDK 分享（现在走系统分享）、下载二维码（上架后）
-- [ ] App 时间锁的后续：iOS 屏蔽页上的“还是要刷”（要再加一个屏蔽按钮扩展）、电话和支付等白名单、按狗度或时间段触发
+- [ ] 超时来电的后续：电话和支付等白名单、按狗度或时间段触发；在真机上试来电页（安卓）和屏蔽页按钮（iOS）
 - [ ] P2：狗群；商业化
 
 什么鬼天气：
@@ -219,5 +231,5 @@ iOS：最低 iOS 15（Xcode 27 不支持更低的版本，`Podfile` 的 post_ins
 - [ ] 照片形象的正式穿戴和遭罪素材（现在是代码画的示意）
 
 系列：
-- [ ] 短信服务商接入（阿里云 / 腾讯云）、微信登录（每个 app 单独的开放平台应用）
+- [ ] 阿里云短信的签名、模板和 AccessKey（代码已接好，见“接真实短信”）；后端部署到公网；微信登录（每个 app 单独的开放平台应用）
 - [ ] 正式美术素材替换代码画的形象；标题字体换成已授权的圆体

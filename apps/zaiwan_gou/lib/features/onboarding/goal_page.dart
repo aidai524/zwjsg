@@ -17,13 +17,11 @@ class GoalPage extends StatefulWidget {
 }
 
 class _GoalPageState extends State<GoalPage> {
-  late int _hours = (AppScope.read(context).goalMinutes / 60).round().clamp(1, 8);
-
-  void _set(int h) => setState(() => _hours = h.clamp(1, 8));
+  late GoalTier _tier = AppScope.read(context).goalTier;
 
   Future<void> _save() async {
     final state = AppScope.read(context);
-    await state.setGoal(_hours * 60);
+    await state.setGoalTier(_tier);
     if (!widget.editing) {
       await state.completeOnboarding();
       // 引导最后一步顺带打开每晚提醒：按钮下面写了会提醒，系统弹窗问权限时用户知道是为什么
@@ -35,122 +33,116 @@ class _GoalPageState extends State<GoalPage> {
 
   @override
   Widget build(BuildContext context) {
-    final goal = _hours * 60;
+    final goal = _tier.minutes;
     return Scaffold(
       appBar: AppBar(),
       body: SafeArea(
-        child: ListView(
+        // 内容不多，一次全部建好（ListView 只建屏幕里的，底部按钮测试时找不到）
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-          children: [
-            const Text('每天刷多久，还算是个人？', style: PopText.title),
-            const SizedBox(height: 8),
-            const Text('超过这个时长的三成就开始长耳朵。说实话，别骗自己。', style: PopText.bodyMuted),
-            const SizedBox(height: 18),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _RoundButton(icon: Icons.remove, label: '减少一小时', onTap: () => _set(_hours - 1)),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('你平时刷手机，算哪一档？', style: PopText.title),
+              const SizedBox(height: 8),
+              const Text('选的这档就是每天的额度，用到三成就开始长耳朵。说实话，别骗自己。', style: PopText.bodyMuted),
+              const SizedBox(height: 18),
+              for (final t in GoalTier.values) ...[
+                _TierCard(tier: t, selected: t == _tier, onTap: () => setState(() => _tier = t)),
+                const SizedBox(height: 12),
+              ],
+              const SizedBox(height: 4),
+              Container(
+                decoration: Pop.card(),
+                clipBehavior: Clip.antiAlias,
+                child: Column(
                   children: [
-                    Text('$_hours', style: const TextStyle(fontSize: 88, fontWeight: FontWeight.w900, height: 1)),
-                    const SizedBox(width: 6),
-                    const Text('小时/天', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                    Container(
+                      width: double.infinity,
+                      color: Pop.ink,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      child: Text('按「${_tier.label}」，你会这样变狗',
+                          style: const TextStyle(color: Pop.white, fontSize: 14, fontWeight: FontWeight.w700)),
+                    ),
+                    for (var i = 0; i < DogMeter.stageThresholds.length; i++)
+                      Container(
+                        height: 52,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          border: i == 0 ? null : const Border(top: BorderSide(color: Color(0xFFEDEDED), width: 2)),
+                        ),
+                        child: Row(
+                          children: [
+                            MyAvatar(stage: i + 1, size: 40),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(DogMeter.nextChange[i],
+                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                            ),
+                            Text('刷到 ${DogMeter.formatMinutes(DogMeter.stageStartMinutes(i + 1, goal))}',
+                                style: PopText.small),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
-                _RoundButton(icon: Icons.add, label: '增加一小时', filled: true, onTap: () => _set(_hours + 1)),
+              ),
+              const SizedBox(height: 28),
+              PopButton(label: widget.editing ? '保存' : '就这么定，开始做人', onPressed: _save),
+              if (!widget.editing) ...[
+                const SizedBox(height: 12),
+                Text(
+                  '每晚 ${AppState.formatHhmm(AppState.defaultRemindAt)} 提醒你看结算卡，可以在“我的”里关掉或改时间。',
+                  textAlign: TextAlign.center,
+                  style: PopText.small,
+                ),
               ],
-            ),
-            Slider(
-              value: _hours.toDouble(),
-              min: 1,
-              max: 8,
-              divisions: 7,
-              activeColor: Pop.ink,
-              label: '$_hours 小时',
-              semanticFormatterCallback: (v) => '${v.round()} 小时',
-              onChanged: (v) => _set(v.round()),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              decoration: Pop.card(),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    color: Pop.ink,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    child: const Text('按这个目标，你会这样变狗',
-                        style: TextStyle(color: Pop.white, fontSize: 14, fontWeight: FontWeight.w700)),
-                  ),
-                  for (var i = 0; i < DogMeter.stageThresholds.length; i++)
-                    Container(
-                      height: 52,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        border: i == 0 ? null : const Border(top: BorderSide(color: Color(0xFFEDEDED), width: 2)),
-                      ),
-                      child: Row(
-                        children: [
-                          MyAvatar(stage: i + 1, size: 40),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(DogMeter.nextChange[i],
-                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                          ),
-                          Text('刷到 ${DogMeter.formatMinutes((goal * DogMeter.stageThresholds[i] / 100).round())}',
-                              style: PopText.small),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 28),
-            PopButton(label: widget.editing ? '保存' : '就这么定，开始做人', onPressed: _save),
-            if (!widget.editing) ...[
-              const SizedBox(height: 12),
-              Text(
-                '每晚 ${AppState.formatHhmm(AppState.defaultRemindAt)} 提醒你看结算卡，可以在“我的”里关掉或改时间。',
-                textAlign: TextAlign.center,
-                style: PopText.small,
-              ),
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _RoundButton extends StatelessWidget {
-  const _RoundButton({required this.icon, required this.label, required this.onTap, this.filled = false});
+/// 一档使用程度：选中的亮黄带阴影
+class _TierCard extends StatelessWidget {
+  const _TierCard({required this.tier, required this.selected, required this.onTap});
 
-  final IconData icon;
-  final String label;
+  final GoalTier tier;
+  final bool selected;
   final VoidCallback onTap;
-  final bool filled;
 
   @override
   Widget build(BuildContext context) {
+    final hours = DogMeter.formatMinutes(tier.minutes);
     return Semantics(
       button: true,
-      label: label,
+      selected: selected,
+      label: '${tier.label}，每天 $hours。${tier.description}',
       excludeSemantics: true,
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            color: filled ? Pop.yellow : Pop.white,
-            shape: BoxShape.circle,
-            border: Border.all(color: Pop.ink, width: Pop.stroke),
-            boxShadow: const [BoxShadow(color: Pop.ink, offset: Offset(3, 3))],
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          decoration: Pop.card(color: selected ? Pop.yellow : Pop.white, shadow: selected),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(tier.label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 2),
+                    Text(tier.description,
+                        style: TextStyle(fontSize: 13, color: selected ? Pop.mutedOnYellow : Pop.muted)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(hours, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+            ],
           ),
-          child: Icon(icon, size: 26, color: Pop.ink),
         ),
       ),
     );

@@ -5,7 +5,7 @@ import 'package:pop_ui/pop_ui.dart';
 import '../../core/app_lock.dart';
 import '../../core/dog_meter.dart';
 
-/// 新建或修改一个时间锁：选 App、选每天最多用多久
+/// 新建或修改一个限时：选 App、选每天最多用多久，用满了来电
 class LockEditorPage extends StatefulWidget {
   const LockEditorPage({super.key, required this.service, this.lock});
 
@@ -74,8 +74,7 @@ class _LockEditorPageState extends State<LockEditorPage> {
     final preview = _draft.hasApps ? service.selectionPreview(lockId: widget.lock?.id, draft: _picked) : null;
     final hint = service.pickHint;
     return Scaffold(
-      backgroundColor: Pop.gray,
-      appBar: AppBar(title: Text(widget.lock == null ? '新的时间锁' : '改时间锁')),
+      appBar: AppBar(title: Text(widget.lock == null ? '新的限时' : '改限时')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),

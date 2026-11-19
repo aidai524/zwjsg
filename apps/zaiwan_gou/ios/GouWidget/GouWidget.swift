@@ -104,11 +104,12 @@ struct Provider: TimelineProvider {
 
 // MARK: - 样式
 
-/// 和 pop_ui 的 Pop 颜色一致
+/// 和 pop_ui 的 Pop 颜色一致：奶油底，亮黄只用在阶段牌上
 private enum Pop {
   static let yellow = Color(hex: 0xFFD23F)
   static let ink = Color(hex: 0x1B1B1F)
-  static let mutedOnYellow = Color(hex: 0x3A3A30)
+  static let paper = Color(hex: 0xFBF5E6)
+  static let muted = Color(hex: 0x5F6368)
 }
 
 private extension Color {
@@ -134,7 +135,7 @@ struct GouWidgetView: View {
       .foregroundStyle(Pop.ink)
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
       .padding(12)
-      .containerBackground(for: .widget) { Pop.yellow }
+      .containerBackground(for: .widget) { Pop.paper }
   }
 
   @ViewBuilder private var content: some View {
@@ -142,7 +143,7 @@ struct GouWidgetView: View {
     case .message(let text):
       VStack(alignment: .leading, spacing: 6) {
         Text("再玩我是狗").font(.pop(15, .black)).lineLimit(1)
-        Text(text).font(.pop(12, .bold)).foregroundStyle(Pop.mutedOnYellow)
+        Text(text).font(.pop(12, .bold)).foregroundStyle(Pop.muted)
       }
     case .dog(let dog):
       if family == .systemSmall { SmallView(dog: dog) } else { MediumView(dog: dog) }
@@ -185,7 +186,7 @@ private struct MediumView: View {
         }
         StagePill(text: dog.stageName)
         Text(dog.quip).font(.pop(12, .heavy)).lineLimit(1).minimumScaleFactor(0.8)
-        Text("\(dog.used) · \(dog.goal)").font(.pop(10, .bold)).foregroundStyle(Pop.mutedOnYellow).lineLimit(1)
+        Text("\(dog.used) · \(dog.goal)").font(.pop(10, .bold)).foregroundStyle(Pop.muted).lineLimit(1)
           .minimumScaleFactor(0.8)
         Text(dog.hint).font(.pop(11, .heavy)).lineLimit(2).minimumScaleFactor(0.8)
       }

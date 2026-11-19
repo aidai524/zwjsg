@@ -116,9 +116,11 @@ class DailyRecordTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->patchJson('/api/v1/me/settings', ['daily_goal_minutes' => 30])->assertStatus(422);
-        $this->patchJson('/api/v1/me/settings', ['daily_goal_minutes' => 240, 'remind_at' => '21:30'])
+        // 目标只有三档：3、5、8 小时，自己填的小时数不收
+        $this->patchJson('/api/v1/me/settings', ['daily_goal_minutes' => 240])->assertStatus(422);
+        $this->patchJson('/api/v1/me/settings', ['daily_goal_minutes' => 300, 'remind_at' => '21:30'])
             ->assertOk()
-            ->assertJsonPath('data.daily_goal_minutes', 240)
+            ->assertJsonPath('data.daily_goal_minutes', 300)
             ->assertJsonPath('data.remind_at', '21:30');
     }
 }

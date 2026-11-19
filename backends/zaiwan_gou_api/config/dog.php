@@ -10,7 +10,9 @@ return [
     // 连续多少天做人解锁传说犬种
     'legend_streak_days' => 7,
 
-    'goal_minutes' => ['min' => 60, 'max' => 480],
+    // 每日目标只有三档（分钟）：正常使用 3 小时、重度使用 5 小时、无可自拔 8 小时。
+    // 和 App 端 lib/core/dog_meter.dart 的 GoalTier 一致，改动时两边一起改
+    'goal_tiers' => [180, 300, 480],
 
     'avatar_regen_default' => 3,
 

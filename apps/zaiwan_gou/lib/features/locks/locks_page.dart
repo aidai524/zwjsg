@@ -6,7 +6,7 @@ import '../../core/app_lock.dart';
 import '../../core/dog_meter.dart';
 import 'lock_editor_page.dart';
 
-/// App 时间锁：选几个 App，每天合计用满额度就锁到第二天 0 点。免费的基础功能。
+/// 超时来电：选几个 App，每天合计用满额度，你的狗就打电话来问还玩不玩。不禁止，接了可以再玩 10 分钟。免费的基础功能。
 class LocksPage extends StatefulWidget {
   /// [service] 只在测试里传
   const LocksPage({super.key, this.service});
@@ -54,7 +54,7 @@ class _LocksPageState extends State<LocksPage> with WidgetsBindingObserver {
         });
       }
     } on PlatformException catch (e) {
-      _toast(e.message ?? '读不到时间锁，稍后再试');
+      _toast(e.message ?? '读不到限时，稍后再试');
     }
   }
 
@@ -82,8 +82,8 @@ class _LocksPageState extends State<LocksPage> with WidgetsBindingObserver {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('删掉这个时间锁？'),
-        content: Text('${lock.title}\n删掉后马上解锁。'),
+        title: const Text('删掉这个限时？'),
+        content: Text('${lock.title}\n删掉后不会再来电。'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('再想想')),
           TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('删掉')),
@@ -99,43 +99,24 @@ class _LocksPageState extends State<LocksPage> with WidgetsBindingObserver {
     }
   }
 
-  /// 紧急解锁前再确认一次，给想放弃的人一个台阶
-  Future<void> _grace(AppLock lock) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('真的还要刷？'),
-        content: Text('再用 ${LockService.graceMinutes} 分钟，用满自动锁回去。今天还能解锁 ${lock.graceLeft} 次。'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('算了，不刷了')),
-          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('再刷 ${LockService.graceMinutes} 分钟')),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    try {
-      final locks = await _service!.grantGrace(lock.id);
-      if (mounted) setState(() => _locks = locks);
-    } on PlatformException catch (e) {
-      _toast(e.message ?? '没解开，稍后再试');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final service = _service;
     return Scaffold(
-      backgroundColor: Pop.gray,
-      appBar: AppBar(title: const Text('App 时间锁')),
+      appBar: AppBar(title: const Text('超时来电')),
       body: SafeArea(
         child: service == null
-            ? const Center(child: Text('这台设备用不了时间锁', style: PopText.bodyMuted))
+            ? const Center(child: Text('这台设备用不了超时来电', style: PopText.bodyMuted))
             : RefreshIndicator(
                 onRefresh: _refresh,
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
                   children: [
-                    const Text('选几个 App，每天合计用满额度就锁到第二天 0 点。锁只存在手机上，不上传。', style: PopText.small),
+                    const Text(
+                      '选几个最上头的 App，每天合计用满额度，你的狗就打电话过来问你：还确定要玩吗？'
+                      '不禁止，接了电话可以再玩 ${LockService.snoozeMinutes} 分钟，到点再打。限时只存在手机上，不上传。',
+                      style: PopText.small,
+                    ),
                     const SizedBox(height: 16),
                     if (_ready == false) ...[
                       Container(
@@ -165,21 +146,20 @@ class _LocksPageState extends State<LocksPage> with WidgetsBindingObserver {
                         preview: service.selectionPreview(lockId: lock.id),
                         onTap: () => _edit(lock),
                         onDelete: () => _delete(lock),
-                        onGrace: () => _grace(lock),
                       ),
                     if (_locks.isEmpty && _ready == true)
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 24),
-                        child: Text('还没有时间锁', textAlign: TextAlign.center, style: PopText.bodyMuted),
+                        child: Text('还没设限时', textAlign: TextAlign.center, style: PopText.bodyMuted),
                       ),
                     const SizedBox(height: 8),
                     PopButton(
-                      label: '加一个时间锁',
+                      label: '加一个限时',
                       onPressed: _ready == true && _locks.length < LockService.maxLocks ? () => _edit() : null,
                     ),
                     if (_locks.length >= LockService.maxLocks) ...[
                       const SizedBox(height: 8),
-                      const Text('最多 ${LockService.maxLocks} 个时间锁', textAlign: TextAlign.center, style: PopText.small),
+                      const Text('最多 ${LockService.maxLocks} 个限时', textAlign: TextAlign.center, style: PopText.small),
                     ],
                   ],
                 ),
@@ -194,7 +174,6 @@ class _LockCard extends StatelessWidget {
     required this.lock,
     required this.onTap,
     required this.onDelete,
-    required this.onGrace,
     this.preview,
   });
 
@@ -204,18 +183,10 @@ class _LockCard extends StatelessWidget {
   final Widget? preview;
   final VoidCallback onTap;
   final VoidCallback onDelete;
-  final VoidCallback onGrace;
 
   @override
   Widget build(BuildContext context) {
-    final used = lock.usedMinutes;
-    final status = lock.graceActive
-        ? '临时解锁中，再用满 ${LockService.graceMinutes} 分钟就锁回去'
-        : lock.locked
-            ? (lock.graceLeft > 0 ? '今天已锁，明天 0 点解开' : '今天已锁，临时解锁也用完了')
-            : used == null
-                ? '今天还没用满'
-                : '今天用了 ${DogMeter.formatMinutes(used)}，还剩 ${DogMeter.formatMinutes(lock.minutes - used)}';
+    final status = limitStatus(lock);
     // 白底：iOS 的选中项是系统画的深色字，放在深色底上看不清
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -235,7 +206,8 @@ class _LockCard extends StatelessWidget {
                 CircleAvatar(
                   radius: 16,
                   backgroundColor: lock.locked ? Pop.ink : Pop.gray,
-                  child: Icon(lock.locked ? Icons.lock : Icons.lock_open, size: 18, color: lock.locked ? Pop.yellow : Pop.ink),
+                  child: Icon(lock.locked ? Icons.phone_in_talk : Icons.timer_outlined,
+                      size: 18, color: lock.locked ? Pop.yellow : Pop.ink),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -258,15 +230,6 @@ class _LockCard extends StatelessWidget {
                           fontWeight: lock.locked ? FontWeight.w700 : FontWeight.w400,
                         ),
                       ),
-                      if (lock.locked && lock.graceLeft > 0)
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton(
-                            style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 36)),
-                            onPressed: onGrace,
-                            child: Text('临时解锁 ${LockService.graceMinutes} 分钟（今天还剩 ${lock.graceLeft} 次）'),
-                          ),
-                        ),
                     ],
                   ),
                 ),
@@ -282,4 +245,13 @@ class _LockCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 一个限时今天的状态，设置页和“今天”页的卡片共用
+String limitStatus(AppLock lock) {
+  final used = lock.usedMinutes;
+  if (lock.graceActive) return '再玩中，再用满 ${LockService.snoozeMinutes} 分钟又会来电';
+  if (lock.locked) return '今天已经超时，打开就来电';
+  if (used == null) return '还没到点';
+  return '今天用了 ${DogMeter.formatMinutes(used)}，还剩 ${DogMeter.formatMinutes((lock.minutes - used).clamp(0, lock.minutes))}';
 }

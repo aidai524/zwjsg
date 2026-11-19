@@ -9,7 +9,7 @@ List<Map<String, dynamic>> _list(dynamic v) =>
 
 /// 关注的城市。游客存在本机；登录后同步到服务端（serverId 不为空）
 class City {
-  const City({required this.locationId, required this.name, this.adm, this.isHome = false, this.serverId});
+  const City({required this.locationId, required this.name, this.adm, this.isHome = false, this.serverId, this.expiresAt});
 
   final String locationId;
   final String name;
@@ -17,19 +17,52 @@ class City {
   final bool isHome;
   final int? serverId;
 
+  /// 临时城市（出差、旅行时看几天）到这个时间自动移除：本地日期某天的 0 点。长期关注的是 null。
+  /// 常驻城市不能是临时的
+  final DateTime? expiresAt;
+
   factory City.fromJson(Map<String, dynamic> j) => City(
         locationId: _s(j['location_id']),
         name: _s(j['name']),
         adm: j['adm'] as String?,
         isHome: j['is_home'] == true,
         serverId: j['id'] is num ? (j['id'] as num).toInt() : null,
+        expiresAt: j['expires_at'] == null ? null : DateTime.tryParse(j['expires_at'].toString())?.toLocal(),
       );
 
-  Map<String, dynamic> toJson() =>
-      {'location_id': locationId, 'name': name, 'adm': adm, 'is_home': isHome, if (serverId != null) 'id': serverId};
+  Map<String, dynamic> toJson() => {
+        'location_id': locationId,
+        'name': name,
+        'adm': adm,
+        'is_home': isHome,
+        if (serverId != null) 'id': serverId,
+        if (expiresAt != null) 'expires_at': expiresAt!.toUtc().toIso8601String(),
+      };
 
-  City copyWith({bool? isHome, int? serverId}) =>
-      City(locationId: locationId, name: name, adm: adm, isHome: isHome ?? this.isHome, serverId: serverId ?? this.serverId);
+  City copyWith({bool? isHome, int? serverId, DateTime? expiresAt, bool permanent = false}) => City(
+        locationId: locationId,
+        name: name,
+        adm: adm,
+        isHome: isHome ?? this.isHome,
+        serverId: serverId ?? this.serverId,
+        expiresAt: permanent ? null : (expiresAt ?? this.expiresAt),
+      );
+
+  bool get isTemporary => expiresAt != null;
+
+  bool isExpired(DateTime now) => expiresAt != null && !now.isBefore(expiresAt!);
+
+  /// 还能看几天（含今天）：明天 0 点到期是 1 天，今天就到期了是 0
+  int daysLeft(DateTime now) {
+    final end = expiresAt;
+    if (end == null) return 0;
+    // 按日期数，用 UTC 构造避开夏令时
+    final days = DateTime.utc(end.year, end.month, end.day).difference(DateTime.utc(now.year, now.month, now.day)).inDays;
+    return days < 0 ? 0 : days;
+  }
+
+  /// 临时看 [days] 天：今天算第 1 天，看到第 [days] 天结束（第 days + 1 天 0 点到期）
+  static DateTime expiryFor(int days, DateTime now) => DateTime(now.year, now.month, now.day + days);
 }
 
 class CityHit {
@@ -75,6 +108,9 @@ class Warning {
   final String pubTime;
   final String color;
   final String typeName;
+
+  /// 一条预警的标识：接口没给 id，用标题（带发布单位和预警种类）加发布时间
+  String get key => '$title|$pubTime';
 
   factory Warning.fromJson(Map<String, dynamic> j) => Warning(
         title: _s(j['title']),

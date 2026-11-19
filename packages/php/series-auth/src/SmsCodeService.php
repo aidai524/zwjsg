@@ -3,6 +3,7 @@
 namespace Series\Auth;
 
 use Series\Auth\Sms\SmsSender;
+use Series\Auth\Sms\SmsSendException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 
@@ -23,7 +24,13 @@ class SmsCodeService
             'attempts' => 0,
         ], self::TTL_SECONDS);
 
-        $this->sender->sendCode($phone, $code);
+        try {
+            $this->sender->sendCode($phone, $code);
+        } catch (SmsSendException $e) {
+            // 没发出去的验证码作废，免得用户拿一个收不到的码去试
+            Cache::forget($this->key($phone));
+            throw $e;
+        }
     }
 
     /** 校验成功后验证码立即作废 */

@@ -10,7 +10,6 @@ class WelcomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Pop.yellow,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
@@ -58,11 +57,11 @@ class WelcomePage extends StatelessWidget {
                   ),
                 ),
               ),
-              PopButton(label: '开始变身', style: PopButtonStyle.dark, height: 60, onPressed: () => context.go('/login')),
+              PopButton(label: '开始变身', height: 60, onPressed: () => context.go('/login')),
               const SizedBox(height: 14),
               const Center(
                 child: Text('使用时长只在你的手机上计算，不上传任何 app 记录',
-                    style: TextStyle(fontSize: 12, color: Pop.mutedOnYellow)),
+                    style: PopText.small),
               ),
             ],
           ),

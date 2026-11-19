@@ -7,7 +7,7 @@ extension DeviceActivityName {
 }
 
 /// 主 App 和监控扩展共用的本机存储（App Group），两个 target 都编译这个文件。
-/// 只存今天到了第几阶段、阈值和调试记录：不存任何 App 名称，也不上传。
+/// 只存今天到了第几阶段、最近每天到过的最高阶段、阈值和调试记录：不存任何 App 名称，也不上传。
 enum ScreenTimeStore {
   static let appGroup = "group.com.zwjsg.zwjsgApp"
 
@@ -34,7 +34,18 @@ enum ScreenTimeStore {
     let current = d.string(forKey: Key.day) == day ? d.integer(forKey: Key.stage) : 0
     d.set(day, forKey: Key.day)
     d.set(max(current, stage), forKey: Key.stage)
+    // 每天到过的最高阶段也记一份：没打开 App 的日子，历史统计也有真实数据
+    var history = stageHistory
+    history[day] = max(history[day] ?? 0, stage)
+    let keep = Set(history.keys.sorted().suffix(historyDays))
+    d.set(history.filter { keep.contains($0.key) }, forKey: Key.history)
   }
+
+  /// 最近每天到过的最高阶段（日期 yyyy-MM-dd → 阶段 0–5）。每天统计周期一开始就记 0，没在统计的日子没有
+  static var stageHistory: [String: Int] { defaults?.dictionary(forKey: Key.history) as? [String: Int] ?? [:] }
+
+  /// 留最近多少天
+  static let historyDays = 120
 
   /// 主 App 重新开始监控时调用：今天从阶段 0 重新算
   static func resetToday() {
@@ -84,12 +95,13 @@ enum ScreenTimeStore {
     static let goal = "goalMinutes"
     static let thresholds = "thresholds"
     static let log = "log"
+    static let history = "stageHistory"
     static let locks = "locks"
     static func lockedDay(_ id: String) -> String { "lockedDay.\(id)" }
   }
 }
 
-/// 一个 App 时间锁：选中的 App（系统的不透明令牌，编码后存）每天合计用满 [minutes] 分钟就锁到 0 点
+/// 一个单个 App 限时：选中的 App（系统的不透明令牌，编码后存）每天合计用满 [minutes] 分钟，屏蔽页就“来电”问还玩不玩
 struct AppLockRecord: Codable {
   let id: String
   var minutes: Int
@@ -126,33 +138,18 @@ extension ScreenTimeStore {
     defaults?.set(locked ? today() : nil, forKey: Key.lockedDay(id))
   }
 
-  // MARK: 紧急解锁：每个锁每天 gracesPerDay 次，每次再用 graceMinutes 分钟（按使用时长算，和安卓一致）
+  // MARK: 超时来电：用满后屏蔽页上点“再玩 10 分钟”就放行，不限次数，再用满又挡一下（按使用时长算，和安卓一致）
 
-  static let gracesPerDay = 3
-  static let graceMinutes = 5
+  static let snoozeMinutes = 10
 
-  /// 临时解锁时单独开一个统计周期：再用满 graceMinutes 就重新锁上
+  /// 再玩的那几分钟单独开一个统计周期：再用满 snoozeMinutes 就重新挡上
   static func graceActivity(_ id: String) -> DeviceActivityName { .init("grace.\(id)") }
 
   static func graceLockId(of activity: DeviceActivityName) -> String? {
     activity.rawValue.hasPrefix("grace.") ? String(activity.rawValue.dropFirst("grace.".count)) : nil
   }
 
-  private static func usedGracesToday(_ id: String) -> Int {
-    guard let d = defaults, d.string(forKey: "graceDay.\(id)") == today() else { return 0 }
-    return d.integer(forKey: "graceCount.\(id)")
-  }
-
-  /// 今天还能紧急解锁几次
-  static func graceLeft(_ id: String) -> Int { max(0, gracesPerDay - usedGracesToday(id)) }
-
-  static func useGrace(_ id: String) {
-    let used = usedGracesToday(id)
-    defaults?.set(today(), forKey: "graceDay.\(id)")
-    defaults?.set(used + 1, forKey: "graceCount.\(id)")
-  }
-
-  /// 正在临时解锁的那几分钟里
+  /// 正在“再玩 10 分钟”的那几分钟里
   static func isGraceActive(_ id: String) -> Bool { defaults?.string(forKey: "graceActive.\(id)") == today() }
 
   static func setGraceActive(_ id: String, _ active: Bool) {

@@ -8,6 +8,7 @@ import 'features/card/card_page.dart';
 import 'features/dex/dex_page.dart';
 import 'features/group/group_page.dart';
 import 'features/history/history_page.dart';
+import 'features/history/stats_page.dart';
 import 'features/locks/locks_page.dart';
 import 'features/me/cartoon_lab_page.dart';
 import 'features/me/me_page.dart';
@@ -94,6 +95,7 @@ GoRouter _buildRouter(AppState state) {
       GoRoute(path: '/privacy', builder: (_, __) => const PrivacyPage()),
       GoRoute(path: '/ranking', builder: (_, __) => const RankingPage()),
       GoRoute(path: '/history', builder: (_, __) => const HistoryPage()),
+      GoRoute(path: '/stats', builder: (_, __) => const StatsPage()),
       GoRoute(path: '/locks', builder: (_, __) => const LocksPage()),
       GoRoute(path: '/screen-time', builder: (_, __) => const ScreenTimePage()),
       GoRoute(path: '/cartoon-lab', builder: (_, __) => const CartoonLabPage()),

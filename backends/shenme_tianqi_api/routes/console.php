@@ -1,6 +1,7 @@
 <?php
 
 use App\Console\Commands\SendMorningBrief;
+use App\Models\UserCity;
 use App\Services\CareService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -15,8 +16,14 @@ Artisan::command('care:prune', function (CareService $care) {
     $this->info('pruned '.$care->prune());
 })->purpose('删除 30 天前的提醒记录');
 
+// 临时城市到点自动移除（App 那边也会自己清，这里兜底）
+Artisan::command('cities:prune', function () {
+    $this->info('pruned '.UserCity::whereNotNull('expires_at')->where('expires_at', '<=', now())->delete());
+})->purpose('删除到期的临时城市');
+
 Schedule::command('care:deliver')->everyMinute()->withoutOverlapping();
 Schedule::command(SendMorningBrief::class)->everyMinute()->withoutOverlapping();
 Schedule::command('care:prune')->dailyAt('04:10');
+Schedule::command('cities:prune')->hourly();
 
 // TODO 预警推送：每 5 分钟拉一次用户常驻城市的预警，新出现的黄色及以上预警推给 alert_push_on 的用户

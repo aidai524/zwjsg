@@ -61,8 +61,16 @@ class _CitySearchPageState extends State<CitySearchPage> {
 
   Future<void> _pick(CityHit hit) async {
     final state = AppScope.read(context);
+    // 引导里加的第一个城市是常驻城市，直接长期关注；之后加的问一句：长期关注，还是临时看几天
+    int? tempDays;
+    final alreadyThere = state.cities.any((c) => c.locationId == hit.locationId);
+    if (!widget.onboarding && state.cities.isNotEmpty && !alreadyThere) {
+      final choice = await showFollowSheet(context, hit.name);
+      if (choice == null || !mounted) return;
+      tempDays = choice == 0 ? null : choice;
+    }
     try {
-      await state.addCity(hit, makeHome: widget.onboarding);
+      await state.addCity(hit, makeHome: widget.onboarding, tempDays: tempDays);
     } on ApiException catch (e) {
       if (mounted) showToast(context, e.message);
       return;
@@ -139,3 +147,45 @@ class _CitySearchPageState extends State<CitySearchPage> {
     );
   }
 }
+
+/// 临时城市能看几天
+const tempCityDays = [1, 3, 7];
+
+/// 怎么关注这个城市：返回 0 是长期关注，1 / 3 / 7 是临时看几天，关掉弹层是 null
+Future<int?> showFollowSheet(BuildContext context, String name) => showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: Pop.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (c) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('怎么关注「$name」？', style: PopText.h2),
+              const SizedBox(height: 4),
+              const Text('出差、旅行只看几天的，选临时：到点自动移除，不用自己删。', style: PopText.small),
+              const SizedBox(height: 14),
+              PopButton(label: '长期关注', onPressed: () => Navigator.pop(c, 0)),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  for (final d in tempCityDays) ...[
+                    if (d != tempCityDays.first) const SizedBox(width: 8),
+                    Expanded(
+                      child: PopButton(
+                        label: '临时 $d 天',
+                        style: PopButtonStyle.secondary,
+                        height: 48,
+                        onPressed: () => Navigator.pop(c, d),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );

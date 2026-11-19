@@ -38,14 +38,13 @@ class ConsentPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Pop.yellow,
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
           children: [
             const Text('用之前，先说清楚', style: PopText.title),
             const SizedBox(height: 8),
-            const Text('我们只为了给你看天气、发关心提醒用你的数据：', style: TextStyle(fontSize: 15, color: Pop.mutedOnYellow)),
+            const Text('我们只为了给你看天气、发关心提醒用你的数据：', style: PopText.bodyMuted),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(16),
@@ -78,20 +77,19 @@ class ConsentPage extends StatelessWidget {
             const SizedBox(height: 16),
             PopButton(
               label: '同意并继续',
-              style: PopButtonStyle.dark,
               onPressed: () => AppScope.read(context).acceptPrivacy(),
             ),
             const SizedBox(height: 8),
             Center(
               child: TextButton(
                 onPressed: () => _disagree(context),
-                child: const Text('不同意', style: TextStyle(color: Pop.mutedOnYellow)),
+                child: const Text('不同意', style: TextStyle(color: Pop.muted)),
               ),
             ),
             const Text(
               '点“同意并继续”，表示你已阅读并同意《隐私政策》。',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: Pop.mutedOnYellow),
+              style: PopText.small,
             ),
           ],
         ),

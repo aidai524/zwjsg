@@ -25,6 +25,8 @@ struct TopApps {
 
   var items: [Item] = []
   var total: TimeInterval = 0
+  /// 统计了几天（一天一个时间段）：历史统计页看最近 7 天
+  var days = 0
 
   private struct Entry {
     let token: ApplicationToken?
@@ -34,8 +36,10 @@ struct TopApps {
 
   static func make(from data: DeviceActivityResults<DeviceActivityData>) async -> TopApps {
     var byApp: [String: Entry] = [:]
+    var days = 0
     for await device in data {
       for await segment in device.activitySegments {
+        days += 1
         for await category in segment.categories {
           for await activity in category.applications {
             let app = activity.application
@@ -54,7 +58,8 @@ struct TopApps {
       items: ranked.enumerated().map {
         TopApps.Item(id: $0.offset + 1, token: $0.element.token, name: $0.element.name, duration: $0.element.duration)
       },
-      total: byApp.values.reduce(0) { $0 + $1.duration }
+      total: byApp.values.reduce(0) { $0 + $1.duration },
+      days: days
     )
   }
 }
@@ -82,10 +87,10 @@ struct TopAppsCompactReport: DeviceActivityReportScene {
 struct TopAppsView: View {
   let report: TopApps
 
-  // 和 Flutter 那边的黄黑波普配色一致
+  // 和 Flutter 那边的配色一致（pop_ui 的 Pop）：底色是排行页的奶油色
   static let ink = Color(red: 0x1B / 255, green: 0x1B / 255, blue: 0x1F / 255)
   static let yellow = Color(red: 1, green: 0xD2 / 255, blue: 0x3F / 255)
-  static let gray = Color(red: 0xF3 / 255, green: 0xF4 / 255, blue: 0xF6 / 255)
+  static let paper = Color(red: 0xFB / 255, green: 0xF5 / 255, blue: 0xE6 / 255)
 
   var body: some View {
     Group {
@@ -97,7 +102,7 @@ struct TopAppsView: View {
       } else {
         ScrollView {
           VStack(alignment: .leading, spacing: 10) {
-            Text("今天一共 \(Self.format(report.total))")
+            Text("\(report.days > 1 ? "这 \(report.days) 天" : "今天")一共 \(Self.format(report.total))")
               .font(.system(size: 13, weight: .bold))
               .foregroundStyle(.secondary)
             ForEach(report.items) { row($0) }
@@ -107,7 +112,7 @@ struct TopAppsView: View {
         }
       }
     }
-    .background(Self.gray)
+    .background(Self.paper)
     // App 只做浅色：手机开了深色模式也按浅色画，不然白底上的字会变成白色
     .environment(\.colorScheme, .light)
   }

@@ -7,6 +7,7 @@ import 'package:zwjsg_app/core/history.dart';
 import 'package:zwjsg_app/core/usage_channel.dart';
 import 'package:zwjsg_app/features/card/card_page.dart';
 import 'package:zwjsg_app/features/history/history_page.dart';
+import 'package:zwjsg_app/features/history/stats_page.dart';
 import 'package:zwjsg_app/features/today/ranking_page.dart';
 import 'package:zwjsg_app/features/today/today_cards.dart';
 import 'package:zwjsg_app/features/today/today_page.dart';
@@ -27,6 +28,10 @@ Future<AppState> newState({Map<String, Object> prefs = const {}}) async {
   SharedPreferences.setMockInitialValues(prefs);
   return AppState(await SharedPreferences.getInstance());
 }
+
+/// 今天用了 [minutes] 分钟的真实数据
+UsageSnapshot usedMinutes(int minutes) =>
+    UsageSnapshot(totalMinutes: minutes, pickups: 0, lateNightMinutes: 0, categoryMinutes: const {});
 
 void main() {
   group('今天时间去哪了', () {
@@ -121,7 +126,7 @@ void main() {
       for (final r in [rec('2026-11-17', 2), rec('2026-11-18', 0), rec('2026-11-19', 0)]) {
         await state.history.put(r);
       }
-      state.setDemoMinutes(20); // 今天到现在 11%，还是人
+      state.debugSetUsage(usedMinutes(20)); // 今天到现在 11%，还是人
       await tester.pumpWidget(AppScope(
         state: state,
         child: MaterialApp(home: Scaffold(body: WeekCard(today: DateTime(2026, 11, 20, 15)))),
@@ -133,7 +138,7 @@ void main() {
       expect(find.text('连续做人 2 天，今天守住就是 3 天'), findsOneWidget);
       expect(find.text('连做 7 天变传说「狼」'), findsOneWidget);
 
-      state.setDemoMinutes(130); // 72%，今天变狗了
+      state.debugSetUsage(usedMinutes(130)); // 72%，今天变狗了
       await tester.pump();
       expect(find.bySemanticsLabel('今天：变狗（阶段 2）'), findsOneWidget);
       expect(find.text('连续做人 2 天，今天破功了，明天重新数'), findsOneWidget);
@@ -143,6 +148,10 @@ void main() {
   testWidgets('“晒一下”打开结算卡，两张卡片分别打开完整排行和历史记录', (tester) async {
     usePhoneScreen(tester);
     await pumpApp(tester, {'onboarded': true});
+    // 没拿到真实数据时没有“晒一下”；有了数据才出现
+    expect(find.text('晒一下'), findsNothing);
+    AppScope.read(tester.element(find.byType(TodayPage))).debugSetUsage(usedMinutes(130));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('晒一下'));
     await tester.pumpAndSettle();
@@ -159,6 +168,12 @@ void main() {
 
     await tester.ensureVisible(find.text('这周'));
     await tester.tap(find.text('这周'));
+    await tester.pumpAndSettle();
+    expect(find.byType(StatsPage), findsOneWidget);
+
+    // 统计页底部进“每天的记录”
+    await tester.scrollUntilVisible(find.text('每天的记录'), 300);
+    await tester.tap(find.text('每天的记录'));
     await tester.pumpAndSettle();
     expect(find.byType(HistoryPage), findsOneWidget);
   });

@@ -33,7 +33,7 @@
     <style name="DogWidgetSmall" parent="DogWidgetText">
         <item name="android:textSize">10sp</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@color/widget_muted_on_yellow</item>
+        <item name="android:textColor">@color/widget_muted</item>
     </style>
 
     <!-- 阶段牌：黑底黄字，和“今天”页一样 -->

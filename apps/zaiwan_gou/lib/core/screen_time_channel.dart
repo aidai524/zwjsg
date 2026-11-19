@@ -18,6 +18,7 @@ class ScreenTimeStatus {
     this.goalMinutes = 0,
     this.thresholds = const [],
     this.stage = 0,
+    this.history = const {},
     this.log = const [],
   });
 
@@ -32,6 +33,9 @@ class ScreenTimeStatus {
       goalMinutes: number('goalMinutes'),
       thresholds: [for (final v in m['thresholds'] as List? ?? const []) (v as num).toInt()],
       stage: number('stage'),
+      history: {
+        for (final e in (m['history'] as Map? ?? const {}).entries) e.key.toString(): (e.value as num).toInt(),
+      },
       log: [for (final v in m['log'] as List? ?? const []) v.toString()],
     );
   }
@@ -49,6 +53,9 @@ class ScreenTimeStatus {
 
   /// 今天到了第几阶段（0–5）
   final int stage;
+
+  /// 监控扩展记下的每天最高阶段（yyyy-MM-dd → 0–5）。没在统计的日子没有
+  final Map<String, int> history;
 
   /// 原生层的调试记录，旧的在前
   final List<String> log;

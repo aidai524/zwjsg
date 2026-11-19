@@ -5,12 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pop_ui/pop_ui.dart';
 
+import '../../core/app_lock.dart';
 import '../../core/app_state.dart';
 import '../../core/dog_meter.dart';
 import '../../core/history.dart';
 import '../../core/screen_time_channel.dart';
 import '../../core/usage_channel.dart';
 import '../../widgets/my_avatar.dart';
+import '../locks/locks_page.dart' show limitStatus;
 
 /// “今天”页上的白卡：标题、右上角的“全部 ›”，整张卡都能点
 class _TodayCard extends StatelessWidget {
@@ -50,6 +52,132 @@ class _TodayCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// 超时来电：直接露出每个单个 App 限时今天到哪了，还没设的话引导去设（放在“今天”页，让限时更显眼）。
+/// 限时和 App 名称只在手机上，不上传。
+class LimitsCard extends StatefulWidget {
+  /// [service] 只在测试里传
+  const LimitsCard({super.key, this.service});
+
+  final LockService? service;
+
+  /// 卡片上最多列几个
+  static const shown = 3;
+
+  @override
+  State<LimitsCard> createState() => _LimitsCardState();
+}
+
+class _LimitsCardState extends State<LimitsCard> with WidgetsBindingObserver {
+  late final LockService? _service = widget.service ?? LockService.platform;
+  List<AppLock>? _locks;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _load();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// 从别的 App 回来时刷新：用了多久变了
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _load();
+  }
+
+  Future<void> _load() async {
+    final service = _service;
+    if (service == null) return;
+    try {
+      final locks = await service.list();
+      if (mounted) setState(() => _locks = locks);
+    } on PlatformException {
+      if (mounted) setState(() => _locks = const []);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_service == null) return const SizedBox.shrink();
+    final locks = _locks;
+    return _TodayCard(
+      title: '超时来电',
+      more: locks == null || locks.isEmpty ? '去设置' : '管理',
+      onTap: () async {
+        await context.push('/locks');
+        await _load();
+      },
+      child: locks == null
+          ? const SizedBox(height: 24)
+          : locks.isEmpty
+              ? const Text('给最上头的 App 设个限时：到点了，你的狗会打电话问你还玩不玩。',
+                  style: TextStyle(fontSize: 14, height: 1.5))
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final lock in locks.take(LimitsCard.shown)) _LimitRow(lock: lock),
+                    if (locks.length > LimitsCard.shown)
+                      Text('还有 ${locks.length - LimitsCard.shown} 个', style: PopText.small),
+                  ],
+                ),
+    );
+  }
+}
+
+class _LimitRow extends StatelessWidget {
+  const _LimitRow({required this.lock});
+
+  final AppLock lock;
+
+  @override
+  Widget build(BuildContext context) {
+    final used = lock.usedMinutes;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(lock.locked ? Icons.phone_in_talk : Icons.timer_outlined, size: 18),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(lock.title,
+                    maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+              ),
+              const SizedBox(width: 8),
+              Text('每天 ${DogMeter.formatMinutes(lock.minutes)}', style: PopText.small),
+            ],
+          ),
+          if (used != null) ...[
+            const SizedBox(height: 6),
+            Container(
+              height: 10,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(color: Pop.ink, width: 1.5),
+              ),
+              clipBehavior: Clip.antiAlias,
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: lock.minutes == 0 ? 1 : (used / lock.minutes).clamp(0.0, 1.0),
+                child: Container(color: lock.locked ? Pop.kingRed : Pop.yellow),
+              ),
+            ),
+          ],
+          const SizedBox(height: 4),
+          Text(limitStatus(lock), style: PopText.small),
+        ],
       ),
     );
   }
@@ -293,7 +421,8 @@ class WeekCard extends StatelessWidget {
   }
 
   /// 进度那句话。[humanToday]：今天到现在还是人
-  static String streakLine(int streak, {required bool humanToday}) {
+  static String streakLine(int streak, {required bool humanToday, bool knownToday = true}) {
+    if (!knownToday) return streak == 0 ? '开了权限，才开始数连续做人' : '连续做人 $streak 天，今天的数据还没拿到';
     if (!humanToday) return streak == 0 ? '今天已经变狗了，明天重新做人' : '连续做人 $streak 天，今天破功了，明天重新数';
     if (streak >= wolfDays) return '已经连续做人 $streak 天，够格变传说「狼」了';
     if (streak == 0) return '今天守住，就是连续做人第 1 天';
@@ -307,7 +436,9 @@ class WeekCard extends StatelessWidget {
     final now = today ?? DateTime.now();
     final day0 = DateTime(now.year, now.month, now.day);
     final monday = DateTime(day0.year, day0.month, day0.day - (day0.weekday - 1));
-    final humanToday = state.stage == 0;
+    // 还没拿到今天的真实数据时，今天那格空着，不算做人也不算变狗
+    final knownToday = state.hasUsageData;
+    final humanToday = knownToday && state.stage == 0;
     final streak = humanStreak(records, day0);
     // 今天变狗了，进度清零；今天还是人，下一格是今天
     final filled = humanToday ? math.min(streak, wolfDays) : 0;
@@ -315,21 +446,23 @@ class WeekCard extends StatelessWidget {
     _DayCell cell(int i) {
       final day = DateTime(monday.year, monday.month, monday.day + i);
       final weekday = '周${_weekdays[i]}';
-      if (day == day0) return _DayCell(label: '今天', weekday: weekday, stage: state.stage, isToday: true);
+      if (day == day0) {
+        return _DayCell(label: '今天', weekday: weekday, stage: knownToday ? state.stage : null, isToday: true);
+      }
       if (day.isAfter(day0)) return _DayCell(label: _weekdays[i], weekday: weekday, future: true);
       return _DayCell(label: _weekdays[i], weekday: weekday, stage: records[AppState.localDate(day)]?.stage);
     }
 
     return _TodayCard(
       title: '这周',
-      more: '全部记录',
-      onTap: () => context.push('/history'),
+      more: '看统计',
+      onTap: () => context.push('/stats'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(children: [for (var i = 0; i < 7; i++) Expanded(child: cell(i))]),
           const SizedBox(height: 10),
-          Text(streakLine(streak, humanToday: humanToday),
+          Text(streakLine(streak, humanToday: humanToday, knownToday: knownToday),
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
           Row(

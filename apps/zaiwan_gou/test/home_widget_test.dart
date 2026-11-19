@@ -57,16 +57,16 @@ Directory tempDir() {
 }
 
 void main() {
-  test('数据来源看 App 拿到的是什么：真实分钟数、只有阶段、演示数据', () {
+  test('数据来源看 App 拿到的是什么：真实分钟数、只有阶段、还没拿到', () {
     const real = UsageSnapshot(totalMinutes: 95, pickups: 30, lateNightMinutes: 0, categoryMinutes: {});
     const stageOnly = UsageSnapshot(totalMinutes: 108, pickups: 0, lateNightMinutes: 0, categoryMinutes: {}, stageOnly: true);
     expect(HomeWidgetSync.sourceFor(real), DogWidgetSource.usage);
     expect(HomeWidgetSync.sourceFor(stageOnly), DogWidgetSource.screenTime);
-    expect(HomeWidgetSync.sourceFor(UsageSnapshot.demo(130)), DogWidgetSource.none);
+    expect(HomeWidgetSync.sourceFor(UsageSnapshot.unavailable), DogWidgetSource.none);
   });
 
-  testWidgets('读过使用情况之后才交配置：规则和文案照搬 DogMeter，演示数据时让小组件提示打开 App', (tester) async {
-    final state = await newState(prefs: {'goal_minutes': 120});
+  testWidgets('读过使用情况之后才交配置：规则和文案照搬 DogMeter，拿不到数据时让小组件提示打开 App', (tester) async {
+    final state = await newState(prefs: {'goal_minutes': 300});
     final bridge = FakeBridge();
     final sync = HomeWidgetSync(state, bridge: bridge);
 
@@ -74,7 +74,7 @@ void main() {
     await tester.runAsync(sync.sync);
     expect(bridge.configs, isEmpty);
 
-    await tester.runAsync(state.refreshUsage); // 测试环境拿不到权限 → 演示数据
+    await tester.runAsync(state.refreshUsage); // 测试环境拿不到权限 → 没有数据
     await tester.runAsync(sync.sync);
     final config = bridge.configs.single;
     expect(config.ready, isTrue);
@@ -82,7 +82,7 @@ void main() {
     expect(config.toMap(), {
       'ready': true,
       'source': 'none',
-      'goal_minutes': 120,
+      'goal_minutes': 300,
       'thresholds': DogMeter.stageThresholds,
       'stage_names': DogMeter.stageNames,
       'quips': DogMeter.quips,
@@ -92,9 +92,9 @@ void main() {
     // 没变化就不重复交；改了目标再交
     await tester.runAsync(sync.sync);
     expect(bridge.configs, hasLength(1));
-    await tester.runAsync(() => state.setGoal(150));
+    await tester.runAsync(() => state.setGoalTier(GoalTier.hooked));
     await tester.runAsync(sync.sync);
-    expect(bridge.configs.last.goalMinutes, 150);
+    expect(bridge.configs.last.goalMinutes, 480);
   });
 
   testWidgets('还没做完引导时小组件提示打开 App', (tester) async {

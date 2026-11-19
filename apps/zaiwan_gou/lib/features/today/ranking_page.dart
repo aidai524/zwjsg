@@ -32,7 +32,6 @@ class RankingPage extends StatelessWidget {
       body = const Center(child: Text('这台设备拿不到使用数据', style: PopText.bodyMuted));
     }
     return Scaffold(
-      backgroundColor: Pop.gray,
       appBar: AppBar(title: const Text('今日 App 排行')),
       body: SafeArea(child: body),
     );

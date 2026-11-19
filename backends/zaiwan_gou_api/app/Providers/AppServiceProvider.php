@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use Series\Auth\Sms\LogSmsSender;
 use Series\Auth\Sms\SmsSender;
+use Series\Auth\Sms\SmsSenders;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -13,8 +13,11 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        // TODO 上线前：按 SMS_DRIVER 切换到阿里云或腾讯云短信实现
-        $this->app->bind(SmsSender::class, LogSmsSender::class);
+        // 按 SMS_DRIVER 选：log（开发，验证码写日志）/ aliyun（阿里云短信）
+        $this->app->bind(SmsSender::class, fn ($app) => SmsSenders::fromConfig(
+            (array) config('services.sms'),
+            $app->environment('production'),
+        ));
     }
 
     public function boot(): void

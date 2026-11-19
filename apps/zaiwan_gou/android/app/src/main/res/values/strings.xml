@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 出现在系统“无障碍”设置里 -->
-    <string name="lock_service_label">再玩我是狗 · App 时间锁</string>
-    <string name="lock_service_description">只用来发现你锁住的 App 被打开，并在额度用满后把它挡住。不读取屏幕内容，不记录你的操作。</string>
+    <string name="lock_service_label">再玩我是狗 · 超时来电</string>
+    <string name="lock_service_description">只用来发现你设了限时的 App 被打开，额度用满后弹出“来电”提醒你（可以接着玩）。不读取屏幕内容，不记录你的操作。</string>
     <!-- 桌面小组件，出现在系统的小组件列表里 -->
     <string name="widget_small_label">狗度（小）</string>
     <string name="widget_medium_label">狗度和提醒</string>

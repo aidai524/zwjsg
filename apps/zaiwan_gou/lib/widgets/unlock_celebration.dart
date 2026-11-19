@@ -91,7 +91,7 @@ class UnlockDialog extends StatelessWidget {
           child: Container(
             width: 300,
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
-            decoration: Pop.card(color: Pop.yellow, radius: 28, border: frame),
+            decoration: Pop.card(color: Pop.softYellow, radius: 28, border: frame),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [

@@ -23,7 +23,10 @@ class AppState extends ChangeNotifier {
         avatars = avatars ?? const FileAvatarStore() {
     _token = _prefs.getString(_kToken);
     _onboarded = _prefs.getBool(_kOnboarded) ?? false;
-    _goalMinutes = _prefs.getInt(_kGoal) ?? 180;
+    // 目标改成三档以后，旧版本自己设的小时数换成最接近的一档
+    final storedGoal = _prefs.getInt(_kGoal);
+    _goalMinutes = GoalTier.nearest(storedGoal ?? GoalTier.normal.minutes).minutes;
+    if (storedGoal != null && storedGoal != _goalMinutes) unawaited(_prefs.setInt(_kGoal, _goalMinutes));
     _nickname = _prefs.getString(_kNickname);
     _remindOn = _prefs.getBool(_kRemindOn) ?? false;
     _remindAt = parseHhmm(_prefs.getString(_kRemindAt)) ?? defaultRemindAt;
@@ -95,7 +98,7 @@ class AppState extends ChangeNotifier {
 
   String? _token;
   bool _onboarded = false;
-  int _goalMinutes = 180;
+  int _goalMinutes = GoalTier.normal.minutes;
   String? _nickname;
   bool _remindOn = false;
   int _remindAt = defaultRemindAt;
@@ -105,12 +108,10 @@ class AppState extends ChangeNotifier {
   Set<String> _ownedBreeds = {};
   List<String> _newlyUnlocked = [];
 
-  /// 拿不到真实数据时的演示时长，方便在模拟器和 iOS 上看效果
-  int demoMinutes = 130;
-
   bool get isLoggedIn => _token != null;
   bool get onboarded => _onboarded;
   int get goalMinutes => _goalMinutes;
+  GoalTier get goalTier => GoalTier.nearest(_goalMinutes);
 
   /// 没起过名字时为 null
   String? get nickname => _nickname;
@@ -145,11 +146,14 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  UsageSnapshot get usage => _usage ?? UsageSnapshot.demo(demoMinutes);
+  UsageSnapshot get usage => _usage ?? UsageSnapshot.unavailable;
+
+  /// 拿到了今天的真实数据。没拿到时界面不显示狗度、时长，只引导去开权限
+  bool get hasUsageData => usage.available;
 
   bool _usageChecked = false;
 
-  /// 打开 App 后读过一次使用情况了（读到了真实数据，或者确认拿不到、用演示数据）
+  /// 打开 App 后读过一次使用情况了（读到了真实数据，或者确认拿不到）
   bool get usageChecked => _usageChecked;
   int get minutesUsed => usage.totalMinutes;
   int get percent => DogMeter.percentFor(minutesUsed, _goalMinutes);
@@ -169,6 +173,8 @@ class AppState extends ChangeNotifier {
 
   /// 狗度的显示。iOS 只知道越过了哪个阈值：越过了显示“≥60%”，一个都没越过显示“<30%”
   String get percentLabel {
+    // 还没拿到数据：大字号的“--”像两块黑条，用问号
+    if (!hasUsageData) return '？';
     final first = _firstThreshold;
     if (first == null) return '$percent%';
     return minutesUsed > 0 ? '≥$percent%' : '<${DogMeter.percentFor(first, _goalMinutes)}%';
@@ -176,6 +182,7 @@ class AppState extends ChangeNotifier {
 
   /// 今日已刷的显示。iOS 上是下限：“至少 1 小时 48 分”或“不到 54 分钟”
   String get minutesUsedLabel {
+    if (!hasUsageData) return '--';
     final used = DogMeter.formatMinutes(minutesUsed);
     final first = _firstThreshold;
     if (first == null) return used;
@@ -431,7 +438,8 @@ class AppState extends ChangeNotifier {
     return launched;
   }
 
-  Future<void> setGoal(int minutes) async {
+  Future<void> setGoalTier(GoalTier tier) async {
+    final minutes = tier.minutes;
     _goalMinutes = minutes;
     await _prefs.setInt(_kGoal, minutes);
     notifyListeners();
@@ -460,6 +468,7 @@ class AppState extends ChangeNotifier {
       _usageChecked = true;
       notifyListeners();
       await _recordToday();
+      await _backfillHistory();
       // iOS 的阶段数据先只在手机上用、不上传：苹果开发者协议 3.3.3(P) 不允许把使用数据传出设备，
       // iOS 怎么上报还没定
       return;
@@ -469,12 +478,97 @@ class AppState extends ChangeNotifier {
     _usageChecked = true;
     notifyListeners();
     await _recordToday();
+    await _backfillHistory();
     await _sync();
   }
 
-  /// 把今天的结果记进历史，同一天只留最后一次。演示数据不记
+  /// 安卓能补多少天：系统一般只留 7–10 天的明细
+  static const backfillDays = 10;
+
+  /// 今天已经补过历史了（每次打开 App 只补一次）
+  String? _backfilledOn;
+
+  /// 历史里补上前几天的真实数据，没打开 App 的日子也有：安卓从系统读每天的汇总，
+  /// iOS 用监控扩展记下的每天最高阶段。已经有记录的日子（打开 App 时记的，可能只记到半天），换成更完整的那份。
+  Future<void> _backfillHistory() async {
+    final today = localDate();
+    if (_backfilledOn == today) return;
+    final List<DayRecord> filled;
+    if (ScreenTimeChannel.isSupported) {
+      final s = _screenTime;
+      if (s == null || !s.authorized) return;
+      filled = [
+        for (final MapEntry(key: date, value: stage) in s.history.entries)
+          if (date != today && (history.day(date)?.stage ?? -1) < stage) _stageRecord(date, stage, s.thresholds),
+      ];
+    } else {
+      if (!_hasPermission) return;
+      filled = [
+        for (final d in await UsageChannel.pastDays(backfillDays))
+          if (d.date != today && _isMoreComplete(history.day(d.date), d.usage)) _minutesRecord(d.date, d.usage),
+      ];
+    }
+    _backfilledOn = today;
+    if (filled.isEmpty) return;
+    await history.putAll(filled);
+    notifyListeners();
+    await _syncBackfilled(filled);
+  }
+
+  bool _isMoreComplete(DayRecord? old, UsageSnapshot full) => old == null || old.stageOnly || full.totalMinutes > old.minutes;
+
+  /// 安卓：一整天的分钟数。目标用那天记录里的（没记录用现在的）
+  DayRecord _minutesRecord(String date, UsageSnapshot usage) {
+    final goal = history.day(date)?.goalMinutes ?? _goalMinutes;
+    final pct = DogMeter.percentFor(usage.totalMinutes, goal);
+    return DayRecord(
+      date: date,
+      goalMinutes: goal,
+      minutes: usage.totalMinutes,
+      percent: pct,
+      percentLabel: '$pct%',
+      stage: DogMeter.stageFor(pct),
+      breedKey: judgeBreed(usage, goal),
+    );
+  }
+
+  /// iOS：只知道那天到了第几阶段。分钟数取那个阶段的阈值（下限）；犬种判断不了，不记
+  DayRecord _stageRecord(String date, int stage, List<int> thresholds) {
+    final pct = stage == 0 ? 0 : DogMeter.stageThresholds[stage - 1];
+    final minutes = stage > 0 && stage <= thresholds.length ? thresholds[stage - 1] : 0;
+    return DayRecord(
+      date: date,
+      goalMinutes: _goalMinutes,
+      minutes: minutes,
+      percent: pct,
+      percentLabel: stage == 0 ? '<${DogMeter.humanBelow}%' : '≥$pct%',
+      stage: stage,
+      stageOnly: true,
+    );
+  }
+
+  /// 登录了的话，补上的日子也报给服务端（安卓；服务端只收今天和前两天），图鉴和传说犬种才算得准
+  Future<void> _syncBackfilled(List<DayRecord> filled) async {
+    if (!isLoggedIn || ScreenTimeChannel.isSupported) return;
+    final earliest = localDate(DateTime.now().subtract(const Duration(days: 2)));
+    for (final r in filled) {
+      if (r.date.compareTo(earliest) < 0 || r.stageOnly) continue;
+      try {
+        await receiveUnlocked(await api.putDailyRecord(
+          date: r.date,
+          dogPercent: r.percent,
+          minutesUsed: r.minutes,
+          breedKey: r.breedKey,
+        ));
+      } on ApiException {
+        // 补报失败不影响本地
+      }
+    }
+  }
+
+  /// 把今天的结果记进历史，同一天只留最后一次。拿不到真实数据时不记
   Future<void> _recordToday() async {
-    if (usage.isDemo) return;
+    if (!usage.available) return;
     await history.put(DayRecord(
       date: localDate(),
       goalMinutes: _goalMinutes,
@@ -513,7 +607,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> _sync() async {
-    if (!isLoggedIn || usage.isDemo) return;
+    if (!isLoggedIn || !usage.available) return;
     try {
       final unlocked = await api.putDailyRecord(
         date: localDate(),
@@ -529,8 +623,11 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void setDemoMinutes(int minutes) {
-    demoMinutes = minutes;
+  /// 测试用：直接给一份今天的使用数据（真机上只来自系统）
+  @visibleForTesting
+  void debugSetUsage(UsageSnapshot usage) {
+    _usage = usage;
+    _usageChecked = true;
     notifyListeners();
   }
 
@@ -552,7 +649,7 @@ class AppState extends ChangeNotifier {
     _token = null;
     api.token = null;
     _onboarded = false;
-    _goalMinutes = 180;
+    _goalMinutes = GoalTier.normal.minutes;
     _ownedBreeds = {};
     _newlyUnlocked = [];
     _nickname = null;

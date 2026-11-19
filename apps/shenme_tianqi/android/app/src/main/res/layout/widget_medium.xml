@@ -227,6 +227,6 @@
             style="@style/WidgetBody"
             android:layout_marginTop="6dp"
             android:maxLines="3"
-            android:textColor="@color/widget_muted_on_yellow" />
+            android:textColor="@color/widget_muted" />
     </LinearLayout>
 </FrameLayout>

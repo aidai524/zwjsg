@@ -8,8 +8,8 @@ import '../features/locks/lock_selection_view.dart';
 import 'screen_time_channel.dart';
 import 'usage_channel.dart';
 
-/// 一个 App 时间锁：这些 App 每天合计用满 [minutes] 分钟，就锁到第二天 0 点。
-/// 锁只存在手机上，不上传。
+/// 一个单个 App 限时（超时来电）：这些 App 每天合计用满 [minutes] 分钟，你的狗就打“电话”来问还玩不玩。
+/// 不禁止：接了电话可以再玩 10 分钟，到点再来电。限时只存在手机上，不上传。
 class AppLock {
   const AppLock({
     required this.id,
@@ -21,7 +21,6 @@ class AppLock {
     this.webDomains = 0,
     this.usedMinutes,
     this.locked = false,
-    this.graceLeft = 0,
     this.graceActive = false,
   });
 
@@ -38,7 +37,6 @@ class AppLock {
       webDomains: number('webDomains'),
       usedMinutes: (m['usedMinutes'] as num?)?.toInt(),
       locked: m['locked'] as bool? ?? false,
-      graceLeft: number('graceLeft'),
       graceActive: m['graceActive'] as bool? ?? false,
     );
   }
@@ -58,13 +56,10 @@ class AppLock {
   /// 安卓：今天已经用了多久；iOS 拿不到
   final int? usedMinutes;
 
-  /// 今天已经用满、锁上了
+  /// 今天已经用满：每次打开都会来电
   final bool locked;
 
-  /// 今天还能紧急解锁几次
-  final int graceLeft;
-
-  /// 正在紧急解锁的那几分钟里
+  /// 接了电话选了“再玩 10 分钟”，还在那几分钟里
   final bool graceActive;
 
   String get title => labels.isNotEmpty ? labels.join('、') : describeSelection(apps, categories, webDomains);
@@ -79,7 +74,7 @@ String describeSelection(int apps, int categories, int webDomains) {
   return parts.isEmpty ? '还没选 App' : parts.join('、');
 }
 
-/// 新建或修改时间锁时的草稿
+/// 新建或修改限时时的草稿
 class LockDraft {
   LockDraft({this.id, this.minutes = 30, this.packages = const [], this.labels = const []});
 
@@ -110,7 +105,8 @@ class LockDraft {
   String get summary => labels.isNotEmpty ? labels.join('、') : describeSelection(apps, categories, webDomains);
 }
 
-/// 时间锁的平台实现：安卓用无障碍服务拦，iOS 用系统的屏幕使用时间屏蔽。抽成接口，测试里换成假的。
+/// 超时来电的平台实现：安卓用无障碍服务发现超时、弹来电页，iOS 用系统的屏幕使用时间挡一下（屏蔽页做成来电的样子）。
+/// 抽成接口，测试里换成假的。
 abstract class LockService {
   /// 当前平台的实现；其他平台为 null
   static LockService? get platform {
@@ -119,14 +115,11 @@ abstract class LockService {
     return null;
   }
 
-  /// 最多几个锁，和原生层一致
+  /// 最多几个限时，和原生层一致
   static const maxLocks = 10;
 
-  /// 紧急解锁每次再用几分钟（原生层 LockStore.GRACE_MINUTES / ScreenTimeStore.graceMinutes 说了算，这里只用来显示）
-  static const graceMinutes = 5;
-
-  /// 紧急解锁：再用 [graceMinutes] 分钟，用满自动再锁上。每天次数有限
-  Future<List<AppLock>> grantGrace(String id);
+  /// 接了电话能再玩几分钟，不限次数（原生层 LockStore.SNOOZE_MINUTES / ScreenTimeStore.snoozeMinutes 说了算，这里只用来显示）
+  static const snoozeMinutes = 10;
 
   /// 拦截要的权限开了没有：安卓是无障碍服务，iOS 是屏幕使用时间授权
   Future<bool> ready();
@@ -157,7 +150,7 @@ abstract class LockService {
   String? get pickHint => null;
 
   /// 编辑页底部说明怎么算
-  String get limitNote => '选中的 App 合计用满这么久，就锁到第二天 0 点。';
+  String get limitNote => '选中的 App 合计用满这么久，你的狗就打电话来问你还玩不玩。';
 }
 
 List<AppLock> _locks(List<dynamic>? list) => [for (final m in list ?? const []) AppLock.fromMap(m as Map)];
@@ -172,17 +165,18 @@ class AndroidLockService extends LockService {
   Future<void> setup() => _channel.invokeMethod<void>('openServiceSettings');
 
   @override
-  String get setupTitle => '还差一步：打开“无障碍”里的时间锁';
+  String get setupTitle => '还差一步：打开“无障碍”里的超时来电';
 
   @override
-  String get setupBody => '在系统“设置 › 无障碍”（有的手机在“更多设置”或“已下载的应用”里）找到“再玩我是狗 · App 时间锁”并打开。'
-      '它只用来发现被锁的 App 被打开，不读屏幕内容。小米、华为等手机还要允许本 App 自启动，不然可能被系统关掉。';
+  String get setupBody => '在系统“设置 › 无障碍”（有的手机在“更多设置”或“已下载的应用”里）找到“再玩我是狗 · 超时来电”并打开。'
+      '它只用来发现设了限时的 App 被打开、到点弹出来电，不读屏幕内容。小米、华为等手机还要允许本 App 自启动，不然可能被系统关掉。';
 
   @override
   String get setupAction => '去打开';
 
   @override
-  String get limitNote => '选中的 App 合计用满这么久，就锁到第二天 0 点。今天已经用掉的也算，已经超了的话，下次打开就会被拦住。';
+  String get limitNote => '选中的 App 合计用满这么久，你的狗就打电话来问你还玩不玩：挂断就回桌面，接了可以再玩 ${LockService.snoozeMinutes} 分钟，到点再打。'
+      '今天已经用掉的也算，已经超了的话，下次打开就会来电。';
 
   @override
   Future<List<AppLock>> list() async => _locks(await _channel.invokeMethod<List<dynamic>>('listLocks'));
@@ -216,9 +210,6 @@ class AndroidLockService extends LockService {
   Future<List<AppLock>> delete(String id) async =>
       _locks(await _channel.invokeMethod<List<dynamic>>('deleteLock', {'id': id}));
 
-  @override
-  Future<List<AppLock>> grantGrace(String id) async =>
-      _locks(await _channel.invokeMethod<List<dynamic>>('grantGrace', {'id': id}));
 }
 
 class IosLockService extends LockService {
@@ -234,16 +225,16 @@ class IosLockService extends LockService {
   String get setupTitle => '还差一步：授权“屏幕使用时间”';
 
   @override
-  String get setupBody => 'iOS 用系统的屏幕使用时间来锁 App：用满额度后系统会直接挡住，第二天 0 点自动解开。';
+  String get setupBody => 'iOS 用系统的屏幕使用时间：用满额度后系统会挡一下，屏幕上是你的狗打来的电话，可以选“再玩 ${LockService.snoozeMinutes} 分钟”。';
 
   @override
   String get setupAction => '去授权';
 
   @override
-  String? get pickHint => '系统的选择页先按类别列出 App：点类别名称展开，就能只勾某一个 App；直接勾类别前面的圆圈，会锁住这一类的所有 App。';
+  String? get pickHint => '系统的选择页先按类别列出 App：点类别名称展开，就能只勾某一个 App；直接勾类别前面的圆圈，这一类的所有 App 都算进去。';
 
   @override
-  String get limitNote => '选中的 App 合计用满这么久，系统就会挡住它们，第二天 0 点自动解开。';
+  String get limitNote => '选中的 App 合计用满这么久，系统会挡一下，上面是你的狗打来的电话：点“不玩了”关掉 App，点“再玩 ${LockService.snoozeMinutes} 分钟”就放行，到点再挡。';
 
   @override
   Widget? selectionPreview({String? lockId, bool draft = false}) => LockSelectionView(lockId: lockId, draft: draft);
@@ -272,8 +263,4 @@ class IosLockService extends LockService {
 
   @override
   Future<void> discardDraft() => _channel.invokeMethod<void>('discardLockDraft');
-
-  @override
-  Future<List<AppLock>> grantGrace(String id) async =>
-      _locks(await _channel.invokeMethod<List<dynamic>>('grantGrace', {'id': id}));
 }

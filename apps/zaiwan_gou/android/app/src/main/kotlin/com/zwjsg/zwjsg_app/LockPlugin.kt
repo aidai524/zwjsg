@@ -48,16 +48,6 @@ class LockPlugin(private val context: Context) {
                     call.argument<String>("id")?.let(store::delete)
                     background(result) { locksPayload() }
                 }
-                "grantGrace" -> {
-                    val id = call.argument<String>("id")
-                    background(result) {
-                        val lock = store.all().firstOrNull { it.id == id } ?: error("这个时间锁已经不在了")
-                        val today = if (TodayUsage.hasPermission(context)) TodayUsage.compute(context) else null
-                        val used = today?.let { LockStore.usedMs(lock, it) } ?: 0L
-                        if (!store.grantGrace(lock.id, used)) error("今天的临时解锁用完了")
-                        locksPayload()
-                    }
-                }
                 "launchableApps" -> background(result) { launchableApps() }
                 else -> result.notImplemented()
             }
@@ -86,7 +76,6 @@ class LockPlugin(private val context: Context) {
                 "minutes" to lock.minutes,
                 "usedMinutes" to usedMs?.let(TodayUsage::toMin),
                 "locked" to (usedMs != null && usedMs >= lock.minutes * 60_000L && !graceActive),
-                "graceLeft" to store.graceLeft(lock.id),
                 "graceActive" to graceActive,
             )
         }
