@@ -17,6 +17,8 @@ class CityResource extends JsonResource
             'adm' => $this->adm,
             'is_home' => $this->is_home,
             'sort' => $this->sort,
+            // 临时城市到期的时间（App 本地日期某天的 0 点）；长期关注的是 null
+            'expires_at' => $this->expires_at?->toIso8601String(),
         ];
     }
 }

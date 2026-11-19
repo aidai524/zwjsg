@@ -25,6 +25,10 @@ class AppState extends ChangeNotifier {
     final raw = _prefs.getString(_kCities);
     if (raw != null) {
       _cities = (jsonDecode(raw) as List).map((e) => City.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+      // 到期的临时城市一打开就清掉（登录了的话，服务端也会自己清）
+      final before = _cities.length;
+      _cities.removeWhere((c) => c.isExpired(DateTime.now()));
+      if (_cities.length != before) unawaited(_prefs.setString(_kCities, jsonEncode(_cities.map((c) => c.toJson()).toList())));
     }
     this.api.token = _token;
     ready.value = _isReady;
@@ -64,7 +68,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  static const maxCities = 5;
+  /// 不限制关注几个城市（2026-11-19 去掉了 5 个的上限），只和服务端一样留个防刷的上限，界面上不提
+  static const maxCities = 50;
+  static const _kDismissedWarnings = 'dismissed_warnings';
+
+  /// 关掉的预警记几天：预警一般一两天就解除，过期的标识清掉
+  static const dismissedWarningDays = 7;
   static const _kToken = 'token';
   static const _kOnboarded = 'onboarded';
   static const _kSnark = 'snark_level';
@@ -126,17 +135,57 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ---- 预警横幅 ----
+
+  /// 关掉的预警：标识 → 哪天关的（yyyy-MM-dd）。只存在手机上
+  late final Map<String, String> _dismissed = _loadDismissed();
+
+  Map<String, String> _loadDismissed() {
+    try {
+      final raw = _prefs.getString(_kDismissedWarnings);
+      if (raw == null) return {};
+      final cutoff = _day(DateTime.now().subtract(const Duration(days: dismissedWarningDays)));
+      return {
+        for (final e in (jsonDecode(raw) as Map).entries)
+          if (e.value.toString().compareTo(cutoff) >= 0) e.key.toString(): e.value.toString(),
+      };
+    } on FormatException {
+      return {};
+    }
+  }
+
+  static String _day(DateTime t) =>
+      '${t.year.toString().padLeft(4, '0')}-${t.month.toString().padLeft(2, '0')}-${t.day.toString().padLeft(2, '0')}';
+
+  /// 这条预警的横幅被关掉了（只有蓝色和其他颜色的横幅能关；黄色及以上的严肃模式不能关）
+  bool isWarningDismissed(Warning w) => _dismissed.containsKey(w.key);
+
+  Future<void> dismissWarning(Warning w) async {
+    _dismissed[w.key] = _day(DateTime.now());
+    await _prefs.setString(_kDismissedWarnings, jsonEncode(_dismissed));
+    notifyListeners();
+  }
+
   // ---- 城市 ----
 
-  Future<void> addCity(CityHit hit, {bool makeHome = false}) async {
+  /// 加城市。[tempDays] 不为空时是临时城市：今天算第 1 天，看满这么多天自动移除；临时城市不当常驻
+  Future<void> addCity(CityHit hit, {bool makeHome = false, int? tempDays}) async {
     if (_cities.any((c) => c.locationId == hit.locationId)) {
       _currentCity = _cities.indexWhere((c) => c.locationId == hit.locationId);
       notifyListeners();
       return;
     }
-    if (_cities.length >= maxCities) throw ApiException('最多关注 $maxCities 个城市');
+    if (_cities.length >= maxCities) throw ApiException('关注的城市太多了，先删几个吧');
 
-    var city = City(locationId: hit.locationId, name: hit.name, adm: hit.adm, isHome: makeHome || _cities.isEmpty);
+    // 第一个城市是常驻城市，只能长期关注
+    final temporary = tempDays != null && _cities.isNotEmpty;
+    var city = City(
+      locationId: hit.locationId,
+      name: hit.name,
+      adm: hit.adm,
+      isHome: !temporary && (makeHome || _cities.isEmpty),
+      expiresAt: temporary ? City.expiryFor(tempDays, DateTime.now()) : null,
+    );
     if (city.isHome) _cities = [for (final c in _cities) c.copyWith(isHome: false)];
     _cities.add(city);
     _currentCity = _cities.length - 1;
@@ -156,7 +205,12 @@ class AppState extends ChangeNotifier {
 
   Future<void> removeCity(City city) async {
     _cities.removeWhere((c) => c.locationId == city.locationId);
-    if (city.isHome && _cities.isNotEmpty) _cities[0] = _cities[0].copyWith(isHome: true);
+    if (city.isHome && _cities.isNotEmpty) {
+      // 常驻城市删了：排在最前的长期关注城市接班；全是临时城市的话，把第一个改成长期关注
+      final next = _cities.indexWhere((c) => !c.isTemporary);
+      final i = next < 0 ? 0 : next;
+      _cities[i] = _cities[i].copyWith(isHome: true, permanent: true);
+    }
     _currentCity = _currentCity.clamp(0, _cities.isEmpty ? 0 : _cities.length - 1);
     await _saveCities();
     if (isLoggedIn && city.serverId != null) {
@@ -168,8 +222,45 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  /// 常驻城市：关心群里家人看到的是这个城市的天气
+  /// 清掉到期的临时城市。打开 App、回到前台时调用；正看着的城市被清掉时翻回常驻城市
+  Future<void> pruneExpiredCities([DateTime? now]) async {
+    final t = now ?? DateTime.now();
+    final expired = [for (final c in _cities) if (c.isExpired(t)) c];
+    if (expired.isEmpty) return;
+    final current = _cities.elementAtOrNull(_currentCity);
+    _cities.removeWhere((c) => c.isExpired(t));
+    final stillThere = current == null ? -1 : _cities.indexWhere((c) => c.locationId == current.locationId);
+    _currentCity = stillThere >= 0 ? stillThere : _cities.indexWhere((c) => c.isHome).clamp(0, _cities.length);
+    await _saveCities();
+    if (!isLoggedIn) return;
+    for (final c in expired) {
+      if (c.serverId == null) continue;
+      try {
+        await api.deleteCity(c.serverId!);
+      } on ApiException {
+        // 服务端到点也会自己清
+      }
+    }
+  }
+
+  /// 临时城市改成长期关注
+  Future<void> makePermanent(City city) async {
+    final i = _cities.indexWhere((c) => c.locationId == city.locationId);
+    if (i < 0 || !_cities[i].isTemporary) return;
+    _cities[i] = _cities[i].copyWith(permanent: true);
+    await _saveCities();
+    if (isLoggedIn && city.serverId != null) {
+      try {
+        await api.makeCityPermanent(city.serverId!);
+      } on ApiException {
+        // 下次登录同步时再说
+      }
+    }
+  }
+
+  /// 常驻城市：关心群里家人看到的是这个城市的天气。临时城市不能当常驻
   Future<void> setHome(City city) async {
+    if (city.isTemporary) throw ApiException('临时城市不能设为常驻，先改成长期关注');
     _cities = [for (final c in _cities) c.copyWith(isHome: c.locationId == city.locationId)];
     await _saveCities();
     if (isLoggedIn && city.serverId != null) {
@@ -191,7 +282,7 @@ class AppState extends ChangeNotifier {
     try {
       var remote = await api.cities();
       for (final c in _cities) {
-        if (!remote.any((r) => r.locationId == c.locationId) && remote.length < maxCities) {
+        if (!remote.any((r) => r.locationId == c.locationId) && remote.length < maxCities && !c.isExpired(DateTime.now())) {
           await api.addCity(c);
         }
       }

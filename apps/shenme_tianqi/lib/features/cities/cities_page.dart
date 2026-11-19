@@ -7,7 +7,8 @@ import '../../core/models.dart';
 import '../../core/temp_unit.dart';
 import '../../widgets/common.dart';
 
-/// 关注的城市（最多 5 个）。常驻城市决定早安推送和关心群里家人看到的天气。
+/// 关注的城市，不限个数。常驻城市决定早安推送、关心群里家人看到的天气和桌面小组件；
+/// 临时城市（出差、旅行看几天）到点自动移除，不能当常驻。
 class CitiesPage extends StatelessWidget {
   const CitiesPage({super.key});
 
@@ -30,13 +31,13 @@ class CitiesPage extends StatelessWidget {
                 context.pop();
               },
               onHome: () => state.setHome(cities[i]),
+              onPermanent: () => state.makePermanent(cities[i]),
               onDelete: cities.length > 1 ? () => state.removeCity(cities[i]) : null,
             ),
             const SizedBox(height: 12),
           ],
-          if (cities.length < AppState.maxCities)
-            PopButton(label: '+ 加个城市', style: PopButtonStyle.secondary, onPressed: () => context.push('/city-search')),
-          const SourceNote('最多关注 5 个城市 · 常驻城市用于早安推送和关心群\n位置只到城市，不记录你去过哪'),
+          PopButton(label: '+ 加个城市', style: PopButtonStyle.secondary, onPressed: () => context.push('/city-search')),
+          const SourceNote('常驻城市用于早安推送、关心群和桌面小组件 · 临时城市到点自动移除\n位置只到城市，不记录你去过哪'),
           const QWeatherCredit(),
         ],
       ),
@@ -47,13 +48,26 @@ class CitiesPage extends StatelessWidget {
 }
 
 class _CityRow extends StatelessWidget {
-  const _CityRow({required this.city, required this.weatherText, required this.onTap, required this.onHome, this.onDelete});
+  const _CityRow({
+    required this.city,
+    required this.weatherText,
+    required this.onTap,
+    required this.onHome,
+    required this.onPermanent,
+    this.onDelete,
+  });
 
   final City city;
   final String weatherText;
   final VoidCallback onTap;
   final VoidCallback onHome;
+  final VoidCallback onPermanent;
   final VoidCallback? onDelete;
+
+  static String tempLabel(City city, DateTime now) {
+    final days = city.daysLeft(now);
+    return days <= 1 ? '临时 · 今天最后一天' : '临时 · 还剩 $days 天';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,19 +83,31 @@ class _CityRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(children: [
-                    Text(city.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                    Flexible(
+                      child: Text(city.name,
+                          overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                    ),
                     if (city.isHome) ...[const SizedBox(width: 6), const Chip2('常驻')],
                   ]),
                   if (city.adm != null) Text(city.adm!, style: const TextStyle(fontSize: 12)),
+                  if (city.isTemporary)
+                    Text(tempLabel(city, DateTime.now()),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Pop.muted)),
                 ],
               ),
             ),
             Text(weatherText, style: const TextStyle(fontWeight: FontWeight.w800)),
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, color: Pop.ink),
-              onSelected: (v) => v == 'home' ? onHome() : onDelete?.call(),
+              onSelected: (v) => switch (v) {
+                'home' => onHome(),
+                'permanent' => onPermanent(),
+                _ => onDelete?.call(),
+              },
               itemBuilder: (_) => [
-                if (!city.isHome) const PopupMenuItem(value: 'home', child: Text('设为常驻城市')),
+                // 临时城市不能当常驻，要先改成长期关注
+                if (city.isTemporary) const PopupMenuItem(value: 'permanent', child: Text('改成长期关注')),
+                if (!city.isHome && !city.isTemporary) const PopupMenuItem(value: 'home', child: Text('设为常驻城市')),
                 if (onDelete != null) const PopupMenuItem(value: 'delete', child: Text('删除')),
               ],
             ),

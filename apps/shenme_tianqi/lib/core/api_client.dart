@@ -41,13 +41,23 @@ class WeatherApi extends SeriesApiClient {
   Future<List<City>> cities() => request(() => dio.get('/cities'), (d) => _dataList(d).map(City.fromJson).toList());
 
   Future<City> addCity(City c) => request(
-        () => dio.post('/cities', data: {'location_id': c.locationId, 'name': c.name, 'adm': c.adm, 'is_home': c.isHome}),
+        () => dio.post('/cities', data: {
+          'location_id': c.locationId,
+          'name': c.name,
+          'adm': c.adm,
+          'is_home': c.isHome,
+          if (c.expiresAt != null) 'expires_at': c.expiresAt!.toUtc().toIso8601String(),
+        }),
         (d) => City.fromJson(_data(d)),
       );
 
   Future<void> setHomeCity(int serverId) => request(() => dio.patch('/cities/$serverId', data: {'is_home': true}), (_) {});
 
   Future<void> deleteCity(int serverId) => request(() => dio.delete('/cities/$serverId'), (_) {});
+
+  /// 临时城市改成长期关注
+  Future<void> makeCityPermanent(int serverId) =>
+      request(() => dio.patch('/cities/$serverId', data: {'expires_at': null}), (_) {});
 
   // ---- 关心群 ----
 

@@ -17,19 +17,34 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   late PageController _pages;
+
+  /// 城市多了小圆点放不下，换成“3 / 12”
+  static const maxDots = 8;
 
   @override
   void initState() {
     super.initState();
     _pages = PageController(initialPage: AppScope.read(context).currentCity);
+    WidgetsBinding.instance.addObserver(this);
+    // 到期的临时城市清掉
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) AppScope.read(context).pruneExpiredCities();
+    });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pages.dispose();
     super.dispose();
+  }
+
+  /// 隔天回到前台时，到期的临时城市也要清掉
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) AppScope.read(context).pruneExpiredCities();
   }
 
   @override
@@ -71,6 +86,7 @@ class _HomePageState extends State<HomePage> {
                             ),
                             const SizedBox(width: 6),
                             if (current.isHome) const Chip2('常驻'),
+                            if (current.isTemporary) const Chip2('临时'),
                             const Icon(Icons.expand_more),
                           ],
                         ),
@@ -91,7 +107,9 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
               ),
-              if (cities.length > 1)
+              if (cities.length > maxDots)
+                Text('${index + 1} / ${cities.length}', style: PopText.small)
+              else if (cities.length > 1)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

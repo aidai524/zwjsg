@@ -20,12 +20,15 @@ class WeatherView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final w = weather;
-    final unit = AppScope.of(context).tempUnit;
+    final state = AppScope.of(context);
+    final unit = state.tempUnit;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        for (final b in w.bannerWarnings) _WarningBanner(b),
+        // 蓝色和其他颜色的预警横幅可以关掉（这一条不再显示，有新预警照样出来）；黄色及以上进严肃模式，不能关
+        for (final b in w.bannerWarnings)
+          if (!state.isWarningDismissed(b)) _WarningBanner(b, onClose: () => state.dismissWarning(b)),
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -95,16 +98,23 @@ class WeatherView extends StatelessWidget {
 }
 
 class _WarningBanner extends StatelessWidget {
-  const _WarningBanner(this.w);
+  const _WarningBanner(this.w, {required this.onClose});
   final Warning w;
+  final VoidCallback onClose;
 
   @override
   Widget build(BuildContext context) {
+    final fg = onWarningColor(w.color);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(12, 4, 0, 4),
       decoration: Pop.card(color: warningColor(w.color), shadow: false, radius: 14),
-      child: Text(w.title, style: TextStyle(fontWeight: FontWeight.w800, color: onWarningColor(w.color))),
+      child: Row(
+        children: [
+          Expanded(child: Text(w.title, style: TextStyle(fontWeight: FontWeight.w800, color: fg))),
+          IconButton(tooltip: '关掉这条预警', onPressed: onClose, icon: Icon(Icons.close, color: fg, size: 20)),
+        ],
+      ),
     );
   }
 }
