@@ -7,6 +7,7 @@ import '../../core/models.dart';
 import '../../core/scene.dart';
 import '../../widgets/common.dart';
 import 'serious_view.dart';
+import 'weather_backdrop.dart';
 import 'weather_view.dart';
 
 /// 首页：左右滑切换关注的城市
@@ -65,77 +66,88 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       color: bg,
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () => context.push('/cities'),
-                        child: Row(
-                          children: [
-                            Flexible(
-                              child: Text(current.name,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+      // 底色上叠一层天气动画（严肃模式不放），内容画在动画上面
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (w != null && !w.serious)
+            IgnorePointer(
+              child: WeatherBackdrop(key: ValueKey('${w.cond}/${w.outfitKey}'), cond: w.cond, outfitKey: w.outfitKey),
+            ),
+          Scaffold(
+            backgroundColor: Colors.transparent,
+            body: SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () => context.push('/cities'),
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  child: Text(current.name,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+                                ),
+                                const SizedBox(width: 6),
+                                if (current.isHome) const Chip2('常驻'),
+                                if (current.isTemporary) const Chip2('临时'),
+                                const Icon(Icons.expand_more),
+                              ],
                             ),
-                            const SizedBox(width: 6),
-                            if (current.isHome) const Chip2('常驻'),
-                            if (current.isTemporary) const Chip2('临时'),
-                            const Icon(Icons.expand_more),
-                          ],
+                          ),
                         ),
-                      ),
+                        // 晒天气卡：预警期间不能晒（严肃模式不生成带吐槽的卡片）
+                        if (w != null && !w.serious) ...[
+                          RoundIconButton(
+                            icon: Icons.ios_share,
+                            label: '晒一下',
+                            onTap: () => context.push('/card/${current.locationId}'),
+                          ),
+                          const SizedBox(width: 10),
+                        ],
+                        RoundIconButton(icon: Icons.favorite_border, label: '关心群', onTap: () => context.push('/care')),
+                        const SizedBox(width: 10),
+                        RoundIconButton(
+                            icon: Icons.settings_outlined, label: '设置', onTap: () => context.push('/settings')),
+                      ],
                     ),
-                    // 晒天气卡：预警期间不能晒（严肃模式不生成带吐槽的卡片）
-                    if (w != null && !w.serious) ...[
-                      RoundIconButton(
-                        icon: Icons.ios_share,
-                        label: '晒一下',
-                        onTap: () => context.push('/card/${current.locationId}'),
-                      ),
-                      const SizedBox(width: 10),
-                    ],
-                    RoundIconButton(icon: Icons.favorite_border, label: '关心群', onTap: () => context.push('/care')),
-                    const SizedBox(width: 10),
-                    RoundIconButton(icon: Icons.settings_outlined, label: '设置', onTap: () => context.push('/settings')),
-                  ],
-                ),
+                  ),
+                  if (cities.length > maxDots)
+                    Text('${index + 1} / ${cities.length}', style: PopText.small)
+                  else if (cities.length > 1)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        for (var i = 0; i < cities.length; i++)
+                          Container(
+                            margin: const EdgeInsets.all(3),
+                            width: i == index ? 16 : 7,
+                            height: 7,
+                            decoration: BoxDecoration(
+                              color: i == index ? Pop.ink : Pop.ink.withAlpha(70),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                      ],
+                    ),
+                  Expanded(
+                    child: PageView.builder(
+                      controller: _pages,
+                      itemCount: cities.length,
+                      onPageChanged: (i) => setState(() => state.currentCity = i),
+                      itemBuilder: (_, i) => _CityPage(city: cities[i]),
+                    ),
+                  ),
+                ],
               ),
-              if (cities.length > maxDots)
-                Text('${index + 1} / ${cities.length}', style: PopText.small)
-              else if (cities.length > 1)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    for (var i = 0; i < cities.length; i++)
-                      Container(
-                        margin: const EdgeInsets.all(3),
-                        width: i == index ? 16 : 7,
-                        height: 7,
-                        decoration: BoxDecoration(
-                          color: i == index ? Pop.ink : Pop.ink.withAlpha(70),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                  ],
-                ),
-              Expanded(
-                child: PageView.builder(
-                  controller: _pages,
-                  itemCount: cities.length,
-                  onPageChanged: (i) => setState(() => state.currentCity = i),
-                  itemBuilder: (_, i) => _CityPage(city: cities[i]),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

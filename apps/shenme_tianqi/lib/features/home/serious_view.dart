@@ -95,7 +95,8 @@ class SeriousView extends StatelessWidget {
           ),
         ),
         SourceNote('预警信息来源：${w.seriousWarnings.map((e) => e.sender).toSet().join('、')}\n${w.attribution}'),
-        QWeatherCredit(attributions: w.attributions),
+        // 预警的来源要原样显示（和风的要求）；“由和风天气驱动”只放在设置页
+        QWeatherCredit(attributions: w.attributions, brand: false),
       ],
     );
   }

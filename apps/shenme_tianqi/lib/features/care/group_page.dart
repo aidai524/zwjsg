@@ -163,7 +163,8 @@ class _GroupPageState extends State<GroupPage> {
                     _InviteCode(code: g.inviteCode, onTap: _copyCode),
                   ],
                   const SourceNote('只能发天气关心，不能聊天 · 只显示城市，不共享位置'),
-                  QWeatherCredit(attributions: {for (final m in g.members) ...m.attributions}.toList()),
+                  // 成员卡片会标对方城市的预警，预警的来源要原样显示；“由和风天气驱动”只放在设置页
+                  QWeatherCredit(attributions: {for (final m in g.members) ...m.attributions}.toList(), brand: false),
                 ],
               ),
             ),
