@@ -38,7 +38,6 @@ class CitiesPage extends StatelessWidget {
           ],
           PopButton(label: '+ 加个城市', style: PopButtonStyle.secondary, onPressed: () => context.push('/city-search')),
           const SourceNote('常驻城市用于早安推送、关心群和桌面小组件 · 临时城市到点自动移除\n位置只到城市，不记录你去过哪'),
-          const QWeatherCredit(),
         ],
       ),
     );

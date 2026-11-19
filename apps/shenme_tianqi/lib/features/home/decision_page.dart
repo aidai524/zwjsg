@@ -41,7 +41,7 @@ class DecisionPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          if (decisionKey == 'umbrella' || decisionKey == 'laundry') _PopChart(w.hourly),
+          if (decisionKey == 'umbrella' || decisionKey == 'laundry') PopChart(w.hourly),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(16),
@@ -56,21 +56,36 @@ class DecisionPage extends StatelessWidget {
             ),
           ),
           SourceNote(w.attribution),
-          QWeatherCredit(attributions: w.attributions),
         ],
       ),
     );
   }
 }
 
-/// 逐小时降水概率柱状图；≥ 50% 的柱子标蓝并写数字
-class _PopChart extends StatelessWidget {
-  const _PopChart(this.hours);
+/// 逐小时降水概率柱状图：每根柱子都写百分比，≥ 50% 的标蓝；上面一句话说结论。
+/// 晴天时每小时都是 0%，只画柱子的话一片空白，看着像没数据（2026-11-19 用户反馈），所以要写清楚
+class PopChart extends StatelessWidget {
+  const PopChart(this.hours, {super.key});
   final List<HourItem> hours;
+
+  /// 最多画几个小时
+  static const shown = 16;
+
+  /// 图上面那句话
+  static String summary(List<HourItem> hours) {
+    final list = hours.take(shown).toList();
+    final known = [for (final h in list) if (h.pop != null) h.pop!];
+    if (known.isEmpty) return '暂时拿不到逐小时的降水概率';
+    final top = known.reduce((a, b) => a > b ? a : b);
+    if (top == 0) return '接下来 ${list.length} 小时都不会下雨（概率都是 0%）';
+    final wet = known.where((p) => p >= 50).length;
+    if (wet == 0) return '最高 $top%，下雨的可能不大';
+    return '有 $wet 个小时下雨概率过半，最高 $top%';
+  }
 
   @override
   Widget build(BuildContext context) {
-    final list = hours.take(16).toList();
+    final list = hours.take(shown).toList();
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: Pop.card(),
@@ -78,40 +93,67 @@ class _PopChart extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('每小时下雨的概率', style: TextStyle(fontWeight: FontWeight.w900)),
-          const Text('虚线 = 50%', style: TextStyle(fontSize: 12, color: Pop.muted)),
+          const SizedBox(height: 2),
+          Text(summary(hours), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
           SizedBox(
-            // 柱子最高 120 + 数字 + 底部小时 20，150 放不下会溢出
+            // 数字 14 + 柱子最高 120 + 底线 + 小时 18
             height: 160,
             child: Stack(
               children: [
-                const Positioned(left: 0, right: 0, bottom: 20 + 60, child: _DashedLine()),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    for (final h in list)
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            if ((h.pop ?? 0) >= 50)
-                              Text('${h.pop}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
-                            Container(
-                              height: ((h.pop ?? 0) * 1.2).clamp(2.0, 120.0),
-                              margin: const EdgeInsets.symmetric(horizontal: 2),
-                              decoration: BoxDecoration(
-                                color: (h.pop ?? 0) >= 50 ? Pop.rareBlue : const Color(0xFFC9D7F2),
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
-                              ),
+                // 50% 的虚线：柱子底部在小时文字上面 20 处，50% 是 60 高
+                const Positioned(left: 0, right: 26, bottom: 20 + 60, child: _DashedLine()),
+                const Positioned(
+                  right: 0,
+                  bottom: 20 + 60 - 7,
+                  child: Text('50%', style: TextStyle(fontSize: 10, color: Pop.muted)),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 26),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      for (final h in list)
+                        Expanded(
+                          child: Semantics(
+                            container: true,
+                            label: '${h.time.toLocal().hour} 点：${h.pop == null ? '没有数据' : '${h.pop}%'}',
+                            excludeSemantics: true,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Text(h.pop == null ? '--' : '${h.pop}',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      color: (h.pop ?? 0) >= 50 ? Pop.rareBlue : Pop.muted,
+                                      fontWeight: (h.pop ?? 0) >= 50 ? FontWeight.w900 : FontWeight.w600,
+                                    )),
+                                const SizedBox(height: 2),
+                                Container(
+                                  height: ((h.pop ?? 0) * 1.2).clamp(2.0, 120.0),
+                                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                                  decoration: BoxDecoration(
+                                    color: h.pop == null
+                                        ? Pop.gray
+                                        : ((h.pop ?? 0) >= 50 ? Pop.rareBlue : const Color(0xFFC9D7F2)),
+                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+                                  ),
+                                ),
+                                // 底线：0% 的柱子也看得出是“有数据、是 0”
+                                Container(height: 1.5, color: Pop.ink),
+                                SizedBox(
+                                  height: 18,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(top: 3),
+                                    child: Text('${h.time.toLocal().hour}', style: const TextStyle(fontSize: 10)),
+                                  ),
+                                ),
+                              ],
                             ),
-                            SizedBox(
-                              height: 20,
-                              child: Text('${h.time.toLocal().hour}', style: const TextStyle(fontSize: 10)),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
