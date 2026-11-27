@@ -11,6 +11,7 @@ import '../../core/temp_unit.dart';
 import '../../widgets/common.dart';
 import '../../widgets/weather_avatars.dart';
 import 'import_avatar_sheet.dart';
+import 'licenses_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -73,6 +74,12 @@ class SettingsPage extends StatelessWidget {
             title: const Text('隐私政策'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/privacy'),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('开源许可'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => showAppLicenses(context),
           ),
           const SourceNote('预警信息来自当地气象部门\n吐槽文案为人工撰写，不改写预报结论'),
           const QWeatherCredit(),

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +11,7 @@ import 'package:shenme_tianqi/core/models.dart';
 import 'package:shenme_tianqi/core/temp_unit.dart';
 import 'package:shenme_tianqi/features/home/home_page.dart';
 import 'package:shenme_tianqi/features/privacy/privacy_page.dart';
+import 'package:shenme_tianqi/features/settings/licenses_page.dart';
 
 /// 服务端：推送设置从 me() 来，改设置记下来；error 不为空时改设置失败
 class FakeApi extends WeatherApi {
@@ -113,6 +116,26 @@ void main() {
     await tester.tap(find.text('隐私政策'));
     await tester.pumpAndSettle();
     expect(find.text(PrivacyPage.summary), findsOneWidget);
+  });
+
+  testWidgets('设置页能打开开源许可：标题是中文的，头上是 App 名和版本', (tester) async {
+    await openSettings(tester);
+    await tester.scrollUntilVisible(find.text('开源许可'), 300);
+    await tester.ensureVisible(find.text('开源许可'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('开源许可'));
+    // 许可在后台读，转圈停不下来：只往前走几帧
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(LicensePage), findsOneWidget);
+    expect(find.widgetWithText(AppBar, '开源许可'), findsOneWidget);
+    expect(find.text('什么鬼天气'), findsOneWidget);
+    expect(find.text(appVersion), findsOneWidget);
+  });
+
+  test('许可页上的版本跟 pubspec 一样', () {
+    final pubspec = File('pubspec.yaml').readAsStringSync();
+    expect(RegExp(r'^version:\s*([\d.]+)', multiLine: true).firstMatch(pubspec)!.group(1), appVersion);
   });
 
   testWidgets('没登录时推送设置提示先登录', (tester) async {
