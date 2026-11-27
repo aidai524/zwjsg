@@ -415,7 +415,7 @@ class _StageDistribution extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Row(
                   children: [
-                    MyAvatar(stage: s, size: 32),
+                    MyAvatar(stage: s, size: 32, evolved: false),
                     const SizedBox(width: 8),
                     SizedBox(
                       width: 52,

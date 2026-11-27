@@ -49,18 +49,34 @@ class UsageSnapshot {
 
 /// 某个 app 的用时。隐私约定：只在手机上显示（排行、限时选 app），绝不上传。
 class AppUsage {
-  const AppUsage({required this.package, required this.label, required this.minutes, this.icon});
+  const AppUsage({
+    required this.package,
+    required this.label,
+    required this.minutes,
+    this.icon,
+    this.category,
+    this.whitelisted = false,
+  });
 
   factory AppUsage.fromMap(Map<dynamic, dynamic> m) => AppUsage(
         package: m['package'] as String,
         label: m['label'] as String,
         minutes: (m['minutes'] as num).toInt(),
         icon: m['icon'] as Uint8List?,
+        category: m['category'] as String?,
+        whitelisted: m['whitelisted'] as bool? ?? false,
       );
+
+  /// 超时来电的白名单（安卓，2026-11-27）：电话、短信、地图、支付、银行、系统设置这些 App 永远不来电，不能选进限时。
+  /// 名单在原生层（LockWhitelist.kt），只有选 App 的列表带这个标记
+  final bool whitelisted;
 
   final String package;
   final String label;
   final int minutes;
+
+  /// 系统给的分类：video / social / game / productivity / other；不知道时为 null
+  final String? category;
 
   /// 96px 的 PNG 图标；拿不到时为 null
   final Uint8List? icon;

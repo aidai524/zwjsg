@@ -18,7 +18,7 @@ class CartoonFace {
 
 /// 拍照形象：打开相机或系统选图器，照片在手机本地变成卡通。抽成接口，测试里换成假的。
 abstract class Cartoonizer {
-  /// 这台手机能不能做（现在只有 iOS 能做，安卓的卡通化还没做）
+  /// 这台手机能不能做（iOS 2026-11-16 起，安卓 2026-11-27 起）
   bool get isSupported;
 
   /// 用户没拍、没选时返回 null。失败时抛 [PlatformException]，message 可以直接给用户看
@@ -31,7 +31,8 @@ class NativeCartoonizer implements Cartoonizer {
   static const _channel = MethodChannel('zwjsg/cartoon');
 
   @override
-  bool get isSupported => defaultTargetPlatform == TargetPlatform.iOS;
+  bool get isSupported =>
+      defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android;
 
   @override
   Future<CartoonFace?> cartoonize(PhotoSource source) async {

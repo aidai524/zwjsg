@@ -30,19 +30,28 @@ class LockPlugin(private val context: Context) {
                 }
                 "listLocks" -> background(result) { locksPayload() }
                 "saveLock" -> {
+                    // 白名单里的（电话、支付……）不锁
                     val packages = call.argument<List<String>>("packages").orEmpty()
+                        .filterNot { LockWhitelist.contains(context, it) }
                     val minutes = call.argument<Int>("minutes") ?: 0
+                    val dogPercent = call.argument<Int>("dogPercent")
                     val id = call.argument<String>("id") ?: LockStore.newId()
                     val locks = store.all()
                     when {
-                        packages.isEmpty() || minutes <= 0 -> result.error("bad_args", "先选要锁的 App", null)
+                        packages.isEmpty() -> result.error("bad_args", "先选要锁的 App", null)
+                        dogPercent == null && minutes <= 0 -> result.error("bad_args", "先选每天最多用多久", null)
+                        dogPercent != null && dogPercent !in 30..300 -> result.error("bad_args", "狗度不对", null)
                         locks.none { it.id == id } && locks.size >= LockStore.MAX ->
                             result.error("too_many", "最多 ${LockStore.MAX} 个时间锁", null)
                         else -> {
-                            store.save(AppLock(id, packages, minutes))
+                            store.save(AppLock(id, packages, minutes, dogPercent))
                             background(result) { locksPayload() }
                         }
                     }
+                }
+                "setGoal" -> {
+                    call.argument<Int>("goalMinutes")?.takeIf { it > 0 }?.let { store.goalMinutes = it }
+                    result.success(null)
                 }
                 "deleteLock" -> {
                     call.argument<String>("id")?.let(store::delete)
@@ -69,19 +78,23 @@ class LockPlugin(private val context: Context) {
         return store.all().map { lock ->
             val usedMs = today?.let { LockStore.usedMs(lock, it) }
             val graceActive = usedMs != null && store.graceRemainingMs(lock.id, usedMs) > 0
+            val declined = store.isDeclinedToday(lock.id)
+            val left = today?.let { store.leftMs(lock, it) }
             mapOf(
                 "id" to lock.id,
                 "packages" to lock.packages,
                 "labels" to lock.packages.map { TodayUsage.label(context, it) },
                 "minutes" to lock.minutes,
+                "dogPercent" to lock.dogPercent,
                 "usedMinutes" to usedMs?.let(TodayUsage::toMin),
-                "locked" to (usedMs != null && usedMs >= lock.minutes * 60_000L && !graceActive),
+                "locked" to (declined || (left != null && left <= 0 && !graceActive)),
                 "graceActive" to graceActive,
+                "declined" to declined,
             )
         }
     }
 
-    /** 能锁的 app：桌面上有图标的，去掉自己和桌面；今天用得多的排前面 */
+    /** 能锁的 app：桌面上有图标的，去掉自己和桌面；今天用得多的排前面。带上分类（按类勾）和是不是在白名单里 */
     private fun launchableApps(): List<Map<String, Any?>> {
         val ignored = TodayUsage.ignoredPackages(context)
         val today = if (TodayUsage.hasPermission(context)) TodayUsage.compute(context) else null
@@ -98,6 +111,8 @@ class LockPlugin(private val context: Context) {
                     "label" to label,
                     "minutes" to TodayUsage.toMin(ms),
                     "icon" to TodayUsage.iconPng(context, pkg),
+                    "category" to TodayUsage.categoryOf(context, pkg),
+                    "whitelisted" to LockWhitelist.contains(context, pkg),
                 )
             }
     }

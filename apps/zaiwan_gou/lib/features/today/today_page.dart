@@ -9,6 +9,7 @@ import 'package:pop_ui/pop_ui.dart';
 import '../../core/screen_time_channel.dart';
 import '../../core/usage_channel.dart';
 
+import 'stage_ring.dart';
 import 'today_cards.dart';
 import '../../widgets/my_avatar.dart';
 
@@ -101,21 +102,16 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                       if (state.hasUsageData) _ShareChip(onTap: () => context.push('/card')),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Container(
-                    width: 200,
-                    height: 200,
-                    decoration: const BoxDecoration(
-                      color: Pop.white,
-                      shape: BoxShape.circle,
-                      border: Border.fromBorderSide(BorderSide(color: Pop.ink, width: Pop.stroke)),
-                      boxShadow: [BoxShadow(color: Pop.ink, offset: Offset(5, 5))],
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    alignment: Alignment.bottomCenter,
-                    child: MyAvatar(stage: stage, size: 184),
+                  const SizedBox(height: 4),
+                  // 狗头外面一圈就是今天刷了多少：转满一圈是最后一个阶段，刻度是每个阶段的门槛
+                  StageRing(
+                    percent: state.hasUsageData ? state.percent : null,
+                    semanticsLabel: state.hasUsageData
+                        ? '今日已刷 ${state.minutesUsedLabel}，目标 ${DogMeter.formatMinutes(state.goalMinutes)}'
+                        : '还没拿到今天的使用数据',
+                    child: MyAvatar(stage: stage, size: 168),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -136,6 +132,10 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                   const SizedBox(height: 8),
                   Text(state.hasUsageData ? DogMeter.quips[stage] : '开了权限，才知道你今天有多狗',
                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                  if (state.hasUsageData) ...[
+                    const SizedBox(height: 12),
+                    _UsageLine(used: state.minutesUsedLabel, goal: state.goalMinutes, hint: _hint(state)),
+                  ],
                 ],
               ),
             ),
@@ -171,20 +171,9 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  if (state.hasUsageData) ...[
-                    _ProgressCard(
-                      used: state.minutesUsedLabel,
-                      goal: state.goalMinutes,
-                      percent: state.percent,
-                      hint: _hint(state),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  // 单个 App 限时（超时来电）放在前面，比排行更显眼
-                  LimitsCard(service: widget.lockService),
-                  const SizedBox(height: 12),
-                  // 卡片上直接露出前三名和这周 7 天，点开再看全部
-                  TimeSpentCard(loader: widget.rankingLoader),
+                  // 卡片上直接露出前五名和这周 7 天，点开再看全部。超时来电不单独占一张卡：
+                  // 设了限时的 App 在排行里带上电话标记，卡片底下一行说限时用到哪了
+                  TimeSpentCard(loader: widget.rankingLoader, lockService: widget.lockService),
                   const SizedBox(height: 12),
                   const WeekCard(),
                 ],
@@ -254,46 +243,33 @@ class _PermissionBanner extends StatelessWidget {
   }
 }
 
-class _ProgressCard extends StatelessWidget {
-  const _ProgressCard({required this.used, required this.goal, required this.percent, required this.hint});
+/// 圈下面一行：今日已刷多久、目标多少，再一句离下一阶段还差多少
+class _UsageLine extends StatelessWidget {
+  const _UsageLine({required this.used, required this.goal, required this.hint});
 
   /// 已刷时长的显示文字（iOS 上是“至少 …”或“不到 …”）
   final String used;
   final int goal;
-  final int percent;
   final String hint;
 
   @override
   Widget build(BuildContext context) {
-    final fill = (percent / 150).clamp(0.0, 1.0);
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: Pop.card(shadow: false),
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 9),
+      decoration: BoxDecoration(color: Pop.white, borderRadius: BorderRadius.circular(14)),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // iOS 上是“至少 …”，文字更长，放不下时换行，不挤掉右边的目标
-              Expanded(child: Text('今日已刷 $used', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700))),
-              const SizedBox(width: 8),
-              Text('目标 ${DogMeter.formatMinutes(goal)}', style: PopText.small),
-            ],
+          Text.rich(
+            TextSpan(children: [
+              const TextSpan(text: '今日已刷 '),
+              TextSpan(text: used, style: const TextStyle(fontWeight: FontWeight.w900)),
+              TextSpan(text: '  ·  目标 ${DogMeter.formatMinutes(goal)}', style: const TextStyle(color: Pop.muted)),
+            ]),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 14),
           ),
-          const SizedBox(height: 8),
-          Container(
-            height: 18,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(9),
-              border: Border.all(color: Pop.ink, width: 2),
-            ),
-            clipBehavior: Clip.antiAlias,
-            alignment: Alignment.centerLeft,
-            child: FractionallySizedBox(widthFactor: fill, child: Container(color: Pop.yellow)),
-          ),
-          const SizedBox(height: 8),
-          Text(hint, style: const TextStyle(fontSize: 13, color: Color(0xFF3C4043))),
+          const SizedBox(height: 2),
+          Text(hint, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: Pop.muted)),
         ],
       ),
     );

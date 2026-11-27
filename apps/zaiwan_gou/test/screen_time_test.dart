@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,12 +5,11 @@ import 'package:zwjsg_app/app.dart';
 import 'package:zwjsg_app/core/app_state.dart';
 import 'package:zwjsg_app/core/dog_meter.dart';
 import 'package:zwjsg_app/core/screen_time_channel.dart';
-import 'package:zwjsg_app/features/me/screen_time_page.dart';
 
 void main() {
   test('阶段阈值按每日目标折算成分钟', () {
     expect(ScreenTimeChannel.thresholdMinutes(180), [54, 108, 162, 216, 270]);
-    expect(ScreenTimeChannel.thresholdMinutes(ScreenTimePage.testGoalMinutes), [3, 6, 9, 12, 15]);
+    expect(ScreenTimeChannel.thresholdMinutes(10), [3, 6, 9, 12, 15]);
   });
 
   test('用量到阈值时，按狗度规则正好进入对应阶段', () {
@@ -39,71 +37,6 @@ void main() {
     expect(s.minPercent, 60);
     expect(const ScreenTimeStatus().minPercent, 0);
     expect(const ScreenTimeStatus().hasSelection, isFalse);
-  });
-
-  testWidgets('验证页：授权并选好 App 后，可以按测试目标开始监控', (tester) async {
-    tester.view.physicalSize = const Size(1080, 2400);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
-
-    const channel = MethodChannel('zwjsg/screen_time');
-    final calls = <MethodCall>[];
-    var status = <String, Object?>{'authorization': 'approved', 'categories': 13};
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
-      calls.add(call);
-      if (call.method == 'startMonitoring') {
-        final args = call.arguments as Map;
-        status = {
-          ...status,
-          'monitoring': true,
-          'goalMinutes': args['goalMinutes'],
-          'thresholds': args['thresholds'],
-          'log': ['11-14 10:00:00 开始监控'],
-        };
-      }
-      return status;
-    });
-    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, null));
-
-    SharedPreferences.setMockInitialValues({});
-    final state = AppState(await SharedPreferences.getInstance());
-    await tester.pumpWidget(AppScope(state: state, child: const MaterialApp(home: ScreenTimePage())));
-    await tester.pumpAndSettle();
-
-    expect(find.text('已授权'), findsOneWidget);
-    expect(find.text('已选 0 个 App、13 个类别、0 个网站'), findsOneWidget);
-
-    final testButton = find.text('测试：按 10 分钟目标开始');
-    await tester.ensureVisible(testButton);
-    await tester.tap(testButton);
-    await tester.pumpAndSettle();
-
-    final start = calls.lastWhere((c) => c.method == 'startMonitoring');
-    expect(start.arguments, {
-      'goalMinutes': 10,
-      'thresholds': [3, 6, 9, 12, 15],
-    });
-    expect(find.text('监控中：目标 10 分钟，阈值 3 / 6 / 9 / 12 / 15 分钟'), findsOneWidget);
-    expect(find.text('11-14 10:00:00 开始监控'), findsOneWidget);
-  });
-
-  testWidgets('验证页：没授权时不能选 App，也不能开始监控', (tester) async {
-    tester.view.physicalSize = const Size(1080, 2400);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
-
-    const channel = MethodChannel('zwjsg/screen_time');
-    tester.binding.defaultBinaryMessenger
-        .setMockMethodCallHandler(channel, (call) async => {'authorization': 'notDetermined'});
-    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, null));
-
-    SharedPreferences.setMockInitialValues({});
-    final state = AppState(await SharedPreferences.getInstance());
-    await tester.pumpWidget(AppScope(state: state, child: const MaterialApp(home: ScreenTimePage())));
-    await tester.pumpAndSettle();
-
-    expect(tester.widget<TextButton>(find.widgetWithText(TextButton, '选择')).onPressed, isNull);
-    expect(tester.widget<TextButton>(find.widgetWithText(TextButton, '授权')).onPressed, isNotNull);
   });
 
   group('iOS 今天页', () {
@@ -173,7 +106,7 @@ void main() {
       expect(find.text('还没开始统计'), findsNothing);
       expect(find.text('去开启'), findsNothing);
       expect(find.text('≥60%'), findsOneWidget);
-      expect(find.text('今日已刷 至少 1 小时 48 分'), findsOneWidget);
+      expect(find.textContaining('今日已刷 至少 1 小时 48 分', findRichText: true), findsOneWidget);
       expect(find.text('今天用满 2 小时 42 分，你就会脸上长毛'), findsOneWidget);
       expect(find.textContaining('拿起手机'), findsNothing);
       expect(state.stage, 2);
@@ -197,7 +130,7 @@ void main() {
       await tester.pumpWidget(AppScope(state: state, child: ZwjsgApp(state: state)));
       await tester.pumpAndSettle();
 
-      expect(find.text('授权“屏幕使用时间”后，这里显示今天最费时间的 3 个 App'), findsOneWidget);
+      expect(find.text('授权“屏幕使用时间”后，这里显示今天最费时间的 5 个 App'), findsOneWidget);
       expect(viewCalls.where((c) => c.method == 'create'), isEmpty);
     }, variant: ios);
 

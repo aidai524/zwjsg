@@ -5,6 +5,7 @@ import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -121,6 +122,23 @@ class TodayUsage private constructor(
             context.packageManager.queryIntentActivities(home, PackageManager.MATCH_DEFAULT_ONLY)
                 .forEach { set.add(it.activityInfo.packageName) }
             return set
+        }
+
+        /** 系统给 app 标的分类 → 我们的 5 类（狗度的犬种、超时来电的建议和选 App 时按类勾都用） */
+        fun categoryOf(context: Context, pkg: String): String {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return "other"
+            val info = try {
+                context.packageManager.getApplicationInfo(pkg, 0)
+            } catch (e: PackageManager.NameNotFoundException) {
+                return "other"
+            }
+            return when (info.category) {
+                ApplicationInfo.CATEGORY_VIDEO -> "video"
+                ApplicationInfo.CATEGORY_SOCIAL -> "social"
+                ApplicationInfo.CATEGORY_GAME -> "game"
+                ApplicationInfo.CATEGORY_PRODUCTIVITY -> "productivity"
+                else -> "other"
+            }
         }
 
         fun label(context: Context, pkg: String): String {

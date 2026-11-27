@@ -6,4 +6,6 @@
     <color name="widget_yellow">#FFFFD23F</color>
     <color name="widget_ink">#FF1B1B1F</color>
     <color name="widget_muted">#FF5F6368</color>
+    <!-- 超时来电页的底色，和 Flutter 的 CallColors.night 一致 -->
+    <color name="call_night">#FF17171A</color>
 </resources>

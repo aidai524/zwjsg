@@ -4,10 +4,11 @@ import 'package:pop_ui/pop_ui.dart';
 
 import '../core/app_state.dart';
 import '../core/breeds.dart';
+import '../core/evolution.dart';
 import '../features/card/card_page.dart';
 import 'my_avatar.dart';
 
-/// 首次获得新犬种时弹解锁动画（需求文档 P0“犬种解锁”）。
+/// 首次获得新犬种时弹解锁动画（需求文档 P0“犬种解锁”）；连续做人解锁进化形态也在这里弹（2026-11-26）。
 /// 挂在底部导航外面，在哪个 Tab 都能弹；一次解锁了几种就一个个弹，看过一个删一个。
 class UnlockListener extends StatefulWidget {
   const UnlockListener({super.key, required this.child});
@@ -37,6 +38,13 @@ class _UnlockListenerState extends State<UnlockListener> {
       while (state.newlyUnlocked.isNotEmpty) {
         if (!mounted) return;
         final key = state.newlyUnlocked.first;
+        final evolution = evolutionByUnlockKey(key);
+        if (evolution != null) {
+          final wear = await showEvolutionUnlockDialog(context, evolution) == true;
+          await state.markUnlockSeen(key);
+          if (wear) await state.wearEvolution(evolution.evolution);
+          continue;
+        }
         final breed = breedByKey(key);
         // 认不出的犬种（两端配置没对齐）就不弹了
         final goDex = breed != null && await showUnlockDialog(context, breed) == true;
@@ -120,7 +128,7 @@ class UnlockDialog extends StatelessWidget {
                     ),
                     clipBehavior: Clip.antiAlias,
                     alignment: Alignment.bottomCenter,
-                    child: MyAvatar(stage: breed.previewStage, size: 150),
+                    child: MyAvatar(stage: breed.previewStage, size: 150, evolved: false),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -133,6 +141,102 @@ class UnlockDialog extends StatelessWidget {
                 const SizedBox(height: 16),
                 PopButton(
                   label: '去图鉴看看',
+                  style: PopButtonStyle.dark,
+                  height: 50,
+                  onPressed: () => Navigator.pop(context, true),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('知道了', style: TextStyle(color: Pop.ink, fontWeight: FontWeight.w700)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 进化形态解锁了：穿上它的你晃两下，名字、梗、连续做人几天解锁的。点“穿上看看”返回 true
+Future<bool?> showEvolutionUnlockDialog(BuildContext context, EvolutionInfo info) {
+  return showGeneralDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    barrierColor: const Color(0x991B1B1F),
+    transitionDuration: const Duration(milliseconds: 500),
+    pageBuilder: (_, __, ___) => EvolutionUnlockDialog(info: info),
+    transitionBuilder: (_, animation, __, child) => FadeTransition(
+      opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+      child: ScaleTransition(
+        scale: CurvedAnimation(parent: animation, curve: Curves.elasticOut, reverseCurve: Curves.easeIn),
+        child: child,
+      ),
+    ),
+  );
+}
+
+class EvolutionUnlockDialog extends StatelessWidget {
+  const EvolutionUnlockDialog({super.key, required this.info});
+
+  final EvolutionInfo info;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Material(
+        type: MaterialType.transparency,
+        child: Semantics(
+          scopesRoute: true,
+          namesRoute: true,
+          explicitChildNodes: true,
+          label: '解锁进化形态：${info.name}',
+          child: Container(
+            width: 300,
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+            decoration: Pop.card(color: Pop.softYellow, radius: 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('进化了！', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(color: Pop.ink, borderRadius: BorderRadius.circular(8)),
+                      child: Text('连续做人 ${info.days} 天',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Pop.yellow)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                _Wobble(
+                  // 圆角方框：衣服（西装、保温杯）露得出来
+                  child: Container(
+                    width: 164,
+                    height: 164,
+                    decoration: BoxDecoration(
+                      color: Pop.white,
+                      borderRadius: BorderRadius.circular(40),
+                      border: Border.all(color: Pop.ink, width: 4),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    alignment: Alignment.bottomCenter,
+                    child: MyAvatar(stage: 0, size: 156, evolution: info.evolution),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(info.name, style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, height: 1.1)),
+                const SizedBox(height: 4),
+                Text(info.quip, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 6),
+                const Text('做人时穿着，一变狗就脱掉；在图鉴里能换穿哪一种',
+                    textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: Pop.mutedOnYellow)),
+                const SizedBox(height: 16),
+                PopButton(
+                  label: '穿上看看',
                   style: PopButtonStyle.dark,
                   height: 50,
                   onPressed: () => Navigator.pop(context, true),

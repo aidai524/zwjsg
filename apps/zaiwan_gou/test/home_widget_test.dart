@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zwjsg_app/core/app_state.dart';
+import 'package:zwjsg_app/core/history.dart';
 import 'package:zwjsg_app/core/dog_meter.dart';
 import 'package:zwjsg_app/core/home_widget.dart';
 import 'package:zwjsg_app/core/usage_channel.dart';
@@ -128,7 +129,7 @@ void main() {
     expect(bridge.reloads, 1, reason: '阶段没变不叫');
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
-  testWidgets('画好 6 张形象图（阶段 0–5）；拍了新形象才重画', (tester) async {
+  testWidgets('画好 6 张形象图（阶段 0–5）；换了预设形象、拍了新形象、换了做人时穿的进化形态才重画', (tester) async {
     final dir = tempDir();
     final state = await newState();
     final bridge = FakeBridge(dir.path);
@@ -137,18 +138,41 @@ void main() {
     await tester.runAsync(sync.sync);
     final names = dir.listSync().map((f) => f.uri.pathSegments.last).toSet();
     expect(names, {for (var s = 0; s <= 5; s++) HomeWidgetSync.fileName(s), WidgetImages.versionFile});
-    expect(File('${dir.path}/${WidgetImages.versionFile}').readAsStringSync(), 'v$dogAvatarArtVersion:default');
+    expect(File('${dir.path}/${WidgetImages.versionFile}').readAsStringSync(), 'v$dogAvatarArtVersion:ahoge:plain');
     expect(bridge.reloads, 1);
 
     await tester.runAsync(sync.sync);
     expect(bridge.reloads, 1, reason: '形象没变不重画');
 
+    await tester.runAsync(() => state.setAvatarPreset(AvatarPreset.bun));
+    await tester.runAsync(sync.sync);
+    expect(bridge.reloads, 2);
+    expect(File('${dir.path}/${WidgetImages.versionFile}').readAsStringSync(), 'v$dogAvatarArtVersion:bun:plain');
+
+    // 拍了新形象就用拍照形象
     final png = await stickerPng(tester, await whiteSticker(tester));
     await tester.runAsync(() => state.setPhotoAvatar(png));
     await tester.runAsync(sync.sync);
-    expect(bridge.reloads, 2);
+    expect(bridge.reloads, 3);
     expect(File('${dir.path}/${WidgetImages.versionFile}').readAsStringSync(),
-        'v$dogAvatarArtVersion:${WidgetImages.fingerprint(png)}');
+        'v$dogAvatarArtVersion:${WidgetImages.fingerprint(png)}:plain');
+
+    // 连续做人 3 天解锁了「学霸」：做人那张换成穿着它的
+    await tester.runAsync(() => state.history.putAll([
+          for (var i = 1; i <= 3; i++)
+            DayRecord(date: AppState.localDate(DateTime.now().subtract(Duration(days: i))), goalMinutes: 180,
+                minutes: 20, percent: 11, percentLabel: '11%', stage: 0),
+        ]));
+    await tester.runAsync(state.checkEvolutions);
+    await tester.runAsync(sync.sync);
+    expect(bridge.reloads, 4);
+    expect(File('${dir.path}/${WidgetImages.versionFile}').readAsStringSync(),
+        'v$dogAvatarArtVersion:${WidgetImages.fingerprint(png)}:scholar');
+
+    await tester.runAsync(() => state.wearEvolution(null));
+    await tester.runAsync(sync.sync);
+    expect(bridge.reloads, 5);
+    expect(File('${dir.path}/${WidgetImages.versionFile}').readAsStringSync(), endsWith(':plain'));
   });
 
   test('形象图的文件名', () {

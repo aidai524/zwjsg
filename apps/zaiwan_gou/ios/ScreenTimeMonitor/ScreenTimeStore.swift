@@ -97,16 +97,88 @@ enum ScreenTimeStore {
     static let log = "log"
     static let history = "stageHistory"
     static let locks = "locks"
+    static let call = "callRequest"
+    static let previewCall = "previewCall"
     static func lockedDay(_ id: String) -> String { "lockedDay.\(id)" }
+    static func declinedDay(_ id: String) -> String { "declinedDay.\(id)" }
+  }
+
+  // MARK: 超时来电（2026-11-23 起是一个像 FaceTime 的来电界面）
+  // 屏蔽页和它的按钮扩展不能放动画、不能出声、不能开麦克风，也打不开 App：
+  // 用满时监控扩展记下“有一通来电”、发一条带铃声的通知；在屏蔽页上点“接听”就记下“已接听”。
+  // 主 App 打开时看到就弹来电界面（Flutter 的 CallScreen），学会两声狗叫再由主 App 放行。拒接 = 今天锁死
+
+  /// 没接的来电：多久内打开 App 还在响
+  static let callRingSeconds: TimeInterval = 10 * 60
+
+  /// 在屏蔽页上点了接听：多久内打开 App 还接着通话
+  static let callAnsweredSeconds: TimeInterval = 30 * 60
+
+  /// 来电铃声：主 App 启动时从 Flutter 资源（assets/sounds/ring.caf）拷到 App Group 的 Library/Sounds，
+  /// 扩展发的通知也能用（系统只在 App、App Group 的 Library/Sounds 和发通知的那个包里找铃声）
+  static let ringSound = "dog_call.caf"
+
+  static func recordCall(_ lockId: String, answered: Bool) {
+    defaults?.set(["id": lockId, "at": Date().timeIntervalSince1970, "answered": answered], forKey: Key.call)
+  }
+
+  /// 正在打来的电话
+  static var pendingCall: (id: String, answered: Bool)? {
+    guard let d = defaults?.dictionary(forKey: Key.call), let id = d["id"] as? String,
+      let at = d["at"] as? TimeInterval
+    else { return nil }
+    let answered = d["answered"] as? Bool ?? false
+    guard Date().timeIntervalSince1970 - at < (answered ? callAnsweredSeconds : callRingSeconds) else { return nil }
+    return (id, answered)
+  }
+
+  static func clearCall() { defaults?.removeObject(forKey: Key.call) }
+
+  /// “试一下来电通知”（只在主 App 用）：记下 Flutter 交过来的那通试一下的来电和通知响的时间，
+  /// 点通知回到 App 时弹出来。通知响之前回来不算，响了以后 10 分钟内有效，读一次就清掉
+  static func recordPreviewCall(_ call: [String: Any], ringsAt: Date) {
+    defaults?.set(["call": call, "at": ringsAt.timeIntervalSince1970], forKey: Key.previewCall)
+  }
+
+  static func takePreviewCall() -> [String: Any]? {
+    guard let d = defaults?.dictionary(forKey: Key.previewCall), let call = d["call"] as? [String: Any],
+      let at = d["at"] as? TimeInterval
+    else { return nil }
+    let now = Date().timeIntervalSince1970
+    // 通知还没响：先不弹，也不清掉
+    if now < at - 1 { return nil }
+    defaults?.removeObject(forKey: Key.previewCall)
+    return now - at < callRingSeconds ? call : nil
+  }
+
+  /// 今天拒接了这个限时的来电：锁到明天 0 点
+  static func isDeclinedToday(_ id: String) -> Bool { defaults?.string(forKey: Key.declinedDay(id)) == today() }
+
+  static func setDeclinedToday(_ id: String) { defaults?.set(today(), forKey: Key.declinedDay(id)) }
+
+  /// 和 DogMeter.formatMinutes 一样
+  static func formatMinutes(_ minutes: Int) -> String {
+    let h = minutes / 60, m = minutes % 60
+    if h == 0 { return "\(m) 分钟" }
+    return m == 0 ? "\(h) 小时" : "\(h) 小时 \(m) 分"
   }
 }
 
-/// 一个单个 App 限时：选中的 App（系统的不透明令牌，编码后存）每天合计用满 [minutes] 分钟，屏蔽页就“来电”问还玩不玩
+/// 一个单个 App 限时：选中的 App（系统的不透明令牌，编码后存）每天合计用满 [minutes] 分钟，屏蔽页就“来电”问还玩不玩。
+/// 按狗度来的（dogPercent 不为空，2026-11-27）：今天狗度统计的那些 App 一共刷到目标的这么多（%）以后，挡住选中的 App、来电
 struct AppLockRecord: Codable {
   let id: String
   var minutes: Int
   /// FamilyActivitySelection 编码后的数据；这个文件不依赖 FamilyControls，解码在 LockShield 里
   var selection: Data
+  /// 按狗度来电（%）；按额度的是 nil（以前存的限时没有这一项，解出来也是 nil）
+  var dogPercent: Int? = nil
+
+  /// 来电时说的“为什么打来”
+  var callReason: String {
+    if let dogPercent { return "今天狗度到 \(dogPercent)% 了" }
+    return "说好一天 \(ScreenTimeStore.formatMinutes(minutes))，时间到了"
+  }
 }
 
 extension ScreenTimeStore {

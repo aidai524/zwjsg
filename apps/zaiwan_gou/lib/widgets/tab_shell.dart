@@ -3,9 +3,11 @@ import 'package:go_router/go_router.dart';
 
 import 'package:pop_ui/pop_ui.dart';
 
+import 'call_gate.dart';
+import 'nudge_listener.dart';
 import 'unlock_celebration.dart';
 
-/// 底部导航：今天 / 狗群 / 图鉴 / 我的。新犬种的解锁动画也从这里弹
+/// 底部导航：今天 / 群组 / 图鉴 / 我的（“狗群”2026-11-20 改名“群组”）。新犬种的解锁动画、群里有人汪你也从这里弹
 class TabShell extends StatelessWidget {
   const TabShell({super.key, required this.shell});
 
@@ -13,7 +15,7 @@ class TabShell extends StatelessWidget {
 
   static const _items = [
     (Icons.home_outlined, '今天'),
-    (Icons.groups_outlined, '狗群'),
+    (Icons.groups_outlined, '群组'),
     (Icons.grid_view_rounded, '图鉴'),
     (Icons.person_outline, '我的'),
   ];
@@ -21,7 +23,7 @@ class TabShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: UnlockListener(child: shell),
+      body: UnlockListener(child: NudgeListener(child: CallGate(child: shell))),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: Pop.white,

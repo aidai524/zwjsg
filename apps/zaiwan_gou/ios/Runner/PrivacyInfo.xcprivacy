@@ -6,6 +6,8 @@
   - 手机号：登录用；账号和昵称：登录后同步；卡通形象：登录后上传（只传卡通，不传照片）；
   - 每日目标、提醒时间：登录后同步；
   - iOS 现在不上传每天的狗度、分钟数和犬种，所以没写。以后 iOS 要上报时补上。
+  - 群组（2026-11-20）：群名、加了哪些群、群里的设置和“汪一下”记录，算 OtherUserContent。
+    iOS 不上传每天的狗度，群里看不到 iPhone 用户的狗度。
   第三方插件（Flutter、shared_preferences 等）自带隐私清单，这里只写本 App 自己的代码。
 -->
 <plist version="1.0">
@@ -55,6 +57,18 @@
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeOtherDataTypes</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeOtherUserContent</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
 			<true/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>

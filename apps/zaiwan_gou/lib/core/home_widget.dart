@@ -164,19 +164,26 @@ class HomeWidgetSync {
     if (dir == null) return false;
     final png = state.photoAvatarPng;
     final sticker = state.photoAvatar;
+    // 没用拍照形象时画挑的那张预设形象；换了哪张脸也要重画
+    final preset = state.avatarPreset;
+    // 做人（阶段 0）那张穿着进化形态；换了穿哪种也要重画
+    final evolution = state.wornEvolution;
+    bool changed() =>
+        !identical(state.photoAvatarPng, png) || state.avatarPreset != preset || state.wornEvolution != evolution;
     final drew = await WidgetImages.sync(
       dir: dir,
-      signature: 'v$dogAvatarArtVersion:${png == null ? 'default' : WidgetImages.fingerprint(png)}',
+      signature: 'v$dogAvatarArtVersion:${png == null ? preset.name : WidgetImages.fingerprint(png)}'
+          ':${evolution?.name ?? 'plain'}',
       images: {
         for (var stage = 0; stage <= 5; stage++)
           fileName(stage): () => sticker == null
-              ? renderDogAvatar(stage: stage, pixels: avatarPixels)
-              : renderPhotoDogAvatar(sticker: sticker, stage: stage, pixels: avatarPixels),
+              ? renderDogAvatar(stage: stage, pixels: avatarPixels, evolution: evolution, preset: preset)
+              : renderPhotoDogAvatar(sticker: sticker, stage: stage, pixels: avatarPixels, evolution: evolution),
       },
-      stale: () => !identical(state.photoAvatarPng, png),
+      stale: changed,
     );
     // 画到一半形象又换了：这一轮作废，再来一轮
-    if (!identical(state.photoAvatarPng, png)) {
+    if (changed()) {
       _again = true;
       return false;
     }

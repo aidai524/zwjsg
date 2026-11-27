@@ -6,6 +6,11 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- 超时来电：来电页响铃时震动 -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- 超时来电：想再玩 10 分钟要学两声狗叫，在手机上判断是不是叫出来的（SoundClassifier），不录音、不上传 -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- 拍照形象：App 里的相机拍自拍，照片只在内存里变成卡通，不保存、不上传（CartoonCameraActivity）。没有相机的设备也能装 -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
     <!-- 结算卡保存到相册：安卓 10 及以下需要 -->
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
@@ -40,6 +45,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- 拍照形象的相机页 -->
+        <activity
+            android:name=".CartoonCameraActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
@@ -56,7 +67,8 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/lock_accessibility_service" />
         </service>
-        <!-- 超时来电页：单独的任务栈，不把 App 主界面带出来；盖在超时的 App 上面，不退回桌面 -->
+        <!-- 超时来电页（Flutter 画的来电界面，单独的引擎，入口 callMain）：单独的任务栈，不把 App 主界面带出来；
+             盖在超时的 App 上面，不退回桌面 -->
         <activity
             android:name=".CallReminderActivity"
             android:exported="false"
@@ -64,7 +76,14 @@
             android:launchMode="singleTask"
             android:screenOrientation="portrait"
             android:taskAffinity="com.zwjsg.zwjsg_app.call"
-            android:theme="@android:style/Theme.Material.NoActionBar" />
+            android:theme="@style/CallTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/CallTheme" />
+        </activity>
         <!-- 桌面小组件：小号 2×2、中号 4×2。系统大约每 30 分钟叫醒一次，小组件自己算今天刷了多久 -->
         <receiver
             android:name=".widget.SmallDogWidget"
