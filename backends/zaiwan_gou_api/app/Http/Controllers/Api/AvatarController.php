@@ -35,6 +35,8 @@ class AvatarController extends Controller
         }
 
         $user->avatar_path = $path;
+        // 传了新的拍照形象就用它，不再用预设形象
+        $user->avatar_preset = null;
         $user->save();
 
         return new UserResource($user);

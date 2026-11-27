@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,10 +8,12 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zwjsg_app/app.dart';
 import 'package:zwjsg_app/core/app_state.dart';
+import 'package:zwjsg_app/core/licenses.dart';
 import 'package:zwjsg_app/core/usage_channel.dart';
 import 'package:series_share/series_share.dart';
 import 'package:zwjsg_app/core/reminders.dart';
 import 'package:zwjsg_app/features/card/card_page.dart';
+import 'package:zwjsg_app/features/me/licenses_page.dart';
 import 'package:zwjsg_app/features/me/privacy_page.dart';
 import 'package:zwjsg_app/features/today/today_page.dart';
 
@@ -201,6 +206,51 @@ void main() {
 
       await tapText(tester, '登录即表示你同意《隐私政策》');
       expect(find.byType(PrivacyPage), findsOneWidget);
+    });
+  });
+
+  group('开源许可', () {
+    testWidgets('我的页能打开，标题是中文的“开源许可”，头上是 App 名和版本', (tester) async {
+      usePhoneScreen(tester);
+      await pumpApp(tester, {'onboarded': true});
+      await go(tester, '/me');
+
+      await tester.scrollUntilVisible(find.text('开源许可'), 300);
+      await tester.tap(find.text('开源许可'));
+      // 许可在后台读，转圈停不下来：只往前走几帧
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(LicensePage), findsOneWidget);
+      expect(find.widgetWithText(AppBar, '开源许可'), findsOneWidget);
+      expect(find.text('再玩我是狗'), findsOneWidget);
+      expect(find.text(appVersion), findsOneWidget);
+    });
+
+    testWidgets('安卓列 YAMNet、它的类别名、LiteRT，还有拍照形象的模型和 CameraX；iOS 列 DCT-Net；都带许可证全文', (tester) async {
+      String text(LicenseEntry e) => e.paragraphs.map((p) => p.text).join('\n');
+      final android = (await tester.runAsync(() => AppLicenses.entries(TargetPlatform.android).toList()))!;
+      expect(android.expand((e) => e.packages), [
+        AppLicenses.yamnet,
+        AppLicenses.audioSet,
+        AppLicenses.litert,
+        AppLicenses.dctNet,
+        AppLicenses.mediaPipe,
+        AppLicenses.cameraX,
+      ]);
+      expect(text(android[3]), allOf(contains('dctnet_anime_head.tflite'), contains('Alibaba'), contains('TERMS AND CONDITIONS')));
+      expect(text(android[4]), allOf(contains('face_landmarker.task'), contains('selfie_segmenter.tflite')));
+      expect(text(android[5]), contains('androidx.camera 1.5.3'));
+      expect(text(android[0]), allOf(contains('TensorFlow Authors'), contains('TERMS AND CONDITIONS')));
+      expect(text(android[1]), allOf(contains('AudioSet'), contains('CC BY-SA 4.0')));
+      expect(text(android[2]), allOf(contains('litert 1.4.2'), contains('TERMS AND CONDITIONS'), contains('Caffe')));
+      final ios = (await tester.runAsync(() => AppLicenses.entries(TargetPlatform.iOS).toList()))!;
+      expect(ios.expand((e) => e.packages), [AppLicenses.dctNet]);
+      expect(text(ios.single), allOf(contains('Alibaba'), contains('TERMS AND CONDITIONS')));
+    });
+
+    test('许可页上的版本跟 pubspec 一样', () {
+      final pubspec = File('pubspec.yaml').readAsStringSync();
+      expect(RegExp(r'^version:\s*([\d.]+)', multiLine: true).firstMatch(pubspec)!.group(1), appVersion);
     });
   });
 

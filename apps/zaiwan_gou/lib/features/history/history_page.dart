@@ -165,7 +165,7 @@ class _DayRow extends StatelessWidget {
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, height: 1.3),
             ),
           ),
-          SizedBox(width: 44, height: 44, child: r == null ? null : MyAvatar(stage: r.stage, size: 44)),
+          SizedBox(width: 44, height: 44, child: r == null ? null : MyAvatar(stage: r.stage, size: 44, evolved: false)),
           const SizedBox(width: 10),
           Expanded(
             child: r == null
@@ -210,7 +210,7 @@ class _MonthCell extends StatelessWidget {
         children: [
           Text('${date.day}', style: TextStyle(fontSize: 12, color: r == null ? Pop.muted : Pop.ink)),
           const SizedBox(height: 2),
-          SizedBox(width: 28, height: 28, child: r == null ? null : MyAvatar(stage: r.stage, size: 28)),
+          SizedBox(width: 28, height: 28, child: r == null ? null : MyAvatar(stage: r.stage, size: 28, evolved: false)),
         ],
       ),
     );

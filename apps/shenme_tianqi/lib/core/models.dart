@@ -123,19 +123,36 @@ class Warning {
 }
 
 class HourItem {
-  const HourItem({required this.time, required this.temp, required this.text, this.pop});
+  const HourItem({required this.time, required this.temp, required this.text, this.pop, this.humidity, this.windScale});
   final DateTime time;
   final int temp;
   final String text;
+
+  /// 降水概率 0–100；接口没给是 null
   final int? pop;
+  final int? humidity;
+  final int? windScale;
 }
 
 class DayItem {
-  const DayItem({required this.date, required this.max, required this.min, required this.text});
+  const DayItem({
+    required this.date,
+    required this.max,
+    required this.min,
+    required this.text,
+    this.textNight,
+    this.humidity,
+    this.windScale,
+    this.uvIndex,
+  });
   final DateTime date;
   final int max;
   final int min;
   final String text;
+  final String? textNight;
+  final int? humidity;
+  final int? windScale;
+  final int? uvIndex;
 }
 
 class WeatherData {
@@ -170,11 +187,27 @@ class WeatherData {
   Decision decision(String key) => Decision.fromJson((view['decisions'] as Map?)?[key] as Map<String, dynamic>?);
 
   List<HourItem> get hourly => _list(raw['hourly'])
-      .map((h) => HourItem(time: DateTime.parse(_s(h['time'])), temp: _i(h['temp']), text: _s(h['text']), pop: _ni(h['pop'])))
+      .map((h) => HourItem(
+            time: DateTime.parse(_s(h['time'])),
+            temp: _i(h['temp']),
+            text: _s(h['text']),
+            pop: _ni(h['pop']),
+            humidity: _ni(h['humidity']),
+            windScale: _ni(h['wind_scale']),
+          ))
       .toList();
 
   List<DayItem> get daily => _list(raw['daily'])
-      .map((d) => DayItem(date: DateTime.parse(_s(d['date'])), max: _i(d['temp_max']), min: _i(d['temp_min']), text: _s(d['text_day'])))
+      .map((d) => DayItem(
+            date: DateTime.parse(_s(d['date'])),
+            max: _i(d['temp_max']),
+            min: _i(d['temp_min']),
+            text: _s(d['text_day']),
+            textNight: d['text_night'] as String?,
+            humidity: _ni(d['humidity']),
+            windScale: _ni(d['wind_scale']),
+            uvIndex: _ni(d['uv_index']),
+          ))
       .toList();
 
   int? get todayMax => daily.isEmpty ? null : daily.first.max;

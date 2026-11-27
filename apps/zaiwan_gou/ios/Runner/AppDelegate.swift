@@ -11,6 +11,10 @@ class PluginsRegistrant: NSObject, FlutterPluginRegistrant {
     if let registrar = registry.registrar(forPlugin: "ScreenTimePlugin") {
       ScreenTimePlugin.register(with: registrar)
     }
+    // 超时来电界面：响铃、提示音、狗版的你说话、听狗叫、放行和拒接
+    if let registrar = registry.registrar(forPlugin: "CallPlugin") {
+      CallPlugin.register(with: registrar)
+    }
     // 拍照形象（技术验证）：手机本地卡通化
     if let registrar = registry.registrar(forPlugin: "CartoonLabPlugin") {
       CartoonLabPlugin.register(with: registrar)

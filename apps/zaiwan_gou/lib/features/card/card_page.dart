@@ -9,6 +9,7 @@ import 'package:series_share/series_share.dart';
 
 import '../../core/app_state.dart';
 import '../../core/breeds.dart';
+import '../../core/evolution.dart';
 import '../../widgets/my_avatar.dart';
 
 /// 每日结算卡。卡片包在 RepaintBoundary 里，保存/分享时截成 3:4 图片。
@@ -24,6 +25,7 @@ class CardPage extends StatefulWidget {
         Rarity.common => Pop.ink,
         Rarity.rare => Pop.rareBlue,
         Rarity.legend => Pop.legendGold,
+        Rarity.limited => Pop.kingRed,
       };
 
   @override
@@ -91,6 +93,9 @@ class _CardPageState extends State<CardPage> {
     }
     final breed = breedByKey(state.breedKey);
     final rarity = breed?.rarity ?? Rarity.common;
+    // 做人时穿着进化形态：卡上写它的名字和梗，不写“人”
+    final worn = breed == null && state.stage == 0 ? state.wornEvolution : null;
+    final evolution = worn == null ? null : evolutionInfo(worn);
     final now = widget.now ?? DateTime.now();
     final nowMinutes = now.hour * 60 + now.minute;
     final settled = nowMinutes >= state.reminderMinutes;
@@ -185,11 +190,11 @@ class _CardPageState extends State<CardPage> {
                                   crossAxisAlignment: CrossAxisAlignment.baseline,
                                   textBaseline: TextBaseline.alphabetic,
                                   children: [
-                                    Text(breed?.name ?? '人',
+                                    Text(breed?.name ?? evolution?.name ?? '人',
                                         style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
                                     const SizedBox(width: 8),
                                     Expanded(
-                                      child: Text(breed?.quip ?? '今天守住了，明天继续',
+                                      child: Text(breed?.quip ?? evolution?.quip ?? '今天守住了，明天继续',
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
                                     ),
@@ -289,8 +294,9 @@ class _RarityTag extends StatelessWidget {
       Rarity.common => Pop.white,
       Rarity.rare => Pop.rareBlue,
       Rarity.legend => Pop.legendGold,
+      Rarity.limited => Pop.kingRed,
     };
-    final fg = rarity == Rarity.rare ? Pop.white : Pop.ink;
+    final fg = rarity == Rarity.rare || rarity == Rarity.limited ? Pop.white : Pop.ink;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(

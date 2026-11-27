@@ -54,6 +54,25 @@ class DayRecord {
   final bool stageOnly;
 }
 
+/// yyyy-MM-dd
+String _dateKey(DateTime d) =>
+    '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+/// 从 [today] 的前一天往前数，连续做人（有记录、阶段 0）的天数。没打开 App、没有记录的那天算断了
+int humanStreakBefore(Map<String, DayRecord> records, DateTime today) {
+  var n = 0;
+  while (true) {
+    final r = records[_dateKey(DateTime(today.year, today.month, today.day - n - 1))];
+    if (r == null || r.stage != 0) return n;
+    n++;
+  }
+}
+
+/// [day] 之前 [n] 天的记录，旧的在前；没记录的那天是 null
+List<DayRecord?> daysBefore(Map<String, DayRecord> records, DateTime day, int n) => [
+      for (var i = n; i >= 1; i--) records[_dateKey(DateTime(day.year, day.month, day.day - i))],
+    ];
+
 /// 每天一条，按日期存在 SharedPreferences 里；同一天反复刷新只留最后一次
 class HistoryStore {
   HistoryStore(this._prefs);
@@ -62,10 +81,16 @@ class HistoryStore {
 
   static const _key = 'history';
 
+  /// 读出来的那份留着，改了再换：界面上算犬种、连续做人时会常读
+  Map<String, DayRecord>? _cache;
+
   /// 最多留多少天
   static const keepDays = 400;
 
-  Map<String, DayRecord> all() {
+  /// 全部记录（给出去的是一份拷贝，改了不影响存着的）
+  Map<String, DayRecord> all() => Map.of(_cache ??= _read());
+
+  Map<String, DayRecord> _read() {
     final raw = _prefs.getString(_key);
     if (raw == null) return {};
     try {
@@ -76,7 +101,10 @@ class HistoryStore {
     }
   }
 
-  DayRecord? day(String date) => all()[date];
+  DayRecord? day(String date) => (_cache ??= _read())[date];
+
+  /// SharedPreferences 被整个清掉以后（退出登录、注销）调一下，下次重新读
+  void forget() => _cache = null;
 
   Future<void> put(DayRecord record) => putAll([record]);
 
@@ -91,6 +119,7 @@ class HistoryStore {
     for (final old in dates.take((dates.length - keepDays).clamp(0, dates.length))) {
       records.remove(old);
     }
+    _cache = records;
     await _prefs.setString(_key, jsonEncode({for (final e in records.entries) e.key: e.value.toJson()}));
   }
 }

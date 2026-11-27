@@ -3,11 +3,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_state.dart';
+import '../../core/breeds.dart';
 import '../../core/dog_meter.dart';
-import '../../core/screen_time_channel.dart';
 import 'package:pop_ui/pop_ui.dart';
 import '../../widgets/my_avatar.dart';
 import 'export_avatar_sheet.dart';
+import 'licenses_page.dart';
 
 class MePage extends StatelessWidget {
   const MePage({super.key});
@@ -138,7 +139,8 @@ class MePage extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '${state.isLoggedIn ? '' : '还没登录 · '}图鉴 ${state.ownedBreeds.length} / 8',
+                          '${state.isLoggedIn ? '' : '还没登录 · '}图鉴 ${state.ownedBreeds.length} / '
+                          '${dexBreeds(state.ownedBreeds, DateTime.now()).length}',
                           style: PopText.small,
                         ),
                       ],
@@ -148,30 +150,11 @@ class MePage extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: Pop.card(color: Pop.softYellow),
-              child: const Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('开通会员', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-                        Text('动态结算卡、周报月报、多套形象', style: TextStyle(fontSize: 12, color: Pop.mutedOnYellow)),
-                      ],
-                    ),
-                  ),
-                  Text('即将上线', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900)),
-                ],
-              ),
-            ),
             const _Section('形象'),
             _Group(children: [
               _Row(
-                title: state.photoAvatar == null ? '用自拍做形象' : '换个形象',
-                trailing: state.photoAvatar == null ? '默认形象' : '拍照形象',
+                title: '换个形象',
+                trailing: state.photoAvatar != null ? '拍照形象' : state.avatarPreset.label,
                 onTap: () => context.push('/avatar?edit=1'),
               ),
               if (state.photoAvatar != null) _Row(title: '导出到「什么鬼天气」', onTap: () => _exportAvatar(context)),
@@ -189,18 +172,11 @@ class MePage extends StatelessWidget {
             _Group(children: [
               _Row(title: '狗度统计', trailing: '最近 7 / 30 / 90 天', onTap: () => context.push('/stats')),
               _Row(title: '超时来电', trailing: '单个 App 限时', onTap: () => context.push('/locks')),
-              const _Row(title: '装扮商店', trailing: '即将上线'),
             ]),
-            if (ScreenTimeChannel.isSupported) ...[
-              const _Section('技术验证'),
-              _Group(children: [
-                _Row(title: '屏幕使用时间', trailing: 'iOS', onTap: () => context.push('/screen-time')),
-                _Row(title: '拍照形象（本地卡通化）', trailing: 'iOS', onTap: () => context.push('/cartoon-lab')),
-              ]),
-            ],
             const _Section('隐私与账号'),
             _Group(children: [
               _Row(title: '隐私政策', onTap: () => context.push('/privacy')),
+              _Row(title: '开源许可', onTap: () => showAppLicenses(context)),
               if (state.isLoggedIn) _Row(title: '退出登录', onTap: state.logout),
               if (state.isLoggedIn) _Row(title: '删除我的形象和数据', danger: true, onTap: () => _confirmDelete(context)),
             ]),

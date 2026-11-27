@@ -8,6 +8,9 @@ class DogMeter {
   /// 低于这个狗度算“做回人”
   static const int humanBelow = 30;
 
+  /// 连续做人多少天变传说犬种「狼」（后端 config/dog.php 的 legend_streak_days）
+  static const int legendStreakDays = 7;
+
   static const List<String> stageNames = [
     '阶段 0 · 还是人',
     '阶段 1 · 冒耳朵',

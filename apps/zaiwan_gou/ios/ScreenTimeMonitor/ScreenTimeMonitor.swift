@@ -5,7 +5,7 @@ import WidgetKit
 /// 系统在后台调起的监控扩展：每天 0 点开始新的统计周期，选中的 App 用量到阈值时通知。
 /// 两类统计周期：
 /// - `.daily`：狗度阶段，只记下到了第几阶段；阈值由主 App 传进来（Flutter 按 dog_meter.dart 的规则算）
-/// - `lock.<id>`：App 时间锁，用满了就挡住那些 App，0 点解开
+/// - `lock.<id>`：单个 App 限时，用满了就挡住那些 App、狗版的你打来电话（响铃的通知），0 点解开
 final class ScreenTimeMonitor: DeviceActivityMonitor {
   override func intervalDidStart(for activity: DeviceActivityName) {
     super.intervalDidStart(for: activity)
@@ -48,12 +48,22 @@ final class ScreenTimeMonitor: DeviceActivityMonitor {
       // 正在“再玩 10 分钟”的时候不打断，等那几分钟用满再挡
       guard !ScreenTimeStore.isGraceActive(id) else { return }
       LockShield.apply(lock)
-      ScreenTimeStore.append("限时 \(id.prefix(4))：用满 \(lock.minutes) 分钟，来电提醒")
+      ring(lock)
+      ScreenTimeStore.append("限时 \(id.prefix(4))：用满 \(lock.minutes) 分钟，来电")
     } else if let id = ScreenTimeStore.graceLockId(of: activity), let lock = ScreenTimeStore.lock(id) {
       ScreenTimeStore.setGraceActive(id, false)
       LockShield.apply(lock)
+      ring(lock)
       ScreenTimeStore.append("限时 \(id.prefix(4))：再玩的 \(ScreenTimeStore.snoozeMinutes) 分钟用完，再来电")
       DeviceActivityCenter().stopMonitoring([activity])
     }
+  }
+
+  /// 狗版的你打来电话：记下有一通来电（10 分钟内打开 App 就是响铃的来电界面），再发一条带铃声的通知。
+  /// 今天拒接过就不打了，屏蔽页上写着“今天锁死了”
+  private func ring(_ lock: AppLockRecord) {
+    guard !ScreenTimeStore.isDeclinedToday(lock.id) else { return }
+    ScreenTimeStore.recordCall(lock.id, answered: false)
+    CallNotice.ring(lock)
   }
 }

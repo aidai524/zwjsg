@@ -71,6 +71,11 @@ class DailyRecordController extends Controller
             'breed_key' => ['nullable', 'string', Rule::in($reportable)],
         ]);
 
+        // 节日限定犬种只在节日那几天、变狗时才算；别的日子报上来的不收，那天不记犬种（不让整条记录报不上来）
+        if (! $this->service->festivalBreedAllowed($data['breed_key'] ?? null, $day->toDateString(), (int) $data['dog_percent'])) {
+            $data['breed_key'] = null;
+        }
+
         [$record, $unlocked] = $this->service->upsert($user, $day->toDateString(), $data);
 
         return response()->json([

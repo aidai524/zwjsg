@@ -6,11 +6,10 @@ import 'package:pop_ui/pop_ui.dart';
 import '../../core/app_state.dart';
 import '../../core/models.dart';
 import '../../core/scene.dart';
-import '../../core/temp_unit.dart';
 import '../../widgets/common.dart';
 import '../../widgets/weather_avatars.dart';
 
-/// 普通模式：形象 + 吐槽 + 温度 + 四张决策卡 + 逐小时 + 7 天
+/// 普通模式：形象 + 吐槽 + 温度 + 四张决策卡，下面是进天气详情的入口
 class WeatherView extends StatelessWidget {
   const WeatherView({super.key, required this.city, required this.weather});
 
@@ -83,15 +82,13 @@ class WeatherView extends StatelessWidget {
               ),
           ],
         ),
-        const SizedBox(height: 20),
-        _HourlyStrip(w.hourly.take(12).toList(), unit),
         const SizedBox(height: 16),
-        _DailyList(w.daily, unit),
-        const SizedBox(height: 16),
-        _Extras(w),
+        // 首页只到“今天的决定”；接下来 12 小时、未来 7 天、空气质量、湿度和风都在详情页（2026-11-19）
+        _DetailEntry(onTap: () => context.push('/detail/${city.locationId}')),
         SourceNote('${w.attribution}${w.obsTime != null ? ' · ${hm(DateTime.parse(w.obsTime!).toLocal())} 更新' : ''}\n'
             '吐槽是我们说的，天气是气象台说的'),
-        QWeatherCredit(attributions: w.attributions),
+        // 页面上有预警横幅时，和风要求原样显示接口给的来源（refer.sources）；“由和风天气驱动”只放在设置页
+        if (w.bannerWarnings.any((b) => !state.isWarningDismissed(b))) QWeatherCredit(attributions: w.attributions, brand: false),
       ],
     );
   }
@@ -166,148 +163,41 @@ class _DecisionCard extends StatelessWidget {
   }
 }
 
-class _HourlyStrip extends StatelessWidget {
-  const _HourlyStrip(this.hours, this.unit);
-  final List<HourItem> hours;
-  final TempUnit unit;
+/// 进天气详情的入口：一张白卡，写清楚里面有什么
+class _DetailEntry extends StatelessWidget {
+  const _DetailEntry({required this.onTap});
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: Pop.card(),
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('接下来 12 小时', style: TextStyle(fontWeight: FontWeight.w900)),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 88,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: hours.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 16),
-              itemBuilder: (_, i) {
-                final h = hours[i];
-                return Column(
+    return Material(
+      color: Pop.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Pop.ink, width: 2),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: const Padding(
+          padding: EdgeInsets.fromLTRB(16, 12, 10, 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(i == 0 ? '现在' : '${h.time.toLocal().hour}时', style: const TextStyle(fontSize: 12)),
-                    const SizedBox(height: 4),
-                    Text(h.text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 4),
-                    Text(unit.deg(h.temp), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-                    Text((h.pop ?? 0) > 0 ? '${h.pop}%' : '',
-                        style: const TextStyle(fontSize: 11, color: Pop.rareBlue, fontWeight: FontWeight.w800)),
+                    Text('天气详情', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                    SizedBox(height: 2),
+                    Text('接下来 12 小时、未来 7 天、空气质量、湿度和风', style: TextStyle(fontSize: 12, color: Pop.muted)),
                   ],
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DailyList extends StatelessWidget {
-  const _DailyList(this.days, this.unit);
-  final List<DayItem> days;
-  final TempUnit unit;
-
-  @override
-  Widget build(BuildContext context) {
-    if (days.isEmpty) return const SizedBox.shrink();
-    final lo = days.map((d) => d.min).reduce((a, b) => a < b ? a : b);
-    final hi = days.map((d) => d.max).reduce((a, b) => a > b ? a : b);
-    final span = (hi - lo).clamp(1, 100);
-
-    return Container(
-      decoration: Pop.card(),
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('未来 ${days.length} 天', style: const TextStyle(fontWeight: FontWeight.w900)),
-          const SizedBox(height: 6),
-          for (var i = 0; i < days.length; i++)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(
-                children: [
-                  SizedBox(width: 44, child: Text(dayLabel(days[i].date, i), style: const TextStyle(fontWeight: FontWeight.w700))),
-                  SizedBox(width: 64, child: Text(days[i].text, overflow: TextOverflow.ellipsis)),
-                  // 华氏度会有三位数，留宽一点
-                  SizedBox(width: 40, child: Text(unit.deg(days[i].min), textAlign: TextAlign.right)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: LayoutBuilder(builder: (_, c) {
-                      final left = (days[i].min - lo) / span * c.maxWidth;
-                      final width = ((days[i].max - days[i].min) / span * c.maxWidth).clamp(6.0, c.maxWidth);
-                      return Stack(children: [
-                        Container(height: 8, decoration: BoxDecoration(color: Pop.gray, borderRadius: BorderRadius.circular(4))),
-                        Positioned(
-                          left: left.clamp(0.0, c.maxWidth - width),
-                          child: Container(
-                            width: width,
-                            height: 8,
-                            decoration: BoxDecoration(color: Pop.ink, borderRadius: BorderRadius.circular(4)),
-                          ),
-                        ),
-                      ]);
-                    }),
-                  ),
-                  const SizedBox(width: 8),
-                  SizedBox(width: 40, child: Text(unit.deg(days[i].max), style: const TextStyle(fontWeight: FontWeight.w900))),
-                ],
+                ),
               ),
-            ),
-        ],
+              Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
       ),
-    );
-  }
-}
-
-class _Extras extends StatelessWidget {
-  const _Extras(this.w);
-  final WeatherData w;
-
-  @override
-  Widget build(BuildContext context) {
-    final air = w.air;
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            decoration: Pop.card(),
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('空气质量', style: TextStyle(fontSize: 12)),
-                Text(air == null ? '--' : '${air['aqi']}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
-                Text(air == null ? '暂无' : '${air['category']}', style: const TextStyle(fontWeight: FontWeight.w700)),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Container(
-            decoration: Pop.card(),
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('湿度 ${w.humidity}%', style: const TextStyle(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 8),
-                Text('风 ${w.wind}', style: const TextStyle(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 8),
-                Text(w.outfitLabel, style: const TextStyle(fontSize: 12)),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

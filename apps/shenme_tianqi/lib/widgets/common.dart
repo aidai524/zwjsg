@@ -91,15 +91,20 @@ class SourceNote extends StatelessWidget {
   }
 }
 
-/// 和风要求：显示了和风数据的页面都要写明“天气服务由和风天气驱动”并链到官网，
-/// 接口返回的 attributions 也要原样显示。所以这里不改写内容，只把网址做成链接。
+/// 和风的来源标注（dev.qweather.com/docs/terms/attribution）：产品里要写明“天气服务由和风天气驱动”并链到官网；
+/// 用了预警、空气质量的地方，必须完整、原样显示接口给的来源（refer.sources，这里的 attributions）。
+/// 2026-11-19 用户要求“由和风天气驱动”只在设置页显示，别的页面用 brand: false 只显示来源。不改写内容，只把网址做成链接。
 class QWeatherCredit extends StatelessWidget {
-  const QWeatherCredit({super.key, this.attributions = const [], this.opener = _launch});
+  const QWeatherCredit({super.key, this.attributions = const [], this.brand = true, this.opener = _launch});
 
   static const label = '天气服务由和风天气驱动';
   static const homepage = 'https://www.qweather.com';
 
   final List<String> attributions;
+
+  /// 显示“天气服务由和风天气驱动”（链到和风官网）。2026-11-19 用户要求只在设置页显示；
+  /// 别的页面传 false，只原样显示接口给的来源（和风要求：用了预警、空气质量的页面必须完整显示 refer.sources）
+  final bool brand;
 
   /// 打开链接，返回是否成功。测试时替换
   final Future<bool> Function(Uri) opener;
@@ -131,11 +136,12 @@ class QWeatherCredit extends StatelessWidget {
           ),
         );
 
+    if (!brand && attributions.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         children: [
-          link(label, homepage),
+          if (brand) link(label, homepage),
           for (final a in attributions)
             if (a.startsWith('http'))
               link(a, a)

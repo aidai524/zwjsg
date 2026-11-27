@@ -7,6 +7,7 @@ import 'package:shenme_tianqi/core/models.dart';
 import 'package:shenme_tianqi/core/scene.dart';
 import 'package:shenme_tianqi/core/temp_unit.dart';
 import 'package:shenme_tianqi/features/home/serious_view.dart';
+import 'package:shenme_tianqi/features/home/weather_detail_page.dart';
 import 'package:shenme_tianqi/features/home/weather_view.dart';
 
 /// 接口给的数字都是摄氏度：现在 9°、体感 7°、逐小时 10°、今天 2–12°
@@ -88,15 +89,31 @@ void main() {
     final state = await pumpPage(tester, WeatherView(city: city, weather: sample), unit: 'f');
     expect(find.text('48°'), findsOneWidget); // 现在 9℃
     expect(find.text('体感 45° · 54° / 36°'), findsOneWidget);
-    expect(find.text('50°'), findsOneWidget); // 逐小时 10℃
-    expect(find.text('36°'), findsOneWidget); // 7 天里的最低 2℃
-    expect(find.text('54°'), findsOneWidget); // 7 天里的最高 12℃
 
     await state.setTempUnit(TempUnit.celsius);
     await tester.pump();
     expect(find.text('9°'), findsOneWidget);
     expect(find.text('体感 7° · 12° / 2°'), findsOneWidget);
     expect(find.text('48°'), findsNothing);
+  });
+
+  testWidgets('天气详情的逐小时、7 天和体感按单位显示', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'temp_unit': 'f',
+      'cities': '[{"location_id":"101010100","name":"北京","is_home":true}]',
+    });
+    final state = AppState(await SharedPreferences.getInstance(), api: UnitApi());
+    await state.loadWeather(city);
+    tester.view.physicalSize = const Size(1080, 6000);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(AppScope(state: state, child: const MaterialApp(home: WeatherDetailPage(locationId: '101010100'))));
+    await tester.pumpAndSettle();
+    expect(find.text('北京 · 天气详情'), findsOneWidget);
+    expect(find.text('50°'), findsOneWidget); // 逐小时 10℃
+    expect(find.text('36°'), findsOneWidget); // 7 天里的最低 2℃
+    expect(find.text('54°'), findsOneWidget); // 7 天里的最高 12℃
+    expect(find.text('体感 45°'), findsOneWidget);
   });
 
   testWidgets('严肃模式的温度也按单位显示', (tester) async {

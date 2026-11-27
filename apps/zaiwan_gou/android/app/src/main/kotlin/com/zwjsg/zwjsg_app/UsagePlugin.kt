@@ -2,9 +2,6 @@ package com.zwjsg.zwjsg_app
 
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -117,24 +114,11 @@ class UsagePlugin(private val context: Context) {
                     "label" to TodayUsage.label(context, pkg),
                     "minutes" to TodayUsage.toMin(ms),
                     "icon" to TodayUsage.iconPng(context, pkg),
+                    // 超时来电的建议要看是不是娱乐类（很多国内 App 不标分类，是 other）
+                    "category" to categoryOf(pkg),
                 )
             }
     }
 
-    /** 系统给 app 标的分类 → 我们的 5 类 */
-    private fun categoryOf(pkg: String): String {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return "other"
-        val info = try {
-            context.packageManager.getApplicationInfo(pkg, 0)
-        } catch (e: PackageManager.NameNotFoundException) {
-            return "other"
-        }
-        return when (info.category) {
-            ApplicationInfo.CATEGORY_VIDEO -> "video"
-            ApplicationInfo.CATEGORY_SOCIAL -> "social"
-            ApplicationInfo.CATEGORY_GAME -> "game"
-            ApplicationInfo.CATEGORY_PRODUCTIVITY -> "productivity"
-            else -> "other"
-        }
-    }
+    private fun categoryOf(pkg: String): String = TodayUsage.categoryOf(context, pkg)
 }

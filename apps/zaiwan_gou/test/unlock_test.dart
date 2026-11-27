@@ -61,12 +61,16 @@ void main() {
     expect(find.byType(DexPage), findsOneWidget);
   });
 
-  testWidgets('会员卡不再写“硬核模式”（时间锁免费，苹果 4.10 不许收费）', (tester) async {
+  testWidgets('“我的”页先不放会员、装扮商店和技术验证（2026-11-20）', (tester) async {
     usePhoneScreen(tester);
     await pumpApp(tester, {'onboarded': true});
     await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
+    for (final text in ['开通会员', '装扮商店', '技术验证', '屏幕使用时间', '拍照形象（本地卡通化）']) {
+      expect(find.textContaining(text), findsNothing, reason: text);
+    }
     expect(find.textContaining('硬核模式'), findsNothing);
-    expect(find.text('动态结算卡、周报月报、多套形象'), findsOneWidget);
+    expect(find.text('超时来电'), findsOneWidget);
+    expect(find.text('狗度统计'), findsOneWidget);
   });
 }

@@ -15,4 +15,10 @@
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
+    <!-- 超时来电页：Flutter 画出第一帧之前先是来电界面的深色底，不闪白 -->
+    <style name="CallTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@color/call_night</item>
+        <item name="android:statusBarColor">@color/call_night</item>
+        <item name="android:navigationBarColor">@color/call_night</item>
+    </style>
 </resources>

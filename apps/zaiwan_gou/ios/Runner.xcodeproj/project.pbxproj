@@ -9,11 +9,11 @@
 /* Begin PBXBuildFile section */
 		04D0D60F33C15106C89A71AF /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FD63C2AA95D7D7FA60F70E16 /* Pods_RunnerTests.framework */; };
 		05876135EA3525295D8BDFFF /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4137344AA6C3FE0FBB225000 /* Foundation.framework */; };
+		0775F19C9D01D9E11735BA83 /* CallPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02F848BDAA7B90784EBE6E5E /* CallPlugin.swift */; };
 		0E377AA7A7619E488B10DF57 /* ShieldIcon.png in Resources */ = {isa = PBXBuildFile; fileRef = FB5DEC37224651750EB6C8DF /* ShieldIcon.png */; };
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
 		157C8B4052CA41D132A599DF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 5F6C74C0E10E3F4F93200261 /* PrivacyInfo.xcprivacy */; };
 		16EE164CC569BE1E2768AD7A /* ShieldConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50454BE297654605FBC0E8EC /* ShieldConfig.swift */; };
-		17D3E1EE6E9B654E7C423182 /* cartoon_sample.jpg in Resources */ = {isa = PBXBuildFile; fileRef = BADF39D8CD430CDE183ACB38 /* cartoon_sample.jpg */; };
 		244C1C17D0DEE2FC46E0D0B4 /* ShieldActions.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CA569748931C2DFDDFBDAEA3 /* ShieldActions.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		2EB73B7F73D9C64CF3B78136 /* ScreenTimeMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 458F5D0C80E76AB546BB5989 /* ScreenTimeMonitor.swift */; };
 		32759C8BD637F533F4E2691C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 3A4B86DF2E935284E34ED2A5 /* PrivacyInfo.xcprivacy */; };
@@ -22,6 +22,7 @@
 		37CB9613277723F298D4C79A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4137344AA6C3FE0FBB225000 /* Foundation.framework */; };
 		3A36F886083134265FE8073D /* GouWidgetShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D5252AC53E4BF369F2DD6B6 /* GouWidgetShared.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
+		43BD641226EA2FD7FE489876 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8401B25F5E21EB9DEE88F36D /* PrivacyInfo.xcprivacy */; };
 		46ECC3EAFA350E3209D9C752 /* LockShield.swift in Sources */ = {isa = PBXBuildFile; fileRef = F39F0FA3539EE5C66E3CCA3C /* LockShield.swift */; };
 		47A4189EA74C0288F6627C3F /* GouWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2F3F3BACB7FCB5F774C2EF1F /* GouWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		59F80BD025BE5F2EC15C2009 /* HomeWidgetPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B99AF8E5814613235C8653E /* HomeWidgetPlugin.swift */; };
@@ -142,6 +143,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		02F848BDAA7B90784EBE6E5E /* CallPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CallPlugin.swift; sourceTree = "<group>"; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
 		187A3513E402254DD02C7B15 /* ShieldActions.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = ShieldActions.xcconfig; sourceTree = "<group>"; };
@@ -177,6 +179,7 @@
 		76381D52D854FB9C80600EC2 /* ScreenTimeReport.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = ScreenTimeReport.entitlements; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
 		81AB97AA8782B29D64620A64 /* ScreenTimeReport.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.extensionkit-extension"; includeInIndex = 0; path = ScreenTimeReport.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		8401B25F5E21EB9DEE88F36D /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		88C831D8B95230CC19851D36 /* ScreenTimeMonitor.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = ScreenTimeMonitor.xcconfig; sourceTree = "<group>"; };
 		91BA09E29F48B4A12F2D3AF3 /* ShieldConfig.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = ShieldConfig.entitlements; sourceTree = "<group>"; };
 		9436569F9E7EB251A156086C /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
@@ -192,7 +195,6 @@
 		B24BB189BD97E2FA77A87F7E /* ScreenTimeReport.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = ScreenTimeReport.xcconfig; sourceTree = "<group>"; };
 		B6181CEFBFF5ECFADDADF63C /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
 		BA2FF97FEFF6C869CF13A553 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		BADF39D8CD430CDE183ACB38 /* cartoon_sample.jpg */ = {isa = PBXFileReference; includeInIndex = 1; path = cartoon_sample.jpg; sourceTree = "<group>"; };
 		CA569748931C2DFDDFBDAEA3 /* ShieldActions.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShieldActions.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		CB463B897F29F57A5A35CB11 /* ShieldActions.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = ShieldActions.entitlements; sourceTree = "<group>"; };
 		CCFC1C2B342D3842D3D445AA /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -299,7 +301,6 @@
 			isa = PBXGroup;
 			children = (
 				2CFC3C0BD25055B03AAFE293 /* DCTNetAnimeHead.mlpackage */,
-				BADF39D8CD430CDE183ACB38 /* cartoon_sample.jpg */,
 			);
 			name = Models;
 			path = Models;
@@ -328,6 +329,7 @@
 				74A05360917BFD2058130206 /* Info.plist */,
 				76381D52D854FB9C80600EC2 /* ScreenTimeReport.entitlements */,
 				B24BB189BD97E2FA77A87F7E /* ScreenTimeReport.xcconfig */,
+				8401B25F5E21EB9DEE88F36D /* PrivacyInfo.xcprivacy */,
 			);
 			name = ScreenTimeReport;
 			path = ScreenTimeReport;
@@ -419,6 +421,7 @@
 				63172128E7891473D0180040 /* CartoonLab.swift */,
 				61FC0379F69A021C60FD0E17 /* Models */,
 				6B99AF8E5814613235C8653E /* HomeWidgetPlugin.swift */,
+				02F848BDAA7B90784EBE6E5E /* CallPlugin.swift */,
 				F8AD157A760FFA7BD50A0DD7 /* PrivacyInfo.xcprivacy */,
 			);
 			path = Runner;
@@ -660,6 +663,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				43BD641226EA2FD7FE489876 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -679,7 +683,6 @@
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
-				17D3E1EE6E9B654E7C423182 /* cartoon_sample.jpg in Resources */,
 				A933D3E54C79B68344AD9C2B /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -843,6 +846,7 @@
 				5E564E5FA37214C779BC7E7E /* CartoonLab.swift in Sources */,
 				7BC833DE31F8EF8AACEB5BB5 /* DCTNetAnimeHead.mlpackage in Sources */,
 				59F80BD025BE5F2EC15C2009 /* HomeWidgetPlugin.swift in Sources */,
+				0775F19C9D01D9E11735BA83 /* CallPlugin.swift in Sources */,
 				E9FAE507D3329B87BABEE421 /* GouWidgetShared.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

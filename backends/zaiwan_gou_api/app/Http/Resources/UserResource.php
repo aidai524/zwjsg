@@ -19,6 +19,7 @@ class UserResource extends JsonResource
             'remind_at' => substr((string) $this->remind_at, 0, 5),
             'avatar_url' => $this->avatarUrl(),
             'avatar_regen_left' => $this->avatar_regen_left,
+            'avatar_preset' => $this->avatar_preset,
             'today' => $this->localToday(),
         ];
     }

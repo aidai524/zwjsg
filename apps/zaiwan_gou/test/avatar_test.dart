@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:avatar_engine/avatar_engine.dart';
@@ -15,9 +16,12 @@ import 'package:zwjsg_app/core/usage_channel.dart';
 
 
 import 'package:zwjsg_app/core/cartoonizer.dart';
+import 'package:zwjsg_app/core/groups.dart';
 import 'package:zwjsg_app/features/card/card_page.dart';
 import 'package:zwjsg_app/features/me/me_page.dart';
+import 'package:zwjsg_app/features/group/member_avatar.dart';
 import 'package:zwjsg_app/features/onboarding/avatar_page.dart';
+import 'package:zwjsg_app/widgets/my_avatar.dart';
 
 import 'me_features_test.dart' show FakeReminders;
 import 'widget_test.dart' show pumpApp, usePhoneScreen;
@@ -70,11 +74,15 @@ class FakeApi extends ApiClient {
   Uint8List? remoteAvatar;
   final downloads = <String>[];
 
+  /// 上传形象、改设置按先后记下来
+  final calls = <String>[];
+
   @override
   Future<Map<String, dynamic>> uploadAvatar(Uint8List png) async {
     final e = uploadError;
     if (e != null) throw e;
     uploads.add(png);
+    calls.add('upload');
     return {'avatar_regen_left': 2};
   }
 
@@ -104,8 +112,14 @@ class FakeApi extends ApiClient {
   @override
   Future<void> logout() async {}
 
+  /// 传给服务端的设置，按顺序
+  final settings = <Map<String, dynamic>>[];
+
   @override
-  Future<void> updateSettings(Map<String, dynamic> settings) async {}
+  Future<void> updateSettings(Map<String, dynamic> settings) async {
+    this.settings.add(settings);
+    calls.add('settings');
+  }
 }
 
 /// 截图返回一张真的 PNG，保存时记下来
@@ -185,6 +199,28 @@ Future<void> pumpAvatarPage(
   }
 }
 
+/// 点照片那一格（还没有照片形象），第一次会先问同意；再选拍照还是从相册选
+Future<void> pickPhoto(WidgetTester tester, String source, {String from = '用照片做形象'}) async {
+  if (from == '换一张照片') {
+    await tester.tap(find.text(from));
+  } else {
+    await tester.tap(find.bySemanticsLabel(from));
+  }
+  await tester.pumpAndSettle();
+  if (find.text('同意，开始').evaluate().isNotEmpty) {
+    await tester.tap(find.text('同意，开始'));
+    await tester.pumpAndSettle();
+  }
+  await tester.tap(find.text(source));
+  await tester.pumpAndSettle();
+}
+
+/// 大图（形象页上面那张）画的是哪张预设形象；是拍照形象时为 null
+AvatarPreset? previewPreset(WidgetTester tester) {
+  final big = find.byWidgetPredicate((w) => w is DogAvatar && w.size == 196);
+  return big.evaluate().isEmpty ? null : tester.widget<DogAvatar>(big).preset;
+}
+
 /// “就用这个”要真的编码、解码图片，只能在真实的异步里跑
 Future<void> confirm(WidgetTester tester, bool Function() done) async {
   await tester.runAsync(() async {
@@ -203,9 +239,9 @@ void main() {
       final cartoonizer = FakeCartoonizer();
       final state = await newState(tester);
       await pumpAvatarPage(tester, state, cartoonizer: cartoonizer, sticker: sticker);
-      expect(find.text('先做一个你'), findsOneWidget);
+      expect(find.text('先挑一个你'), findsOneWidget);
 
-      await tester.tap(find.text('拍一张自拍'));
+      await tester.tap(find.bySemanticsLabel('用照片做形象'));
       await tester.pumpAndSettle();
       expect(find.text('用照片做形象之前'), findsOneWidget);
       expect(find.textContaining('不保存、不上传'), findsWidgets);
@@ -214,11 +250,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(cartoonizer.calls, isEmpty);
       expect(state.faceConsented, isFalse);
+      expect(find.text('拍一张自拍'), findsNothing);
 
-      await tester.tap(find.text('拍一张自拍'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('同意，开始'));
-      await tester.pumpAndSettle();
+      await pickPhoto(tester, '拍一张自拍');
       expect(state.faceConsented, isTrue);
       expect(cartoonizer.calls, [PhotoSource.camera]);
       expect(find.text('这就是你'), findsOneWidget);
@@ -228,11 +262,11 @@ void main() {
       }
 
       // 换一张：从相册选，不再问
-      await tester.tap(find.text('换一张'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('从相册选一张'));
+      await tester.tap(find.text('换一张照片'));
       await tester.pumpAndSettle();
       expect(find.text('用照片做形象之前'), findsNothing);
+      await tester.tap(find.text('从相册选一张'));
+      await tester.pumpAndSettle();
       expect(cartoonizer.calls, [PhotoSource.camera, PhotoSource.library]);
       sticker.dispose();
     });
@@ -243,20 +277,19 @@ void main() {
       final state = await newState(tester, prefs: {'face_consent_version': AppState.faceConsentVersion});
       await pumpAvatarPage(tester, state, cartoonizer: cartoonizer, sticker: sticker);
 
-      await tester.tap(find.text('拍一张自拍'));
-      await tester.pumpAndSettle();
-      expect(find.text('先做一个你'), findsOneWidget);
+      await pickPhoto(tester, '拍一张自拍');
+      expect(find.text('先挑一个你'), findsOneWidget);
+      expect(previewPreset(tester), AvatarPreset.ahoge);
 
       cartoonizer.next = PlatformException(code: 'lab_failed', message: '没找到人脸，换一张正脸、光线亮一点的照片');
-      await tester.tap(find.text('从相册选一张'));
-      await tester.pumpAndSettle();
+      await pickPhoto(tester, '从相册选一张');
       expect(find.text('没找到人脸，换一张正脸、光线亮一点的照片'), findsOneWidget);
-      expect(find.text('先做一个你'), findsOneWidget);
+      expect(find.text('先挑一个你'), findsOneWidget);
 
       cartoonizer.next = face(faces: 3);
-      await tester.tap(find.text('从相册选一张'));
-      await tester.pumpAndSettle();
+      await pickPhoto(tester, '从相册选一张');
       expect(find.text('照片里有 3 张脸，用了最大的那张'), findsOneWidget);
+      expect(previewPreset(tester), isNull);
       sticker.dispose();
     });
 
@@ -268,8 +301,7 @@ void main() {
           prefs: {'face_consent_version': AppState.faceConsentVersion}, api: api, store: store);
       await pumpAvatarPage(tester, state, cartoonizer: FakeCartoonizer(), sticker: sticker);
 
-      await tester.tap(find.text('拍一张自拍'));
-      await tester.pumpAndSettle();
+      await pickPhoto(tester, '拍一张自拍');
       await confirm(tester, () => store.png != null);
 
       expect(store.png, isNotNull);
@@ -290,13 +322,15 @@ void main() {
       await pumpAvatarPage(tester, state, cartoonizer: FakeCartoonizer(), sticker: sticker);
 
       api.uploadError = ApiException('重新生成次数用完了', statusCode: 422);
-      await tester.tap(find.text('拍一张自拍'));
-      await tester.pumpAndSettle();
+      await pickPhoto(tester, '拍一张自拍');
       await confirm(tester, () => false);
       expect(find.text('重新生成次数用完了'), findsOneWidget);
       expect(store.png, isNull);
       expect(state.photoAvatar, isNull);
       expect(find.text('这就是你'), findsOneWidget);
+      // 等提示自己消失（它盖在按钮上）
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
 
       api.uploadError = null;
       await confirm(tester, () => store.png != null);
@@ -323,23 +357,36 @@ void main() {
 
       await pumpAvatarPage(tester, state, cartoonizer: FakeCartoonizer(), sticker: sticker, editing: true);
       expect(find.text('换个形象'), findsOneWidget);
+      // 用着拍照形象：先选中它
       expect(find.bySemanticsLabel('照片卡通形象，变狗阶段 0'), findsOneWidget);
+      expect(previewPreset(tester), isNull);
       expect(find.text('换形象的次数用完了'), findsOneWidget);
-      await tester.tap(find.text('拍一张自拍'));
+      await tester.tap(find.text('换一张照片'));
       await tester.pumpAndSettle();
+      expect(find.text('拍一张自拍'), findsNothing);
       expect(find.text('这就是你'), findsNothing);
+      // 换成预设形象不算次数
+      await tester.tap(find.bySemanticsLabel('形象：寸头'));
+      await tester.pumpAndSettle();
+      expect(find.text('换形象的次数用完了'), findsNothing);
+      await confirm(tester, () => state.usesPreset);
+      expect(state.avatarPreset, AvatarPreset.buzz);
+      expect(find.text('去换形象'), findsOneWidget);
       sticker.dispose();
     });
 
-    testWidgets('安卓：拍照形象还在做，先用默认形象', (tester) async {
+    testWidgets('做不了拍照形象的手机：只能挑预设形象', (tester) async {
       final sticker = await whiteSticker(tester);
       final state = await newState(tester);
       await pumpAvatarPage(tester, state, cartoonizer: FakeCartoonizer(isSupported: false), sticker: sticker);
 
-      expect(find.text('拍一张自拍'), findsNothing);
-      expect(find.textContaining('安卓版的拍照形象还在做'), findsOneWidget);
-      await tester.tap(find.text('先用默认形象'));
-      await tester.pumpAndSettle();
+      expect(find.bySemanticsLabel('用照片做形象'), findsNothing);
+      expect(find.textContaining('这台手机做不了拍照形象'), findsOneWidget);
+      for (final p in AvatarPreset.values) {
+        expect(find.bySemanticsLabel('形象：${p.label}'), findsOneWidget);
+      }
+      await confirm(tester, () => state.usesPreset);
+      expect(state.avatarPreset, AvatarPreset.ahoge);
       expect(find.text('设目标页'), findsOneWidget);
       sticker.dispose();
     });
@@ -348,8 +395,8 @@ void main() {
       await pumpApp(tester, {'onboarded': true});
       await tester.tap(find.text('我的'));
       await tester.pumpAndSettle();
-      expect(find.text('默认形象  ›'), findsOneWidget);
-      await tester.tap(find.text('用自拍做形象'));
+      expect(find.text('呆毛  ›'), findsOneWidget);
+      await tester.tap(find.text('换个形象'));
       await tester.pumpAndSettle();
       expect(find.byType(AvatarPage), findsOneWidget);
       expect(find.text('换个形象'), findsOneWidget);
@@ -489,13 +536,14 @@ void main() {
 
   // 隐式标识本身的格式在 packages/series_share 的测试里
   group('AI 标识', () {
-    Future<PngExporter> pumpCard(WidgetTester tester, {required bool photo}) async {
+    Future<PngExporter> pumpCard(WidgetTester tester, {required bool photo, AvatarPreset? preset}) async {
       usePhoneScreen(tester);
       final sticker = await whiteSticker(tester);
       final store = MemoryAvatarStore()..png = photo ? await stickerPng(tester, sticker) : null;
       final state = await newState(tester, store: store)
         ..debugSetUsage(const UsageSnapshot(totalMinutes: 130, pickups: 0, lateNightMinutes: 0, categoryMinutes: {}));
       await tester.runAsync(state.loadAvatar);
+      if (preset != null) await tester.runAsync(() => state.setAvatarPreset(preset));
       final exporter = PngExporter();
       await tester.pumpWidget(AppScope(state: state, child: MaterialApp(home: CardPage(exporter: exporter))));
       await tester.pumpAndSettle();
@@ -524,6 +572,199 @@ void main() {
       await tester.tap(find.text('保存图片'));
       await tester.pumpAndSettle();
       expect(AigcLabel.read(exporter.saved.single), isNull);
+    });
+
+    testWidgets('有拍照形象但换成了预设形象：画的是预设形象，不加标识', (tester) async {
+      final exporter = await pumpCard(tester, photo: true, preset: AvatarPreset.parted);
+      expect(find.text('AI生成'), findsNothing);
+      expect(find.bySemanticsLabel(RegExp('照片卡通形象')), findsNothing);
+      await tester.tap(find.text('保存图片'));
+      await tester.pumpAndSettle();
+      expect(AigcLabel.read(exporter.saved.single), isNull);
+    });
+  });
+
+  group('预设形象', () {
+    test('预设形象的名字和狗后端 config/dog.php 的 avatar_presets 一致（顺序也一样）', () {
+      final php = File('../../backends/zaiwan_gou_api/config/dog.php').readAsStringSync();
+      final list = RegExp(r"'avatar_presets' => \[([^\]]*)\]").firstMatch(php)!.group(1)!;
+      expect([for (final m in RegExp(r"'([a-z_]+)'").allMatches(list)) m.group(1)],
+          [for (final p in AvatarPreset.values) p.name]);
+      expect(AvatarPreset.values.map((p) => p.label).toSet(), hasLength(AvatarPreset.values.length));
+    });
+
+    testWidgets('挑一张：默认选中呆毛，点哪张大图换哪张；就用这个才记下来，没登录时等登录后再告诉服务端', (tester) async {
+      final sticker = await whiteSticker(tester);
+      final api = FakeApi();
+      final state = await newState(tester, api: api);
+      await pumpAvatarPage(tester, state, cartoonizer: FakeCartoonizer(), sticker: sticker);
+      expect(previewPreset(tester), AvatarPreset.ahoge);
+      expect(tester.getSemantics(find.bySemanticsLabel('形象：呆毛')), containsSemantics(isSelected: true));
+
+      await tester.tap(find.bySemanticsLabel('形象：卷毛'));
+      await tester.pumpAndSettle();
+      expect(previewPreset(tester), AvatarPreset.curly);
+      expect(tester.getSemantics(find.bySemanticsLabel('形象：卷毛')), containsSemantics(isSelected: true));
+      expect(tester.getSemantics(find.bySemanticsLabel('形象：呆毛')), containsSemantics(isSelected: false));
+      // 下面一排刷多了的样子也是卷毛
+      expect(
+        [for (final a in tester.widgetList<DogAvatar>(find.byType(DogAvatar))) if (a.size == 50) (a.stage, a.preset)],
+        [for (var s = 1; s <= 5; s++) (s, AvatarPreset.curly)],
+      );
+      expect(state.usesPreset, isFalse, reason: '点“就用这个”之前不算');
+
+      await confirm(tester, () => state.usesPreset);
+      expect(state.avatarPreset, AvatarPreset.curly);
+      expect(find.text('设目标页'), findsOneWidget);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('avatar_preset'), 'curly');
+      expect(api.settings, isEmpty);
+
+      // 登录后补上：这台手机上新挑的，比服务端记着的新
+      api.meData = {'avatar_preset': 'bun'};
+      await tester.runAsync(() => state.login('13800000000', '123456'));
+      expect(api.settings, [
+        {'avatar_preset': 'curly'}
+      ]);
+      expect(state.avatarPreset, AvatarPreset.curly);
+      expect(prefs.getBool('avatar_preset_pending'), isFalse);
+      sticker.dispose();
+    });
+
+    testWidgets('有拍照形象也能换成预设形象：照片还留着，能换回来，来回换都不用重新上传', (tester) async {
+      final sticker = await whiteSticker(tester);
+      final png = await stickerPng(tester, sticker);
+      final api = FakeApi();
+      final store = MemoryAvatarStore()..png = png;
+      final state = await newState(tester, prefs: {'token': 't'}, api: api, store: store);
+      await tester.runAsync(state.loadAvatar);
+      expect(state.photoAvatar, isNotNull);
+
+      await tester.runAsync(() => state.setAvatarPreset(AvatarPreset.bob));
+      expect(state.photoAvatar, isNull);
+      expect(state.photoAvatarPng, isNull);
+      expect(state.savedPhotoAvatar, isNotNull);
+      expect(store.png, png, reason: '拍照形象还留在手机上');
+      expect(api.settings.last, {'avatar_preset': 'bob'});
+
+      // 各处画的是挑的那张
+      await tester.pumpWidget(AppScope(
+        state: state,
+        child: const Directionality(textDirection: TextDirection.ltr, child: MyAvatar(stage: 2)),
+      ));
+      expect(tester.widget<DogAvatar>(find.byType(DogAvatar)).preset, AvatarPreset.bob);
+      expect(find.byType(PhotoDogAvatar), findsNothing);
+
+      // 形象页：选中的是粉色短发；点照片那一格换回拍照形象
+      await pumpAvatarPage(tester, state, cartoonizer: FakeCartoonizer(), sticker: sticker, editing: true);
+      expect(previewPreset(tester), AvatarPreset.bob);
+      await tester.tap(find.bySemanticsLabel('拍照形象'));
+      await tester.pumpAndSettle();
+      expect(previewPreset(tester), isNull);
+      expect(find.text('AI生成'), findsOneWidget);
+      await confirm(tester, () => !state.usesPreset);
+      expect(state.photoAvatar, isNotNull);
+      expect(api.settings.last, {'avatar_preset': null});
+      expect(api.uploads, isEmpty);
+      expect(find.text('去换形象'), findsOneWidget);
+      sticker.dispose();
+    });
+
+    testWidgets('登录时：没挑过的用服务端记着的那张，认不出来的当没挑过；没登录时拍的照片形象传上去，不用服务端记着的', (tester) async {
+      var api = FakeApi()..meData = {'avatar_preset': 'bun'};
+      var state = await newState(tester, api: api);
+      await tester.runAsync(() => state.login('13800000000', '123456'));
+      expect(state.avatarPreset, AvatarPreset.bun);
+      expect(state.usesPreset, isTrue);
+      expect(api.settings, isEmpty);
+
+      // 比如新版本加的预设，旧版本认不出来
+      api = FakeApi()..meData = {'avatar_preset': 'mohawk'};
+      state = await newState(tester, api: api);
+      await tester.runAsync(() => state.login('13800000000', '123456'));
+      expect(state.usesPreset, isFalse);
+      expect(state.avatarPreset, AvatarPreset.ahoge);
+
+      final sticker = await whiteSticker(tester);
+      final png = await stickerPng(tester, sticker);
+      api = FakeApi()..meData = {'avatar_preset': 'bun'};
+      final store = MemoryAvatarStore()..png = png;
+      state = await newState(tester, prefs: {'avatar_pending_upload': true}, api: api, store: store);
+      await tester.runAsync(state.loadAvatar);
+      await tester.runAsync(() => state.login('13800000000', '123456'));
+      expect(api.uploads, [png]);
+      expect(state.usesPreset, isFalse);
+      expect(state.photoAvatar, isNotNull);
+      sticker.dispose();
+    });
+
+    testWidgets('打开 App 时补上没告诉服务端的：先传拍照形象，再说换了哪张脸', (tester) async {
+      final sticker = await whiteSticker(tester);
+      final png = await stickerPng(tester, sticker);
+      final api = FakeApi();
+      final state = await newState(tester,
+          prefs: {'token': 't', 'avatar_pending_upload': true, 'avatar_preset': 'buzz', 'avatar_preset_pending': true},
+          api: api,
+          store: MemoryAvatarStore()..png = png);
+      expect(state.avatarPreset, AvatarPreset.buzz);
+      await tester.runAsync(() async {
+        await state.loadAvatar();
+        for (var i = 0; i < 40 && api.calls.length < 2; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+        }
+      });
+      expect(api.calls, ['upload', 'settings']);
+      expect(api.settings.single, {'avatar_preset': 'buzz'});
+      expect(state.avatarPreset, AvatarPreset.buzz);
+      expect(state.photoAvatar, isNull, reason: '用的还是寸头');
+      sticker.dispose();
+    });
+
+    testWidgets('做了新的拍照形象就不用预设形象了；退出登录后清掉', (tester) async {
+      final sticker = await whiteSticker(tester);
+      final png = await stickerPng(tester, sticker);
+      final state = await newState(tester, prefs: {'token': 't', 'avatar_preset': 'long'});
+      expect(state.usesPreset, isTrue);
+      await tester.runAsync(() => state.setPhotoAvatar(png));
+      expect(state.usesPreset, isFalse);
+      expect(state.photoAvatar, isNotNull);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('avatar_preset'), isNull);
+
+      await tester.runAsync(() => state.setAvatarPreset(AvatarPreset.long));
+      await tester.runAsync(state.logout);
+      expect(state.usesPreset, isFalse);
+      expect(state.avatarPreset, AvatarPreset.ahoge);
+      expect(state.savedPhotoAvatar, isNull);
+      sticker.dispose();
+    });
+
+    testWidgets('“我的”页写着用的是哪张', (tester) async {
+      await pumpApp(tester, {'onboarded': true, 'avatar_preset': 'bob'});
+      await tester.tap(find.text('我的'));
+      await tester.pumpAndSettle();
+      expect(find.text('粉色短发  ›'), findsOneWidget);
+    });
+
+    testWidgets('群里：用预设形象的群友画 TA 挑的那张，没挑过是呆毛', (tester) async {
+      final m = GroupMember.fromJson({'id': 2, 'nickname': '小王', 'avatar_url': null, 'avatar_preset': 'curly'});
+      expect(m.avatarPreset, AvatarPreset.curly);
+      expect(GroupMember.fromJson({'id': 3, 'nickname': '小李', 'avatar_preset': 'nope'}).avatarPreset, isNull);
+      final king = KingOfDay.fromJson(
+          {'user_id': 2, 'nickname': '小王', 'avatar_preset': 'bob', 'date': '2026-11-26', 'dog_percent': 95, 'stage': 3});
+      expect(king.avatarPreset, AvatarPreset.bob);
+
+      await tester.pumpWidget(Directionality(
+        textDirection: TextDirection.ltr,
+        child: Column(children: [
+          MemberBadge(key: const Key('a'), url: null, preset: m.avatarPreset, stage: 3, size: 60),
+          const MemberBadge(key: Key('b'), url: null, stage: 1, size: 60),
+        ]),
+      ));
+      DogAvatar dogIn(String key) =>
+          tester.widget<DogAvatar>(find.descendant(of: find.byKey(Key(key)), matching: find.byType(DogAvatar)));
+      expect((dogIn('a').preset, dogIn('a').stage), (AvatarPreset.curly, 3));
+      expect(dogIn('b').preset, AvatarPreset.ahoge);
     });
   });
 }

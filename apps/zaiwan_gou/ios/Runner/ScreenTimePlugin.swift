@@ -4,6 +4,7 @@ import Flutter
 import ManagedSettings
 import SwiftUI
 import UIKit
+import UserNotifications
 
 /// iOS 屏幕使用时间（技术验证）。交给 Flutter 的只有授权状态、选了几个 App 和类别、今天到了第几阶段。
 /// 选中的 App 是系统给的不透明令牌，只存在本机 App Group 里：拿不到名字，也不上传。
@@ -55,7 +56,7 @@ final class ScreenTimePlugin: NSObject, FlutterPlugin {
   private func locksPayload() -> [[String: Any]] {
     ScreenTimeStore.locks.map { lock in
       let s = LockShield.selection(of: lock)
-      return [
+      var payload: [String: Any] = [
         "id": lock.id,
         "minutes": lock.minutes,
         "apps": s?.applicationTokens.count ?? 0,
@@ -63,7 +64,10 @@ final class ScreenTimePlugin: NSObject, FlutterPlugin {
         "webDomains": s?.webDomainTokens.count ?? 0,
         "locked": ScreenTimeStore.isLockedToday(lock.id),
         "graceActive": ScreenTimeStore.isGraceActive(lock.id),
+        "declined": ScreenTimeStore.isDeclinedToday(lock.id),
       ]
+      if let pct = lock.dogPercent { payload["dogPercent"] = pct }
+      return payload
     }
   }
 
@@ -102,24 +106,69 @@ final class ScreenTimePlugin: NSObject, FlutterPlugin {
     else {
       return result(FlutterError(code: "no_selection", message: "先选要锁的 App", details: nil))
     }
-    let lock = AppLockRecord(id: id, minutes: minutes, selection: data)
+    let dogPercent = args["dogPercent"] as? Int
+    if let dogPercent, !(30...300).contains(dogPercent) {
+      return result(FlutterError(code: "bad_args", message: "狗度不对", details: nil))
+    }
+    // 按狗度来的要看狗度统计的那些 App 和每天的目标：还没开始统计狗度时设不了
+    if dogPercent != nil && dogMeterSelection == nil {
+      return result(FlutterError(code: "dog_meter_off", message: "按狗度来电，要先在“今天”页开启屏幕使用时间的统计", details: nil))
+    }
+    let lock = AppLockRecord(id: id, minutes: minutes, selection: data, dogPercent: dogPercent)
     if let index { locks[index] = lock } else { locks.append(lock) }
     ScreenTimeStore.locks = locks
     draftSelection = nil
-    // 改过的锁先解开，按新的设置重新算
-    LockShield.clear(id)
-    ScreenTimeStore.setGraceActive(id, false)
-    let center = DeviceActivityCenter()
-    let name = ScreenTimeStore.lockActivity(id)
-    center.stopMonitoring([name, ScreenTimeStore.graceActivity(id)])
     do {
-      let threshold = DateComponents(hour: minutes / 60, minute: minutes % 60)
-      try center.startMonitoring(name, during: Self.dailySchedule, events: [ScreenTimeStore.lockEvent: Self.event(selection, threshold)])
-      ScreenTimeStore.append("时间锁 \(id.prefix(4))：每天 \(minutes) 分钟")
+      try arm(lock, selection)
+      ScreenTimeStore.append("时间锁 \(id.prefix(4))：" + (dogPercent.map { "狗度到 \($0)%" } ?? "每天 \(minutes) 分钟"))
+      // 用满时狗版的你要打电话来（响铃的通知）：第一次设限时就问通知权限，已经问过的不会再弹
+      UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
       result(locksPayload())
     } catch {
       ScreenTimeStore.append("时间锁没开起来：\(error.localizedDescription)")
       result(FlutterError(code: "monitor_failed", message: "时间锁没开起来", details: error.localizedDescription))
+    }
+  }
+
+  /// 狗度统计的那些 App（“今天”页开启屏幕使用时间时选的）和目标；还没开始统计时为 nil
+  private var dogMeterSelection: FamilyActivitySelection? {
+    guard let s = SelectionStore.value,
+          !(s.applicationTokens.isEmpty && s.categoryTokens.isEmpty && s.webDomainTokens.isEmpty),
+          ScreenTimeStore.goalMinutes > 0
+    else { return nil }
+    return s
+  }
+
+  /// 开始盯一个限时：先解开（改过的锁按新的设置重新算），再按额度盯选中的 App，或者按狗度盯狗度统计的那些 App 一共刷了多久
+  private func arm(_ lock: AppLockRecord, _ selection: FamilyActivitySelection) throws {
+    LockShield.clear(lock.id)
+    ScreenTimeStore.setGraceActive(lock.id, false)
+    let center = DeviceActivityCenter()
+    let name = ScreenTimeStore.lockActivity(lock.id)
+    center.stopMonitoring([name, ScreenTimeStore.graceActivity(lock.id)])
+    let counted: FamilyActivitySelection
+    let minutes: Int
+    if let pct = lock.dogPercent {
+      guard let s = dogMeterSelection else { return }
+      counted = s
+      minutes = max(1, ScreenTimeStore.goalMinutes * pct / 100)
+    } else {
+      counted = selection
+      minutes = lock.minutes
+    }
+    let threshold = DateComponents(hour: minutes / 60, minute: minutes % 60)
+    try center.startMonitoring(name, during: Self.dailySchedule, events: [ScreenTimeStore.lockEvent: Self.event(counted, threshold)])
+  }
+
+  /// 换了目标、重新选了狗度统计的 App：按狗度来的限时跟着重新盯（今天拒接锁死的不动）
+  private func rearmDogLocks() {
+    for lock in ScreenTimeStore.locks where lock.dogPercent != nil && !ScreenTimeStore.isDeclinedToday(lock.id) {
+      guard let selection = LockShield.selection(of: lock) else { continue }
+      do {
+        try arm(lock, selection)
+      } catch {
+        ScreenTimeStore.append("时间锁 \(lock.id.prefix(4))：没重新开起来：\(error.localizedDescription)")
+      }
     }
   }
 
@@ -249,6 +298,7 @@ final class ScreenTimePlugin: NSObject, FlutterPlugin {
     do {
       try center.startMonitoring(.daily, during: Self.dailySchedule, events: events)
       ScreenTimeStore.append("开始监控：目标 \(goal) 分钟，阈值 \(thresholds.map(String.init).joined(separator: "/")) 分钟")
+      rearmDogLocks()
       result(status())
     } catch {
       ScreenTimeStore.append("监控没开起来：\(error.localizedDescription)")
@@ -279,8 +329,9 @@ final class ScreenTimePlugin: NSObject, FlutterPlugin {
 
 /// 今日排行：把系统的报告视图嵌进 Flutter 页面（UiKitView）。
 /// 排行由报告扩展 ios/ScreenTimeReport/ 画出来，主 App 读不到里面的数字。
-/// Flutter 传 {"compact": true} 时画“今天”页卡片里的精简版（一句话 + 前三名），不传是完整排行；
-/// 传 {"days": 7} 是最近 7 天（含今天）的排行，历史统计页用。
+/// Flutter 传 {"compact": true} 时画“今天”页卡片里的精简版（一句话 + 前五名），不传是完整排行；
+/// 传 {"days": 7} 是最近 7 天（含今天）的排行，历史统计页用；再加 {"advice": true} 是超时来电页的建议，
+/// 再加 {"compact": true} 是编辑页里只有那几行的精简版。
 final class ScreenTimeReportFactory: NSObject, FlutterPlatformViewFactory {
   func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol {
     FlutterStandardMessageCodec.sharedInstance()
@@ -294,8 +345,11 @@ final class ScreenTimeReportFactory: NSObject, FlutterPlatformViewFactory {
     let filter = DeviceActivityFilter(
       segment: .daily(during: DateInterval(start: start, end: Date())), users: .all, devices: .all)
     let compact = params["compact"] as? Bool == true
-    return HostedSwiftUIView(
-      frame: frame, root: AnyView(DeviceActivityReport(compact ? .topAppsCompact : .topApps, filter: filter)))
+    let context: DeviceActivityReport.Context =
+      params["advice"] as? Bool == true
+      ? (compact ? .limitAdviceCompact : .limitAdvice)
+      : (compact ? .topAppsCompact : .topApps)
+    return HostedSwiftUIView(frame: frame, root: AnyView(DeviceActivityReport(context, filter: filter)))
   }
 }
 
@@ -338,42 +392,64 @@ final class HostedSwiftUIView: NSObject, FlutterPlatformView {
   func view() -> UIView { host.view }
 }
 
-/// 一排小标签：单个 App、整个类别（标“整类”）、网站
+/// 限时里选了哪些：一行一个（单个 App、整个类别标“整类”、网站），最多 [maxRows] 行，多的写“还有 N 个”。
+/// 2026-11-27 从横着一排可滑动的小标签改过来：系统画的名字（Label 的标题）在能横着滑的地方拿不到宽度，只露出半个字；
+/// 一行一个、名字占满整行就完整了。行高、行距和 Flutter 的 LockSelectionView.heightFor 一致
 private struct SelectionChips: View {
   let selection: FamilyActivitySelection
 
-  var body: some View {
-    ScrollView(.horizontal, showsIndicators: false) {
-      HStack(spacing: 8) {
-        ForEach(Array(selection.applicationTokens), id: \.self) { token in
-          chip(icon: Label(token), title: Label(token), tag: nil)
-        }
-        ForEach(Array(selection.categoryTokens), id: \.self) { token in
-          chip(icon: Label(token), title: Label(token), tag: "整类")
-        }
-        ForEach(Array(selection.webDomainTokens), id: \.self) { token in
-          chip(icon: Label(token), title: Label(token), tag: nil)
-        }
-      }
-      .padding(.vertical, 2)
-    }
+  static let maxRows = 3
+  static let rowHeight: CGFloat = 34
+  static let spacing: CGFloat = 4
+
+  private enum Pick: Hashable {
+    case app(ApplicationToken)
+    case category(ActivityCategoryToken)
+    case web(WebDomainToken)
   }
 
-  private func chip<L: View>(icon: L, title: L, tag: String?) -> some View {
-    HStack(spacing: 6) {
-      icon.labelStyle(.iconOnly).frame(width: 20, height: 20).clipped()
-      title.labelStyle(.titleOnly).font(.system(size: 14, weight: .semibold)).lineLimit(1)
+  private var picks: [Pick] {
+    selection.applicationTokens.map(Pick.app) + selection.categoryTokens.map(Pick.category)
+      + selection.webDomainTokens.map(Pick.web)
+  }
+
+  var body: some View {
+    let all = picks
+    VStack(alignment: .leading, spacing: Self.spacing) {
+      ForEach(Array(all.prefix(Self.maxRows)), id: \.self) { pick in
+        switch pick {
+        case .app(let token): line(icon: Label(token), title: Label(token), tag: nil)
+        case .category(let token): line(icon: Label(token), title: Label(token), tag: "整类")
+        case .web(let token): line(icon: Label(token), title: Label(token), tag: nil)
+        }
+      }
+      if all.count > Self.maxRows {
+        Text("还有 \(all.count - Self.maxRows) 个")
+          .font(.system(size: 13))
+          .foregroundStyle(.secondary)
+          .frame(height: 18)
+      }
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+  }
+
+  /// 图标放进 30x30（和超时来电建议里的一样），名字占满这一行剩下的宽度
+  private func line<L: View>(icon: L, title: L, tag: String?) -> some View {
+    HStack(spacing: 8) {
+      icon.labelStyle(.iconOnly).frame(width: 30, height: 30)
+      title.labelStyle(.titleOnly)
+        .font(.system(size: 15, weight: .semibold))
+        .lineLimit(1)
+        .frame(maxWidth: .infinity, alignment: .leading)
       if let tag {
         Text(tag)
           .font(.system(size: 11, weight: .bold))
-          .padding(.horizontal, 5)
-          .padding(.vertical, 1)
+          .padding(.horizontal, 6)
+          .padding(.vertical, 2)
           .background(Capsule().fill(Color(red: 1, green: 0xD2 / 255, blue: 0x3F / 255)))
       }
     }
-    .padding(.horizontal, 10)
-    .frame(height: 30)
-    .background(Capsule().fill(Color(red: 0xF3 / 255, green: 0xF4 / 255, blue: 0xF6 / 255)))
+    .frame(height: Self.rowHeight)
   }
 }
 

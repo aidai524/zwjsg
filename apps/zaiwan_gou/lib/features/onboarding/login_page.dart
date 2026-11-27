@@ -90,7 +90,7 @@ class _LoginPageState extends State<LoginPage> {
           children: [
             const Text('先报个到', style: PopText.title),
             const SizedBox(height: 8),
-            const Text('用手机号登录，换手机也能找回你的狗', style: PopText.bodyMuted),
+            const Text('用手机号登录，换手机也能找回狗版的你', style: PopText.bodyMuted),
             const SizedBox(height: 28),
             TextField(
               controller: _phone,

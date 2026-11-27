@@ -11,6 +11,7 @@ import 'features/cities/cities_page.dart';
 import 'features/cities/city_search_page.dart';
 import 'features/home/decision_page.dart';
 import 'features/home/home_page.dart';
+import 'features/home/weather_detail_page.dart';
 import 'features/login/login_page.dart';
 import 'features/onboarding/welcome_page.dart';
 import 'features/privacy/consent_page.dart';
@@ -74,6 +75,7 @@ GoRouter buildRouter(AppState state) {
         builder: (_, s) => DecisionPage(decisionKey: s.pathParameters['key']!, locationId: s.uri.queryParameters['city'] ?? ''),
       ),
       GoRoute(path: '/cities', builder: (_, __) => const CitiesPage()),
+      GoRoute(path: '/detail/:locationId', builder: (_, s) => WeatherDetailPage(locationId: s.pathParameters['locationId']!)),
       GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
       GoRoute(path: '/card/:locationId', builder: (_, s) => WeatherCardPage(locationId: s.pathParameters['locationId']!)),
       GoRoute(path: '/login', builder: (_, s) => LoginPage(next: s.uri.queryParameters['next'])),
