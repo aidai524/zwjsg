@@ -106,7 +106,7 @@ flutter run --dart-define=API_BASE=http://10.0.2.2:8000/api/v1
 - 每晚提醒：本地通知（flutter_local_notifications），不经过服务器。设目标页点“开始做人”时请求通知权限，默认 22:00；在“我的 › 结算卡提醒”里开关、换时间，点通知直接打开结算卡。登录后提醒时间同步到 `remind_at`，以后做服务端推送时用。安卓用非精确闹钟，可能晚几分钟，国内部分系统还要用户允许后台运行。
 - 昵称：“我的”页点名字修改，最长 16 个字，登录后同步到服务端，也显示在结算卡上。
 - 隐私政策：`lib/features/me/privacy_page.dart`，“我的”页和登录页都能打开。内容按现在的数据处理写成，上架前要补运营者名称和联系方式，并请法务审核。
-- 开源许可（2026-11-26）：“我的 › 开源许可”，用系列共用的许可页（`pop_ui` 的 `showPopLicenses`：Flutter 自带的 LicensePage，App 没接系统的中文本地化，这一页的标题等几处单独换成中文；狗 App 这边的入口和版本号在 `lib/features/me/licenses_page.dart`，版本号照 pubspec，测试会对一遍）。Dart 包的许可 Flutter 自己列；Dart 包以外、打包进 App 的模型和运行库在 `lib/core/licenses.dart` 补上，按平台列：安卓是 YAMNet 声音分类模型、它的类别名（AudioSet 本体，CC BY-SA 4.0）和 LiteRT 运行库，iOS 是 DCT-Net 卡通化模型和示例图。许可证全文在 `assets/licenses/`（从 LiteRT 1.4.2 的 AAR 自带的 LICENSE 拆出来：Apache 2.0 全文、Caffe 版权声明）。以后打包新的第三方模型、字体、素材，在 `licenses.dart` 加一条。
+- 开源许可（2026-11-26）：“我的 › 开源许可”，用系列共用的许可页（`pop_ui` 的 `showPopLicenses`：Flutter 自带的 LicensePage，App 没接系统的中文本地化，这一页的标题等几处单独换成中文；狗 App 这边的入口和版本号在 `lib/features/me/licenses_page.dart`，版本号照 pubspec，测试会对一遍）。Dart 包的许可 Flutter 自己列；Dart 包以外、打包进 App 的模型和运行库在 `lib/core/licenses.dart` 补上，按平台列：安卓是 YAMNet 声音分类模型、它的类别名（AudioSet 本体，CC BY-SA 4.0）和 LiteRT 运行库，iOS 是 DCT-Net 卡通化模型。许可证全文在 `assets/licenses/`（从 LiteRT 1.4.2 的 AAR 自带的 LICENSE 拆出来：Apache 2.0 全文、Caffe 版权声明）。以后打包新的第三方模型、字体、素材，在 `licenses.dart` 加一条。
 - 桌面小组件（iOS `ios/GouWidget/`，安卓 `android/app/src/main/kotlin/.../widget/`）：小号（2×2）是狗度、形象、阶段牌和一句吐槽；中号（4×2）再加今日已刷、目标和“再刷多久你就会……”，点小组件打开 App。狗度只在手机上算、不联网：安卓的小组件自己用 `TodayUsage` 算当天的使用时长（和 App 同一个算法），系统大约每 30 分钟叫醒一次，0 点另有闹钟让它变回人；iOS 只知道到了哪个阶段（监控扩展记在 App Group 里），到了新阶段监控扩展马上叫小组件刷新，狗度显示成“≥60%”，0 点变回人。阈值和文案由 App 交过去（照搬 `dog_meter.dart`），原生只做“分钟 ÷ 目标 → 数越过了几个阈值”。没开权限、没做完引导时提示打开 App，不显示演示数据。App 这边是 `lib/core/home_widget.dart` 的 `HomeWidgetSync`，6 张形象图（阶段 0–5）预先画好放进共享目录，换了形象或画法版本（`dogAvatarArtVersion`）才重画。iOS 的小组件要 iOS 17 以上。
 - iOS 隐私清单（`PrivacyInfo.xcprivacy`）：主 App、监控扩展、小组件扩展各一份，都申报了读写 App Group 的 UserDefaults（原因 1C8F.1）；屏蔽页扩展、屏蔽页按钮扩展也读 App Group（今天的阶段、形象图、限时），一样申报；报告扩展 2026-11-27 起也读 App Group 里已经设了哪些限时（超时来电的建议跳过它们，只读），一样申报。主 App 的清单照隐私政策写明收集的数据：手机号、账号和昵称、登录后上传的卡通形象、同步的目标和提醒时间、群组（群名、加了哪些群、汪一下，算 OtherUserContent）；iOS 现在不上传每天的狗度，所以没写，以后 iOS 要上报时补上。改了隐私政策要一起改。
 - 新犬种解锁动画（`lib/widgets/unlock_celebration.dart`）：上报每日结果时服务端返回这次新解锁的犬种，App 先存在手机上（`pending_unlocks`，服务端只告诉一次），在底部导航的哪个页面都会弹；看过一个删一个，一次解锁几种就一个个弹。安卓要登录了才上报；iOS 不上报，在手机上按同样的规则判定传说「狼」（连续 7 天做人，`AppState._judgeLocalWolf`，记在 `local_breed_unlocks`），解锁时一样弹。
@@ -174,7 +174,7 @@ iOS 屏幕使用时间（技术验证中）：
 - 各处显示用 `MyAvatar`：用着拍照形象就用它，不然用代码画的 `DogAvatar`（挑的那张预设形象，没挑过是呆毛）。默认形象 2026-11-23 改成 Q 版：大头、带高光的大眼睛、腮红、尖刘海加呆毛、亮黄卫衣；阶段 1 大垂耳，2 亮鼻子和 ω 嘴，3 狗毛脸、眼圈斑、项圈，4 吐长舌头、摇尾巴，5 完全变狗、捧着手机。改了画法把 `dogAvatarArtVersion` 加 1（现在是 2），桌面小组件、来电页、屏蔽页用的形象图会重画。
 - 导出到「什么鬼天气」：有拍照形象时“我的 › 形象”里多一行，没登录先去登录；形象还没传上服务端的先补传，再生成导出码，弹层里分两段显示（ABCD-EFGH），可以复制（`lib/features/me/export_avatar_sheet.dart`）。
 - AI 标识：用了拍照形象的结算卡，右下角印“AI生成”（文字高度不低于卡片短边的 5%），导出、分享的 PNG 里写入 GB 45438-2025 的 AIGC 元数据（`packages/series_share` 的 `AigcLabel`，和天气卡共用）。上线前请法务确认，`ContentProducer` 换成公司名称或备案号。
-- Flutter 的卡通化验证页 2026-11-20 删了；原生的 `zwjsg/cartoon_lab` 通道和样图还在（`CARTOON_LAB_AUTORUN` 开关在真机上测卡通化要用），上线前删掉。模型来源、转换脚本和实测数据见 `tools/cartoon/README.md`；DCT-Net 的 Apache 2.0 许可证已经附在“我的 › 开源许可”里（iOS）。
+- Flutter 的卡通化验证页 2026-11-20 删了；原生的 `zwjsg/cartoon_lab` 通道、样图和 `CARTOON_LAB_AUTORUN` 调试开关 2026-11-27 也删了（要再在真机上和基准对数值，见 `tools/cartoon/README.md`）。模型来源、转换脚本和实测数据见 `tools/cartoon/README.md`；DCT-Net 的 Apache 2.0 许可证已经附在“我的 › 开源许可”里（iOS）。
 
 ---
 

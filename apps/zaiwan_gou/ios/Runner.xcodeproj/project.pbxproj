@@ -14,7 +14,6 @@
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
 		157C8B4052CA41D132A599DF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 5F6C74C0E10E3F4F93200261 /* PrivacyInfo.xcprivacy */; };
 		16EE164CC569BE1E2768AD7A /* ShieldConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50454BE297654605FBC0E8EC /* ShieldConfig.swift */; };
-		17D3E1EE6E9B654E7C423182 /* cartoon_sample.jpg in Resources */ = {isa = PBXBuildFile; fileRef = BADF39D8CD430CDE183ACB38 /* cartoon_sample.jpg */; };
 		244C1C17D0DEE2FC46E0D0B4 /* ShieldActions.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CA569748931C2DFDDFBDAEA3 /* ShieldActions.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		2EB73B7F73D9C64CF3B78136 /* ScreenTimeMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 458F5D0C80E76AB546BB5989 /* ScreenTimeMonitor.swift */; };
 		32759C8BD637F533F4E2691C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 3A4B86DF2E935284E34ED2A5 /* PrivacyInfo.xcprivacy */; };
@@ -196,7 +195,6 @@
 		B24BB189BD97E2FA77A87F7E /* ScreenTimeReport.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = ScreenTimeReport.xcconfig; sourceTree = "<group>"; };
 		B6181CEFBFF5ECFADDADF63C /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
 		BA2FF97FEFF6C869CF13A553 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		BADF39D8CD430CDE183ACB38 /* cartoon_sample.jpg */ = {isa = PBXFileReference; includeInIndex = 1; path = cartoon_sample.jpg; sourceTree = "<group>"; };
 		CA569748931C2DFDDFBDAEA3 /* ShieldActions.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShieldActions.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		CB463B897F29F57A5A35CB11 /* ShieldActions.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = ShieldActions.entitlements; sourceTree = "<group>"; };
 		CCFC1C2B342D3842D3D445AA /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -303,7 +301,6 @@
 			isa = PBXGroup;
 			children = (
 				2CFC3C0BD25055B03AAFE293 /* DCTNetAnimeHead.mlpackage */,
-				BADF39D8CD430CDE183ACB38 /* cartoon_sample.jpg */,
 			);
 			name = Models;
 			path = Models;
@@ -686,7 +683,6 @@
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
-				17D3E1EE6E9B654E7C423182 /* cartoon_sample.jpg in Resources */,
 				A933D3E54C79B68344AD9C2B /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 ///   跑模型的 LiteRT 运行库（build.gradle.kts 里的 com.google.ai.edge.litert:litert）；
 ///   拍照形象（2026-11-27）的 DCT-Net 模型、MediaPipe 的人脸检测、人脸关键点和自拍抠图模型（assets/cartoon/）、
 ///   App 里的相机用的 CameraX（androidx.camera）
-/// - iOS：照片卡通化的 DCT-Net 模型（ios/Runner/Models/DCTNetAnimeHead.mlpackage）和示例图
+/// - iOS：照片卡通化的 DCT-Net 模型（ios/Runner/Models/DCTNetAnimeHead.mlpackage）
 ///
 /// 许可证全文在 assets/licenses/：从 LiteRT 1.4.2 的 AAR 自带的 LICENSE 拆成两份（Apache 2.0 全文、它附的 Caffe 版权声明），没改过。
 /// 新打包进第三方的模型、字体、素材时，在这里加一条。只在 main() 里注册一次（安卓超时来电页的引擎用不到）
@@ -83,10 +83,9 @@ abstract final class AppLicenses {
       'Copyright The Android Open Source Project\n\n'
       '按 Apache License 2.0 授权，全文如下：';
 
-  /// 示例图是 ios/Runner/Models/cartoon_sample.jpg（原生的卡通化验证在用），上线前要删；删了就把“示例图”那句也删掉
   static const _dctNetIntro = 'iOS 版用自拍做卡通形象时，用的是 DCT-Net 日漫头像模型（阿里巴巴达摩院，'
       'ModelScope damo/cv_unet_person-image-cartoon_compound-models，https://github.com/menyifang/DCT-Net），'
-      '转成 Core ML 在手机上运行；App 里还带着 DCT-Net 的一张示例图。\n\n'
+      '转成 Core ML 在手机上运行。\n\n'
       'Copyright (c) Alibaba, Inc. and its affiliates.\n\n'
       '按 Apache License 2.0 授权，全文如下：';
 }

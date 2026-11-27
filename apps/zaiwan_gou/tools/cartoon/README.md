@@ -11,8 +11,8 @@
 - 许可证：Apache 2.0，可以商用（仓库的 LICENSE 写的是 Copyright (c) Alibaba, Inc. and its affiliates.）。Apache 2.0 全文和“模型来自 DCT-Net”已经写在 App 的“我的 › 开源许可”里（iOS，`lib/core/licenses.dart`，2026-11-26）。
 - 转好的 Core ML 模型：`ios/Runner/Models/DCTNetAnimeHead.mlpackage`（3.0 MB，FP16）。
   输入 `input_image`，形状 [288, 288, 3]，BGR，0–255 的浮点；输出 `mul_6`，形状和颜色顺序相同，也是 0–255。
-- 样图：`ios/Runner/Models/cartoon_sample.jpg`，是 DCT-Net 仓库里的示例图 `input.png`（Apache 2.0）缩到 512 像素。
-  **只给验证页用，上线前和验证页一起删掉**。
+- 样图：DCT-Net 仓库里的示例图 `input.png`（Apache 2.0）缩到 512 像素。以前打包在 App 里给验证用（`ios/Runner/Models/cartoon_sample.jpg`），
+  2026-11-27 上线前清理时删了；要用就从 DCT-Net 仓库下载，或者从提交 `7f2ea04` 里拿。
 
 ## 流程（手机上）
 
@@ -108,4 +108,4 @@ python -I to_coreml.py <模型目录>/cartoon_anime_h.pb <输出目录> <输出�
 - `to_coreml.py`：转成 Core ML，并和基准比较误差。
 - `compare_device.py`：把手机上跑出来的结果和基准比较。
 
-用 devicectl 带环境变量 `CARTOON_LAB_AUTORUN=1` 启动 App，它会自动拿样图跑两遍，结果写到 App 沙盒的 `Documents/cartoon_lab/`，用 `xcrun devicectl device copy from --domain-type appDataContainer` 拷回来比较。
+以前用 devicectl 带环境变量 `CARTOON_LAB_AUTORUN=1` 启动 App，它会自动拿样图跑两遍，结果写到 App 沙盒的 `Documents/cartoon_lab/`，用 `xcrun devicectl device copy from --domain-type appDataContainer` 拷回来比较。2026-11-27 这个开关和样图一起删了；要再在真机上对数值，从提交 `7f2ea04` 把 `CartoonLab.swift` 里的 `autorun` 和样图拿回来，只在调试时用，别带进上线的包。
