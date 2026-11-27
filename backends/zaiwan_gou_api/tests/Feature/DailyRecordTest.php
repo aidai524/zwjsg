@@ -51,6 +51,31 @@ class DailyRecordTest extends TestCase
         $this->assertArrayNotHasKey('apps', $user->dailyRecords()->first()->getAttributes());
     }
 
+    public function test_rare_breeds_can_be_reported_and_show_in_dex(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        $today = CarbonImmutable::parse($user->localToday());
+
+        $this->putJson('/api/v1/daily-records/'.$today->subDay()->toDateString(), [
+            'dog_percent' => 67, 'minutes_used' => 120, 'breed_key' => 'mutt',
+        ])->assertOk()->assertJsonPath('newly_unlocked', ['mutt']);
+        $this->putJson('/api/v1/daily-records/'.$today->toDateString(), [
+            'dog_percent' => 44, 'minutes_used' => 80, 'breed_key' => 'retriever',
+        ])->assertOk()->assertJsonPath('newly_unlocked', ['retriever']);
+
+        $this->getJson('/api/v1/breeds')->assertOk()
+            ->assertJsonPath('owned', 2)
+            ->assertJsonPath('total', 8)
+            ->assertJsonFragment(['key' => 'mutt', 'name' => '串串', 'rarity' => 'rare', 'unlocked' => true])
+            ->assertJsonFragment(['key' => 'retriever', 'name' => '金毛寻回犬', 'rarity' => 'rare', 'unlocked' => true]);
+
+        // 定下来以前的占位 key 不认
+        $this->putJson('/api/v1/daily-records/'.$today->toDateString(), [
+            'dog_percent' => 44, 'minutes_used' => 80, 'breed_key' => 'rare_a',
+        ])->assertStatus(422);
+    }
+
     public function test_client_cannot_report_legend_breed(): void
     {
         $user = User::factory()->create();
@@ -122,5 +147,44 @@ class DailyRecordTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.daily_goal_minutes', 300)
             ->assertJsonPath('data.remind_at', '21:30');
+    }
+
+    public function test_festival_breed_only_on_its_days_and_only_when_a_dog(): void
+    {
+        // 元旦那天变狗：立flag犬
+        $this->travelTo(CarbonImmutable::parse('2027-01-01 20:00', 'Asia/Shanghai'));
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        $this->putJson('/api/v1/daily-records/2027-01-01', ['dog_percent' => 72, 'minutes_used' => 130, 'breed_key' => 'flag'])
+            ->assertOk()
+            ->assertJsonPath('record.breed_key', 'flag')
+            ->assertJsonPath('newly_unlocked', ['flag']);
+
+        // 第二天还报立flag犬：不收，那天不记犬种，记录照样存下
+        $this->travelTo(CarbonImmutable::parse('2027-01-02 20:00', 'Asia/Shanghai'));
+        $this->putJson('/api/v1/daily-records/2027-01-02', ['dog_percent' => 72, 'minutes_used' => 130, 'breed_key' => 'flag'])
+            ->assertOk()
+            ->assertJsonPath('record.breed_key', null)
+            ->assertJsonPath('record.stage', 2);
+
+        // 春节那几天：旺财；还是人的话不算
+        $this->travelTo(CarbonImmutable::parse('2027-02-07 20:00', 'Asia/Shanghai'));
+        $this->putJson('/api/v1/daily-records/2027-02-06', ['dog_percent' => 20, 'minutes_used' => 36, 'breed_key' => 'wangcai'])
+            ->assertOk()
+            ->assertJsonPath('record.breed_key', null)
+            ->assertJsonPath('newly_unlocked', []);
+        $this->putJson('/api/v1/daily-records/2027-02-07', ['dog_percent' => 95, 'minutes_used' => 171, 'breed_key' => 'wangcai'])
+            ->assertOk()
+            ->assertJsonPath('record.breed_key', 'wangcai')
+            ->assertJsonPath('newly_unlocked', ['wangcai']);
+        // 图鉴总数：没拿到的限定犬种不算
+        $this->getJson('/api/v1/breeds')->assertOk()
+            ->assertJsonPath('owned', 2)
+            ->assertJsonPath('total', 10)
+            ->assertJsonFragment(['key' => 'wangcai', 'name' => '旺财', 'rarity' => 'limited', 'unlocked' => true]);
+
+        // 没有这种限定犬种
+        $this->putJson('/api/v1/daily-records/2027-02-07', ['dog_percent' => 95, 'minutes_used' => 171, 'breed_key' => 'nianshou'])
+            ->assertStatus(422);
     }
 }

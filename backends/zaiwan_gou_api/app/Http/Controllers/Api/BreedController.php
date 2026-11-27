@@ -26,7 +26,8 @@ class BreedController extends Controller
 
         return response()->json([
             'owned' => $owned->count(),
-            'total' => $breeds->count(),
+            // 节日限定的没拿到不算进总数（过了那几天图鉴里就不出现了，和 App 一样）
+            'total' => $breeds->filter(fn ($b) => $b['rarity'] !== 'limited' || $b['unlocked'])->count(),
             'breeds' => $breeds,
         ]);
     }

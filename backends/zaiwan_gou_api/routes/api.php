@@ -5,7 +5,9 @@ use App\Http\Controllers\Api\AvatarController;
 use App\Http\Controllers\Api\AvatarExportController;
 use App\Http\Controllers\Api\BreedController;
 use App\Http\Controllers\Api\DailyRecordController;
+use App\Http\Controllers\Api\GroupController;
 use App\Http\Controllers\Api\MeController;
+use App\Http\Controllers\Api\NudgeController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -28,5 +30,17 @@ Route::prefix('v1')->group(function () {
         Route::put('daily-records/{date}', [DailyRecordController::class, 'upsert']);
 
         Route::get('breeds', [BreedController::class, 'index']);
+
+        // 群组（原“狗群”）
+        Route::get('groups', [GroupController::class, 'index']);
+        Route::post('groups', [GroupController::class, 'store'])->middleware('throttle:10,1');
+        Route::post('groups/join', [GroupController::class, 'join'])->middleware('throttle:20,1');
+        Route::get('groups/{dogGroup}', [GroupController::class, 'show']);
+        Route::patch('groups/{dogGroup}', [GroupController::class, 'update']);
+        Route::patch('groups/{dogGroup}/me', [GroupController::class, 'updateMe']);
+        Route::post('groups/{dogGroup}/leave', [GroupController::class, 'leave']);
+        Route::post('groups/{dogGroup}/nudges', [NudgeController::class, 'store'])->middleware('throttle:30,1');
+        Route::get('nudges/inbox', [NudgeController::class, 'inbox']);
+        Route::post('nudges/seen', [NudgeController::class, 'seen']);
     });
 });

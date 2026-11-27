@@ -45,6 +45,31 @@ class DailyRecordService
         return [$record, $unlocked];
     }
 
+    /**
+     * 节日限定犬种能不能记在 $date 这天：那天在这个节日里，而且变狗了（狗度到了“做人”线）。
+     * 不是限定犬种的一律可以（App 按刷法判的，服务端拿不到明细，照收）
+     */
+    public function festivalBreedAllowed(?string $breedKey, string $date, int $dogPercent): bool
+    {
+        $festival = $breedKey ? config("dog.festival_breeds.{$breedKey}") : null;
+        if (! $festival) {
+            return true;
+        }
+        if ($this->meter->isHuman($dogPercent)) {
+            return false;
+        }
+        if (isset($festival['every_year'])) {
+            return substr($date, 5) === $festival['every_year'];
+        }
+        foreach ($festival['windows'] ?? [] as [$start, $end]) {
+            if ($date >= $start && $date <= $end) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function unlock(User $user, string $breedKey, string $date): bool
     {
         $breed = UserBreed::firstOrCreate(
