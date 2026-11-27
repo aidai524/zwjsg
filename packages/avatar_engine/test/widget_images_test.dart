@@ -64,6 +64,48 @@ void main() {
     expect(clamped, isTrue);
   });
 
+  testWidgets('进化形态只在做人（阶段 0）时画：四种都不一样；变狗了穿不穿都一样；照片形象也一样', (tester) async {
+    final result = await tester.runAsync(() async {
+      final sticker = await whiteSticker();
+      Future<Uint8List> draw(int stage, Evolution? e, {bool photo = false}) async {
+        final image = photo
+            ? await renderPhotoDogAvatar(sticker: sticker, stage: stage, pixels: 120, evolution: e)
+            : await renderDogAvatar(stage: stage, pixels: 120, evolution: e);
+        final bytes = await rgba(image);
+        image.dispose();
+        return bytes;
+      }
+
+      final out = <String, Uint8List>{};
+      for (final photo in [false, true]) {
+        final kind = photo ? 'photo' : 'default';
+        out['$kind:plain'] = await draw(0, null, photo: photo);
+        for (final e in Evolution.values) {
+          out['$kind:${e.name}'] = await draw(0, e, photo: photo);
+          out['$kind:dog:${e.name}'] = await draw(2, e, photo: photo);
+        }
+        out['$kind:dog'] = await draw(2, null, photo: photo);
+      }
+      sticker.dispose();
+      return out;
+    });
+    final images = result!;
+    for (final kind in ['default', 'photo']) {
+      final looks = [images['$kind:plain']!, for (final e in Evolution.values) images['$kind:${e.name}']!];
+      for (var a = 0; a < looks.length; a++) {
+        for (var b = a + 1; b < looks.length; b++) {
+          expect(listEquals(looks[a], looks[b]), isFalse, reason: '$kind 第 $a 和第 $b 种');
+        }
+      }
+      for (final e in Evolution.values) {
+        expect(listEquals(images['$kind:dog:${e.name}'], images['$kind:dog']), isTrue, reason: '$kind ${e.name} 变狗以后');
+      }
+    }
+    expect(Evolution.byName('elite'), Evolution.elite);
+    expect(Evolution.byName('nope'), isNull);
+    expect(Evolution.byName(null), isNull);
+  });
+
   testWidgets('形象图画进目录、记下签名；签名没变不重画，缺图、换签名才重画', (tester) async {
     final dir = tempDir();
     var renders = 0;
